@@ -1,0 +1,205 @@
+@font-face { 
+    font-family: "Sakkal"; 
+    font-style: normal; 
+    font-weight: normal; 
+    src: url('/microservices/wrld3d/fonts/SakkalMajallaBold.eot'); 
+    src: url('/microservices/wrld3d/fonts/SakkalMajallaBold-iefix.eot') format("embedded-opentype"),
+    url('/microservices/wrld3d/fonts/SakkalMajallaBold.woff') format("woff"),
+    url('/microservices/wrld3d/fonts/SakkalMajallaBold.ttf') format("truetype"),
+    url('/microservices/wrld3d/fonts/SakkalMajallaBold.svg') format("svg")
+}
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0
+}
+#pageDiv {
+    position: relative;
+    height: 100%;
+}
+#indoor-container {
+    position: absolute;
+    left: 15px;
+    top: 200px
+}
+/* #compass-container {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 72px
+} */
+#compass-container {
+    position: absolute;
+    right: 20px;
+    bottom: 10px
+}
+#map {
+    height:100%;
+    width:100%;
+}
+#searchbar-container {
+    left: 60px;
+    top: 12px;
+}
+#eegeo-searchbar {
+    border-radius: 4px;
+}
+.eegeo-indoor-control #eegeo-exit-interior-button-container button {
+    border-radius: 4px;
+    color: #1976d2;
+}
+#searchbar-container .text-field-container {
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+/* #searchbar-container .text-field-container {
+    background-color: #fff;
+    box-sizing: border-box;
+    height: 40px;
+    width: 300px;
+    border: none;
+    padding: 5px 10px;
+}
+#searchbar-container .text-field-container input.text-field {
+    width: 230px;
+    outline: none;
+    margin-left: 10px;
+    background-color: transparent;
+    border-style: none;
+} */
+#searchbar-container .header-container .header-text {
+    display: none;
+}
+#alertsDiv {
+    position: absolute;
+    bottom:0; left:0;
+    z-index: 20;
+    display: none;
+}
+.leaflet-bottom.leaflet-right {
+    display: none;
+}
+.leaflet-left .leaflet-control {
+    margin-left: 15px;
+}
+#pageDiv a {
+    color: #1976d2;
+}
+.logo-wrap {
+    position: absolute;
+    top:20px; right:20px;
+    z-index: 20;
+    background-color: rgba(249, 242, 231, 0.8);
+    padding: 5px 2px 0px 3px;
+    border-radius: 50%;
+}
+.logo-image {
+    background: url(/microservices/wrld3d/img/PIF-logo.svg) no-repeat;
+    transition: all ease 1s !important;
+    width: 95px;
+    height: 95px;
+    display: inline-block;
+}
+.footer {
+    bottom: 0;
+    width: 100%;
+    position: relative;
+}
+.footer-title {
+    color: #bd9b60;
+    margin: 0 auto;
+    top: -50px;
+    line-height: 20px;
+    position: absolute;
+    transform: translateX(-50%);
+    font-family: Sakkal;
+    font-size: 16px !important;
+    left: 50%;
+    background-color: rgba(0, 122, 51, 0.8);
+    padding: 0px 10px;
+    border-radius: 5px;
+}
+.tilt-button {
+    font-family: "Open Sans", sans-serif;
+    font-size: 13pt;
+    font-weight: 600;
+}
+.action-buttons {
+    position: absolute;
+    top: 12px;
+    left: 440px;
+    height: 40px;
+    width: 820px;
+    z-index: 40;
+}
+.action-buttons .alertButton {
+    height: 44px;
+    width: auto;
+    border: none;
+    border-radius: 4px;
+    padding: 10px;
+    text-align: left;
+    background-color: #fff;
+}
+.action-buttons .alertButton:hover {
+    background-color: #f4f4f4;
+}
+.action-buttons .alertButton img {
+    height: 24px;
+    width: 24px;
+    opacity: 0.6;
+}
+.action-buttons .alertButton div {
+    margin-left: 5px;
+    margin-top: -25px;
+}
+.badge {
+    display: inline-block;
+    min-width: 10px;
+    padding: 3px 7px;
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 1;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    background-color: #777;
+    border-radius: 10px;
+}
+.badge.bg-red {
+    background-color: #dd4b39 !important;
+}
+/* .tilt-button-container {
+    position: absolute;
+    right: calc(32px * 2 + 10px * 3);
+    top: 10px;
+    transition: right 500ms;
+    box-shadow: 0 2px 4px 2px var(--box-shadow-color);
+    z-index: 100;
+    width: 32px;
+    height: 32px;
+}
+.tilt-button-container .tilt-button {
+    width: 32px;
+    height: 32px;
+    font-family: "Open Sans", sans-serif;
+    font-size: 13pt;
+    color: #1756a9;
+    font-weight: 600;
+} */
+/* .ripple-button {
+    background-color: var(--widgets-main-theme-button-other-color);
+    background-position: center;
+    background-repeat: no-repeat;
+    border: 0;
+    box-sizing: border-box;
+    cursor: pointer;
+    outline: none;
+    overflow: hidden;
+    padding: 0;
+    position: relative;
+} */

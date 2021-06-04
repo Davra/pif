@@ -1,0 +1,51 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="icon" href="/microservices/wrld3d/favicon.ico">
+    <script src="https://cdn-webgl.wrld3d.com/wrldjs/dist/latest/wrld.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.1/leaflet.css" rel="stylesheet" />
+    <link href="https://cdn-webgl.wrld3d.com/wrldjs/addons/resources/latest/css/wrld.css" rel="stylesheet"/>
+    <script src="https://cdn-webgl.wrld3d.com/wrldjs/addons/poi_api/latest/poi_api.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"></script>
+    <script src="https://cdn-webgl.wrld3d.com/wrldjs/addons/searchbar/latest/searchbar.js"></script>
+    <script src="https://cdn-webgl.wrld3d.com/wrldjs/addons/indoor_control/latest/indoor_control.js"></script>
+    <script src="https://cdn-webgl.wrld3d.com/wrldjs/addons/compass_control/latest/compass_control.js"></script>
+    <script src="https://cdn-webgl.wrld3d.com/wrldjs/addons/marker_controller/latest/marker_controller.js"></script>
+    <script src="/microservices/wrld3d/js/wrld3d.js"></script>
+    <link href="/microservices/wrld3d/css/wrld3d.css" rel="stylesheet"/>
+</head>
+<body>
+<div id="pageDiv" class="leaflet-touch">
+    <div class="leaflet-top leaflet-left">
+        <div class="leaflet-control-zoom leaflet-bar leaflet-control">
+            <a class="leaflet-control-zoom-in" href="#" title="Zoom in" role="button" aria-label="Zoom in">+</a>
+            <a class="leaflet-control-zoom-out" href="#" title="Zoom out" role="button" aria-label="Zoom out">−</a>
+            <a class="tilt-button" href="#" data-mode="3d" title="Change camera tilt" role="button" aria-label="Change tilt">2D</a>
+        </div>
+    </div>
+    <div id="searchbar-container" class="wrld-widget-container"></div>
+    <!-- <div id="tilt-button-container" class="tilt-button-container">
+        <button class="ripple-button tilt-button" data-mode="3d">2D</button>
+    </div> -->
+    <div class="action-buttons">
+        <button type="button" class="alertButton"><img src="/microservices/wrld3d/img/bell.svg" alt="Bell image"/><div class="alertsCount badge bg-red">2</div></button>
+    </div>
+    <div id="indoor-container"></div>
+    <div id="compass-container"></div>
+    <div id="alertsDiv"></div>
+    <div id="map"></div>
+    <div class="footer">
+        <div class="footer-title">
+            <div>صندوق الاستثمارات العامة</div>
+            <div>Public Investment Fund</div>
+        </div>
+    </div>
+    <div class="logo-wrap">
+        <div class="logo-image"></div>
+    </div>
+</div>
+</body>
+</html>
