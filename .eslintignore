@@ -1,0 +1,16 @@
+cordova/
+cypress/
+feather-master/
+mongoScripts/
+public/audio/
+public/css/
+public/img/
+public/js/ext/
+public/pages/office/
+public/tenants/
+public/test*
+public/test/
+qrdump/
+test*
+test/
+text-security/
