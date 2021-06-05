@@ -2,7 +2,7 @@
 // https://maps.wrld3d.com/?lat=24.760670&lon=46.639152&zoom=14.868738475598787&coverage_tree_manifest=https://cdn-webgl.eegeo.com/coverage-trees/vjsdavra/v38/manifest.bin.gz
 // https://mapdesigner.wrld3d.com/poi/latest/?&coverage_tree_manifest=https://cdn-webgl.eegeo.com/coverage-trees/vjsdavra/v38/manifest.bin.gz
 $(function () {
-    const map = L.Wrld.map('map', '8d2d6eef6635955569c400073255f501', {
+    var map = L.Wrld.map('map', '8d2d6eef6635955569c400073255f501', {
         // center: [37.7952, -122.4028],
         center: [24.763289081785917, 46.63878573585767], // Riyadh
         zoom: 17,
@@ -17,7 +17,7 @@ $(function () {
     new WrldCompassControl('compass-container', map) // eslint-disable-line no-new
     new WrldIndoorControl('indoor-container', map) // eslint-disable-line no-new
     // https://www.wrld3d.com/wrld.js/latest/docs/api/Widgets/WrldMarkerController/#iconkey-values
-    const searchbarConfig = {
+    var searchbarConfig = {
         apiKey: '8d2d6eef6635955569c400073255f501',
         skipYelpSearch: true,
         overrideIndoorSearchMenuItems: true,
@@ -28,14 +28,14 @@ $(function () {
             { name: 'Meeting Rooms', searchTag: 'meeting_room', iconKey: 'meeting_room' }
         ]
     }
-    const searchbar = new WrldSearchbar('searchbar-container', map, searchbarConfig)
-    const markerController = new WrldMarkerController(map, {
+    var searchbar = new WrldSearchbar('searchbar-container', map, searchbarConfig)
+    var markerController = new WrldMarkerController(map, {
         searchbar: searchbar,
         poiViewsEnabled: true
     })
     $('#searchbar-container .text-field-container input')[0].placeholder = ''
     searchbar.on('menuopen', function (e) {
-        const checkExist = setInterval(function () {
+        var checkExist = setInterval(function () {
             if ($('#searchbar-container .header-container .header-text').length) {
                 console.log('Exists!')
                 $('#searchbar-container .header-container .header-text')[0].innerHTML = 'Menu'
@@ -45,7 +45,7 @@ $(function () {
         }, 100)
     })
 
-    let pendingFloorIndex = 0
+    var pendingFloorIndex = 0
     map.indoors.on('indoormapenter', function (e) {
         // console.log('Entered an indoor map')
         $('#wrld-indoor-map-watermark0').hide()
@@ -60,7 +60,7 @@ $(function () {
     })
     $('.tilt-button').click(function (e) {
         e.preventDefault()
-        const mode = $(this).attr('data-mode')
+        var mode = $(this).attr('data-mode')
         if (mode === '3d') {
             $(this).attr('data-mode', '2d')
             $(this).text('3D')
@@ -74,14 +74,14 @@ $(function () {
     })
     $('.leaflet-control-zoom-in').click(function (e) {
         e.preventDefault()
-        const zoom = map.getZoom()
-        const center = map.getCenter()
+        var zoom = map.getZoom()
+        var center = map.getCenter()
         map.setView(center, zoom + 1)
     })
     $('.leaflet-control-zoom-out').click(function (e) {
         e.preventDefault()
-        const zoom = map.getZoom()
-        const center = map.getCenter()
+        var zoom = map.getZoom()
+        var center = map.getCenter()
         map.setView(center, zoom - 1)
     })
     searchbar.on('searchresultselect', goToResult)
@@ -95,7 +95,7 @@ $(function () {
             pendingFloorIndex = event.result.location.floorIndex
         }
         else {
-            const floorIndex = map.indoors.getFloor().getFloorIndex()
+            var floorIndex = map.indoors.getFloor().getFloorIndex()
             if (event.result.location.floorIndex !== floorIndex) map.indoors.setFloor(event.result.location.floorIndex)
         }
 
@@ -103,20 +103,21 @@ $(function () {
     }
     function displayAlerts (success, results) {
         if (success) {
-            const html = []
+            var html = []
             results.forEach(function (result) {
                 console.log(JSON.stringify(result))
-                const floorNumber = result.floor_id + 2
-                html.push('<button type="button" class="alert" data-index="' + result.id + '" style="width: 100%">' + result.title + ', floor ' + floorNumber + '</button>')
+                var floorNumber = result.floor_id + 2
+                // html.push('<button type="button" class="alert" data-index="' + result.id + '" style="width: 100%">' + result.title + ', floor ' + floorNumber + '</button>')
+                html.push('<div class="alertRow"><div class="col1">' + result.tags.split(' ')[0] + '</div><div class="col2">' + result.title + '</div><div class="col3">' + floorNumber + '</div></div>')
             })
-            $('#alertsDiv').html(html.join(''))
-            $('#alertsDiv button').each(function (i, button) {
-                const result = results[i]
-                $(button).click(function () {
+            $('.alertsList').html(html.join(''))
+            $('.alertsList .alertRow').each(function (i, row) {
+                var result = results[i]
+                $(row).click(function () {
                     // var id = parseInt($(this).attr('data-index'))
                     // markerController.openPoiView(id)
-                    const markerId = result.id
-                    const markerOptions = {
+                    var markerId = result.id
+                    var markerOptions = {
                         isIndoor: result.indoor,
                         indoorId: result.indoor_id,
                         floorIndex: result.floor_id,
@@ -135,7 +136,7 @@ $(function () {
                         },
                         iconKey: result.tags.split(' ')[0]
                     }
-                    const marker = markerController.addMarker(markerId, [result.lat, result.lon], markerOptions)
+                    var marker = markerController.addMarker(markerId, [result.lat, result.lon], markerOptions)
                     if (!map.indoors.isIndoors()) {
                         map.indoors.enter(result.indoor_id, {
                             animate: false
@@ -143,7 +144,7 @@ $(function () {
                         pendingFloorIndex = result.floor_id
                     }
                     else {
-                        const floorIndex = map.indoors.getFloor().getFloorIndex()
+                        var floorIndex = map.indoors.getFloor().getFloorIndex()
                         if (result.floor_id !== floorIndex) map.indoors.setFloor(result.floor_id)
                     }
                     markerController.showMarker(marker)
@@ -157,10 +158,13 @@ $(function () {
     $('.alertButton').click(function (e) {
         $('#alertsDiv').slideToggle()
     })
-    const poiApi = new WrldPoiApi('8d2d6eef6635955569c400073255f501')
-    const radius = 1000
-    const maxResults = 10
-    const options = { range: radius, number: maxResults }
+    $('#alertsDiv .close').click(function (e) {
+        $('#alertsDiv').slideToggle()
+    })
+    var poiApi = new WrldPoiApi('8d2d6eef6635955569c400073255f501')
+    var radius = 1000
+    var maxResults = 10
+    var options = { range: radius, number: maxResults }
     poiApi.searchTags(['alert'], { lat: 24.763289081785917, lng: 46.63878573585767 }, displayAlerts, options)
 
     /*

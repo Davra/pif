@@ -46,6 +46,7 @@ html, body {
 }
 #eegeo-searchbar {
     border-radius: 4px;
+    box-shadow: none;
 }
 .eegeo-indoor-control #eegeo-exit-interior-button-container button {
     border-radius: 4px;
@@ -78,12 +79,126 @@ html, body {
     bottom:0; left:0;
     z-index: 20;
     display: none;
+    width: 70%;
+    box-shadow: 0 6px 12px rgb(0 0 0 / 18%);
+    border-color: #ddd;
+    /* margin-bottom: 20px; */
+    margin-left: 15px;
+    background-color: #fff;
+    border: 1px solid transparent;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    font-family: 'Source Sans Pro',sans-serif;
+}
+h4.divToggle, h5.divToggle {
+    margin: 5px;
+    margin-left: 0;
+    margin-right: 0;
+    padding: 5px 5px 5px 15px;
+    position: relative;
+    font-size: 18px;
+}
+h4.divToggle button.export {
+    width: 140px;
+    position: absolute;
+    right: 50px;
+    top: 4px;
+}
+.btn-info {
+    background-color: #00c0ef;
+    border-color: #00acd6;
+    color: #fff;
+    border: 1px solid transparent;
+}
+.btn-xs, .btn-group-xs > .btn {
+    padding: 1px 5px;
+    font-size: 12px;
+    line-height: 1.5;
+    border-radius: 3px;
+}
+.btn-info:hover, .btn-info:active, .btn-info.hover {
+    background-color: #00acd6;
+}
+.btn-info:hover {
+    color: #fff;
+    border-color: #269abc;
+}
+.btn:hover, .btn:focus, .btn.focus {
+    text-decoration: none;
+}
+.btn-info.btn-xs img {
+    height: 13px;
+    opacity: 0.5;
+    color: #fff;
+    margin-right: 6px;
+    position: relative;
+    top: 2px;
+}
+.btn-info.btn-xs svg {
+    color: #fff;
+}
+#alertsDiv .colHeader {
+    font-weight: bold;
+    font-size: 14px;
+    border-bottom: 2px solid #ddd;
+    vertical-align: bottom;
+    padding: 8px 10px 8px 20px;
+}
+#alertsDiv .alertRow {
+    cursor: pointer;
+    padding: 10px 10px 10px 20px;
+    border-bottom: solid 1px #eee;
+    color: #333;
+    font-weight: 400;
+}
+#alertsDiv .alertRow:hover {
+    background-color: #f5f5f5;
+}
+#alertsDiv .col1 {
+    display: inline-block;
+    width: 20%;
+}
+#alertsDiv .col2 {
+    display: inline-block;
+    width: 40%;
+}
+#alertsDiv .col3 {
+    display: inline-block;
+    width: 10%;
+}
+.modal-header .close {
+    margin-top: -2px;
+}
+button.close {
+    -webkit-appearance: none;
+    padding: 0;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    float: right;
+    margin-right: 10px;
+    font-size: 21px;
+    font-weight: bold;
+    line-height: 1;
+    color: #000;
+    text-shadow: 0 1px 0 #fff;
+    filter: alpha(opacity=20);
+    opacity: .2;
+}
+.close:hover, .close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+    filter: alpha(opacity=50);
+    opacity: .5;
 }
 .leaflet-bottom.leaflet-right {
     display: none;
 }
 .leaflet-left .leaflet-control {
     margin-left: 15px;
+    margin-top: 12px;
+    border: none;
 }
 #pageDiv a {
     color: #1976d2;

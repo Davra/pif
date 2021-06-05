@@ -35,7 +35,16 @@
     </div>
     <div id="indoor-container"></div>
     <div id="compass-container"></div>
-    <div id="alertsDiv"></div>
+    <div id="alertsDiv">
+        <h4 class="divToggle">
+            <span>Alerts</span>
+            <span class="alertsCount badge bg-red">2</span>
+            <button type="button" class="export btn btn-info btn-xs" title="Export alerts"><img src="/microservices/wrld3d/img/file-export-light.svg" alt="Bell image"/><span>Export</span></button>
+            <button type="button" class="close" title="Close">&times;</button>
+        </h4>
+        <div class="colHeader"><div class="col1">Type</div><div class="col2">Description</div><div class="col3">Floor</div></div>
+        <div class="alertsList"></div>
+    </div>
     <div id="map"></div>
     <div class="footer">
         <div class="footer-title">
