@@ -101,59 +101,87 @@ $(function () {
 
         // map.setView(event.result.location.latLng, 15);
     }
-    function displayAlerts (success, results) {
+    function formatTimestamp (date, format) {
+        if (!date) return ''
+        var y = date.getFullYear()
+        var M = '' + (date.getMonth() + 1)
+        var d = '' + date.getDate()
+        var M0 = M.length === 1 ? '0' + M : M
+        var d0 = d.length === 1 ? '0' + d : d
+        var h = '' + date.getHours()
+        var m = '' + date.getMinutes()
+        if (h.length === 1) h = '0' + h
+        if (m.length === 1) m = '0' + m
+        var ds = '-'
+        return (y + ds + M0 + ds + d0 + ' ' + h + ':' + m)
+    }
+    var results = []
+    function displayAlerts (success, resultsParm) {
         if (success) {
-            var html = []
-            results.forEach(function (result) {
-                console.log(JSON.stringify(result))
-                var floorNumber = result.floor_id + 2
-                // html.push('<button type="button" class="alert" data-index="' + result.id + '" style="width: 100%">' + result.title + ', floor ' + floorNumber + '</button>')
-                html.push('<div class="alertRow"><div class="col1">' + result.tags.split(' ')[0] + '</div><div class="col2">' + result.title + '</div><div class="col3">' + floorNumber + '</div></div>')
-            })
-            $('.alertsList').html(html.join(''))
-            $('.alertsList .alertRow').each(function (i, row) {
-                var result = results[i]
-                $(row).click(function () {
-                    // var id = parseInt($(this).attr('data-index'))
-                    // markerController.openPoiView(id)
-                    var markerId = result.id
-                    var markerOptions = {
-                        isIndoor: result.indoor,
-                        indoorId: result.indoor_id,
-                        floorIndex: result.floor_id,
-                        poiView: {
-                            title: result.title,
-                            subtitle: result.subtitle,
-                            tags: result.tags.split(' '),
-                            address: '',
-                            phone: '',
-                            web: '',
-                            email: '',
-                            facebook: '',
-                            twitter: '',
-                            imageUrl: result.user_data.image_url,
-                            description: ''
-                        },
-                        iconKey: result.tags.split(' ')[0]
-                    }
-                    var marker = markerController.addMarker(markerId, [result.lat, result.lon], markerOptions)
-                    if (!map.indoors.isIndoors()) {
-                        map.indoors.enter(result.indoor_id, {
-                            animate: false
-                        })
-                        pendingFloorIndex = result.floor_id
-                    }
-                    else {
-                        var floorIndex = map.indoors.getFloor().getFloorIndex()
-                        if (result.floor_id !== floorIndex) map.indoors.setFloor(result.floor_id)
-                    }
-                    markerController.showMarker(marker)
-                })
-            })
+            results = resultsParm
+            pageAlerts(0)
         }
         else {
             map.openPopup('POI API query failed!', map.getCenter())
         }
+    }
+    function pageAlerts (start) {
+        var html = []
+        var count = 0
+        for (var i = start, n = 5; i < n; i++) {
+            var result = results[i]
+            if (result) {
+                count++
+                console.log(JSON.stringify(result))
+                var floorNumber = result.floor_id + 2
+                var date = new Date()
+                var evens = (i % 2) ? 'odd' : 'even'
+                // html.push('<div class="alertRow"><div class="col1">' + result.tags.split(' ')[0] + '</div><div class="col2">' + result.title + '</div><div class="col3">' + floorNumber + '</div></div>')
+                html.push('<div class="alertRow ' + evens + '" data-index="' + i + '"><div class="col1">' + formatTimestamp(date) + '</div><div class="col2">' + result.title + '</div><div class="col3">' + floorNumber + '</div></div>')
+            }
+        }
+        $('.alertsList').html(html.join(''))
+        $('.paginationDiv .text').text((start + 1) + '-' + (start + count) + ' of ' + results.length)
+        $('.alertsList .alertRow').each(function (i, row) {
+            var index = parseInt($(this).attr('data-index'))
+            var result = results[index]
+            $(row).click(function () {
+                // var id = parseInt($(this).attr('data-index'))
+                // markerController.openPoiView(id)
+                var markerId = result.id
+                var markerOptions = {
+                    isIndoor: result.indoor,
+                    indoorId: result.indoor_id,
+                    floorIndex: result.floor_id,
+                    poiView: {
+                        title: result.title,
+                        subtitle: result.subtitle,
+                        tags: result.tags.split(' '),
+                        address: '',
+                        phone: '',
+                        web: '',
+                        email: '',
+                        facebook: '',
+                        twitter: '',
+                        imageUrl: result.user_data.image_url,
+                        description: ''
+                    },
+                    iconKey: result.tags.split(' ')[0]
+                }
+                var marker = markerController.addMarker(markerId, [result.lat, result.lon], markerOptions)
+                if (!map.indoors.isIndoors()) {
+                    map.indoors.enter(result.indoor_id, {
+                        animate: false
+                    })
+                    pendingFloorIndex = result.floor_id
+                }
+                else {
+                    var floorIndex = map.indoors.getFloor().getFloorIndex()
+                    if (result.floor_id !== floorIndex) map.indoors.setFloor(result.floor_id)
+                }
+                markerController.showMarker(marker)
+            })
+        })
     }
     $('.alertButton').click(function (e) {
         $('#alertsDiv').slideToggle()
