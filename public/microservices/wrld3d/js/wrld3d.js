@@ -22,10 +22,18 @@ $(function () {
         skipYelpSearch: true,
         overrideIndoorSearchMenuItems: true,
         outdoorSearchMenuItems: [
-            { name: 'Screens', searchTag: 'video_conference', iconKey: 'video_conference' },
+            { name: 'Access Control Devices', searchTag: 'badge_reader', iconKey: 'badge_reader' },
+            { name: 'Air Quality', searchTag: 'air_quality', iconKey: 'air_quality' },
+            { name: 'Beacons', searchTag: 'positioning_beacon', iconKey: 'positioning_beacon' },
+            { name: 'Digital Signage', searchTag: 'message', iconKey: 'message' },
+            { name: 'Fire Systems', searchTag: 'fire_extinguisher', iconKey: 'fire_extinguisher' },
+            { name: 'Hayyak devices', searchTag: 'smart_post', iconKey: 'smart_post' },
+            { name: 'Hot desks', searchTag: 'desk_available', iconKey: 'desk_available' },
+            { name: 'HVAC/Lighting/Electrical', searchTag: 'electricity_meter', iconKey: 'electricity_meter' },
+            { name: 'Meeting Rooms', searchTag: 'meeting_room', iconKey: 'meeting_room' },
+            // { name: 'Screens', searchTag: 'video_conference', iconKey: 'video_conference' },
             // { name: 'Alerts', searchTag: 'alert', iconKey: 'alert' },
-            { name: 'Around Me', searchTag: '', iconKey: 'aroundme' },
-            { name: 'Meeting Rooms', searchTag: 'meeting_room', iconKey: 'meeting_room' }
+            { name: 'Around Me', searchTag: '', iconKey: 'aroundme' }
         ]
     }
     var searchbar = new WrldSearchbar('searchbar-container', map, searchbarConfig)
