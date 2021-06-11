@@ -87,7 +87,8 @@ button.export svg {
     height: 24px;
 }
 button .kiwi {
-    fill: #689f38;
+    /* fill: #689f38; */
+    fill: #007a33;
 }
 button.export, .paginationDiv button {
     filter: alpha(opacity=60);

@@ -38,7 +38,7 @@ $(function () {
     }
     var searchbar = new WrldSearchbar('searchbar-container', map, searchbarConfig)
     var markerController = new WrldMarkerController(map, {
-        searchbar: searchbar,
+        // searchbar: searchbar,
         poiViewsEnabled: true
     })
     $('#searchbar-container .text-field-container input')[0].placeholder = ''
@@ -54,6 +54,7 @@ $(function () {
     })
 
     var pendingFloorIndex = 0
+    var pendingMarkerId = 0
     map.indoors.on('indoormapenter', function (e) {
         // console.log('Entered an indoor map')
         $('#wrld-indoor-map-watermark0').hide()
@@ -64,7 +65,27 @@ $(function () {
             $('.tilt-button').attr('data-mode', '3d')
             $('.tilt-button').text('2D')
         })
-        if (pendingFloorIndex) map.indoors.setFloor(pendingFloorIndex)
+        if (pendingFloorIndex) {
+            map.indoors.setFloor(pendingFloorIndex)
+            pendingFloorIndex = 0
+        }
+        else {
+            setTimeout(function () {
+                markerController.showMarker(pendingMarkerId)
+                markerController.openPoiView(pendingMarkerId)
+                pendingMarkerId = 0
+            }, 1000)
+        }
+    })
+    map.indoors.on('indoormapfloorchange', function (e) {
+        console.log('Floor changed on indoor map')
+        if (pendingMarkerId) {
+            setTimeout(function () {
+                markerController.showMarker(pendingMarkerId)
+                markerController.openPoiView(pendingMarkerId)
+                pendingMarkerId = 0
+            }, 1000)
+        }
     })
     $('.tilt-button').click(function (e) {
         e.preventDefault()
@@ -92,9 +113,58 @@ $(function () {
         var center = map.getCenter()
         map.setView(center, zoom - 1)
     })
-    searchbar.on('searchresultselect', goToResult)
+    searchbar.on('searchresultselect', handleResult)
 
-    function goToResult (event) {
+    function handleResult (event) {
+        goToResult (event.result.data)
+    }
+    function goToResult (result) {
+        var markerId = result.id
+        var markerOptions = {
+            isIndoor: result.indoor,
+            indoorId: result.indoor_id,
+            floorIndex: result.floor_id,
+            poiView: {
+                title: result.title,
+                subtitle: result.subtitle,
+                tags: result.tags.split(' '),
+                address: '',
+                phone: '',
+                web: '',
+                email: '',
+                facebook: '',
+                twitter: '',
+                imageUrl: result.user_data.image_url,
+                description: ''
+            },
+            iconKey: result.tags.split(' ')[0]
+        }
+        if (markerOptions.iconKey === 'positioning_beacon') {
+            markerOptions.poiView.imageUrl = ''
+            markerOptions.poiView.customView = 'http://localhost:8080/beacon/' + result.id
+            markerOptions.poiView.customViewHeight = 400
+        }
+        markerController.addMarker(markerId, [result.lat, result.lon], markerOptions)
+        if (!map.indoors.isIndoors()) {
+            pendingFloorIndex = result.floor_id
+            pendingMarkerId = markerId
+            map.indoors.enter(result.indoor_id, {
+                animate: false
+            })
+        }
+        else {
+            var floorIndex = map.indoors.getFloor().getFloorIndex()
+            if (result.floor_id !== floorIndex) {
+                pendingMarkerId = markerId
+                map.indoors.setFloor(result.floor_id)
+            }
+            else {
+                markerController.showMarker(markerId)
+                markerController.openPoiView(markerId)
+            }
+        }
+    }
+    function goToResultXXX (event) {
         markerController.openPoiView(event.result.sourceId)
         if (!map.indoors.isIndoors()) {
             map.indoors.enter(event.result.location.indoorId, {
@@ -151,43 +221,10 @@ $(function () {
         $('.alertsList').html(html.join(''))
         $('.paginationDiv .text').text((start + 1) + '-' + (start + count) + ' of ' + results.length)
         $('.alertsList .alertRow').each(function (i, row) {
-            var index = parseInt($(this).attr('data-index'))
-            var result = results[index]
             $(row).click(function () {
-                // var id = parseInt($(this).attr('data-index'))
-                // markerController.openPoiView(id)
-                var markerId = result.id
-                var markerOptions = {
-                    isIndoor: result.indoor,
-                    indoorId: result.indoor_id,
-                    floorIndex: result.floor_id,
-                    poiView: {
-                        title: result.title,
-                        subtitle: result.subtitle,
-                        tags: result.tags.split(' '),
-                        address: '',
-                        phone: '',
-                        web: '',
-                        email: '',
-                        facebook: '',
-                        twitter: '',
-                        imageUrl: result.user_data.image_url,
-                        description: ''
-                    },
-                    iconKey: result.tags.split(' ')[0]
-                }
-                var marker = markerController.addMarker(markerId, [result.lat, result.lon], markerOptions)
-                if (!map.indoors.isIndoors()) {
-                    map.indoors.enter(result.indoor_id, {
-                        animate: false
-                    })
-                    pendingFloorIndex = result.floor_id
-                }
-                else {
-                    var floorIndex = map.indoors.getFloor().getFloorIndex()
-                    if (result.floor_id !== floorIndex) map.indoors.setFloor(result.floor_id)
-                }
-                markerController.showMarker(marker)
+                var index = parseInt($(this).attr('data-index'))
+                var result = results[index]
+                goToResult (result)
             })
         })
     }

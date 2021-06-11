@@ -10,8 +10,9 @@
   "author": "connecthing.io",
   "license": "ISC",
   "dependencies": {
+    "@connecthing.io/connecthing-api": "~1.0.2",
     "express": "^4.15.4",
-    "@connecthing.io/connecthing-api": "~1.0.2"
+    "http-proxy": "^1.18.1"
   },
   "devDependencies": {
     "eslint": "^7.27.0",
