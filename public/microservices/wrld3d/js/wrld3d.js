@@ -2,6 +2,7 @@
 // https://maps.wrld3d.com/?lat=24.760670&lon=46.639152&zoom=14.868738475598787&coverage_tree_manifest=https://cdn-webgl.eegeo.com/coverage-trees/vjsdavra/v38/manifest.bin.gz
 // https://mapdesigner.wrld3d.com/poi/latest/?&coverage_tree_manifest=https://cdn-webgl.eegeo.com/coverage-trees/vjsdavra/v38/manifest.bin.gz
 $(function () {
+    var prefix = window.location.hostname === 'localhost' ? '' : '/microservices/wrld3d'
     var map = L.Wrld.map('map', '8d2d6eef6635955569c400073255f501', {
         // center: [37.7952, -122.4028],
         center: [24.763289081785917, 46.63878573585767], // Riyadh
@@ -141,7 +142,7 @@ $(function () {
         }
         if (markerOptions.iconKey === 'positioning_beacon') {
             markerOptions.poiView.imageUrl = ''
-            markerOptions.poiView.customView = 'http://localhost:8080/beacon/' + result.id
+            markerOptions.poiView.customView = prefix + '/beacon/' + result.id
             markerOptions.poiView.customViewHeight = 400
         }
         markerController.addMarker(markerId, [result.lat, result.lon], markerOptions)

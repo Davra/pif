@@ -20,7 +20,6 @@ app.get('/beacon/:id', (req, res) => {
     })
     res.send(html.join(''))
 })
-
 app.listen(port, () => {
-    console.log(`Davra PIF server listening at http://localhost:${port}`)
+    console.log(`Davra PIF server listening on port ${port}`)
 })
