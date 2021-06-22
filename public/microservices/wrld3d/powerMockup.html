@@ -1,0 +1,348 @@
+
+<html>
+	<head>
+		<link href="https://pif.davra.com/ui/vendors/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+		<link href="https://pif.davra.com/ui/vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+	
+		<!-- bootstrap-daterangepicker -->
+		<link href="https://pif.davra.com/ui/vendors/bootstrap-daterangepicker/daterangepicker.css" rel="stylesheet">
+		<link href="https://pif.davra.com/ui/vendors/bootstrap-colorpicker/css/bootstrap-colorpicker.min.css" rel="stylesheet">
+
+		<link href="https://pif.davra.com/ui/vendors/amcharts/amcharts/plugins/export/export.css" rel="stylesheet" type="text/css" media="all" />
+        <link href="https://pif.davra.com/ui/vendors/font-awesome-5/css/fontawesome-all.min.css" rel="stylesheet" type="text/css" media="all" />
+		<link href="https://pif.davra.com/ui/assets/bootstrap-gentelella-theme-for-widgets.css" rel="stylesheet">
+        <!-- datatables select css -->
+        <link href="https://pif.davra.com/ui/vendors/datatables.net-bs/css/dataTables.bootstrap.min.css" rel="stylesheet" />  
+        <link href="https://cdn.datatables.net/v/dt/jszip-3.1.3/pdfmake-0.1.27/dt-1.10.15/b-1.4.0/b-colvis-1.4.0/b-flash-1.4.0/b-html5-1.4.0/b-print-1.4.0/r-2.1.1/sc-1.4.2/datatables.min.css" rel="stylesheet" type="text/css" />
+        <link href="https://pif.davra.com/ui/vendors/bootstrap/dist/css/less/pagination.less" rel="stylesheet" />
+        <link href="https://pif.davra.com/ui/css/custom.min.css" rel="stylesheet" />
+        <link href="https://pif.davra.com/ui/css/davra.css" rel="stylesheet" />
+		<style>
+			.sample-data-msg {
+				display: none;
+			}
+			.tile_count .tile_stats_count .count {
+				font-size: 20px;
+			}
+			.dt-buttons.btn-group, .dataTables_info {
+				float: left !important;
+			}
+			.dataTables_wrapper .dataTables_filter {
+				float: right !important;
+			}
+			.dataTable {
+				color: #000000;
+				font-family: "Poppins",Arial,"Droid Sans",sans-serif;
+				font-size: 13px;
+				font-weight: 400;
+				line-height: 1.471;
+			}
+			.dataTables_wrapper .dt-buttons.btn-group, .dataTables_wrapper .dataTables_filter {
+				display: none;
+			}
+		</style>
+	</head>
+	
+	<body style="background: #FFFFFF">
+	
+		<div id="widgetContent" class="row form-horizontal form-label-left" style="width: 98%">
+		  	<div class="row tile_count">
+				<div class="tile_stats_count">
+					<div style="display:inline-block; width:23%">
+						<!-- <span class="count_top"><i class="fa fa-user"></i> Total Users</span> -->
+						<span class="count_top"></i>Total Usage</span>
+						<div class="count green">3,700</div>
+						<span class="count_bottom"><i class="red"><i class="fa fa-sort-asc"></i>34% </i>WoW</span>
+					</div>
+					<div style="display:inline-block; width:23%">
+						<!-- <span class="count_top"><i class="fa fa-user"></i> Total Users</span> -->
+						<span class="count_top"></i> Total Lighting</span>
+						<div class="count green">1,500</div>
+						<span class="count_bottom"><i class="red"><i class="fa fa-sort-asc"></i>24% </i>WoW</span>
+					</div>
+					<div style="display:inline-block; width:23%">
+						<!-- <span class="count_top"><i class="fa fa-user"></i> Total Users</span> -->
+						<span class="count_top"></i> Total HVAC</span>
+						<div class="count green">1,000</div>
+						<span class="count_bottom"><i class="green"><i class="fa fa-sort-desc"></i>20% </i>WoW</span>
+					</div>
+					<div style="display:inline-block; width:23%">
+						<!-- <span class="count_top"><i class="fa fa-user"></i> Total Users</span> -->
+						<span class="count_top"></i> Total Sockets</span>
+						<div class="count green">1,200</div>
+						<span class="count_bottom"><i class="green"><i class="fa fa-sort-desc"></i>14% </i>WoW</span>
+					</div>
+				</div>
+			</div>
+		</div>
+        <div id="chartdiv" style="width: 1px; height: 1px; max-height: 250px;"></div>
+
+        <hr class="widget-header-hr" />
+        <div class="widget-header">Events</div>
+        <div class="table-container">
+            <table id="table" width="100%" class="table dataTable dt-bootstrap dt-responsive"></table>
+        </div>
+        <div class="modal" id="loading-mask">Loading ... </div>
+
+        <script src="https://pif.davra.com/ui/vendors/amcharts/amcharts/amcharts.js"></script>  
+        <script src="https://pif.davra.com/ui/vendors/amcharts/amcharts/serial.js"></script>
+        <script src="https://pif.davra.com/ui/vendors/amcharts/amcharts/plugins/export/export.min.js"></script>
+        <script src="https://pif.davra.com/ui/vendors/underscore/underscore-min.js"></script>
+        <!-- <script src="https://pif.davra.com/ui/vendors/jquery/3.2.1/jquery.min.js"></script> -->
+		<script src="https://pif.davra.com/ui/vendors/jquery/2.2.4/jquery.min.js"></script>
+        <!-- <script src="/ui/assets/widget-utilities.js"></script> -->
+        <script src="https://pif.davra.com/ui/assets/templates/amcharts-connecthing-theme.js"></script>
+        <script src="https://pif.davra.com/ui/assets/templates/amcharts-connecthing-widgets.js"></script>
+	
+	
+		<script src="https://pif.davra.com/ui/vendors/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	
+		<script src="https://pif.davra.com/ui/vendors/jquery-sparkline/dist/jquery.sparkline.min.js"></script>
+		
+		<script src="https://pif.davra.com/ui/vendors/fastclick/lib/fastclick.js"></script>
+		<!-- NProgress -->
+		<script src="https://pif.davra.com/ui/vendors/nprogress/nprogress.js"></script>
+		<!-- morris.js -->
+		<script src="https://pif.davra.com/ui/vendors/raphael/raphael.min.js"></script>
+		<script src="https://pif.davra.com/ui/vendors/morris.js/morris.min.js"></script>
+		<!-- bootstrap-progressbar -->
+		<script src="https://pif.davra.com/ui/vendors/bootstrap-progressbar/bootstrap-progressbar.min.js"></script>
+		<!-- bootstrap-daterangepicker -->
+		<script src="https://pif.davra.com/ui/vendors/moment/min/moment.min.js"></script>
+		<script src="https://pif.davra.com/ui/vendors/bootstrap-daterangepicker/daterangepicker.js"></script>
+		<script src="https://pif.davra.com/ui/assets/bootstrap-gentelella-theme-for-widgets.js"></script>
+		<script src="https://pif.davra.com/ui/assets/widget-utilities.js"></script>
+        <!-- Datatables -->
+        <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.15/datatables.min.js"></script>
+        <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-3.1.3/pdfmake-0.1.27/dt-1.10.15/b-1.4.0/b-colvis-1.4.0/b-flash-1.4.0/b-html5-1.4.0/b-print-1.4.0/r-2.1.1/sc-1.4.2/datatables.min.js"></script>
+        <!-- Styling for the buttons of datatables -->
+        <script src="https://pif.davra.com/ui/vendors/datatables.net-buttons-bs/js/buttons.bootstrap.min.js"></script>
+        <!-- Sample-Data chart configuration goes here -->
+        <script>
+            var connecthingChartConfig = {
+                "theme": "connecthing",
+                "type": "serial",
+                "categoryField": "year",
+                "categoryAxis": {
+                    "parseDates": false,
+                    "dashLength": 1,
+                    "minorGridEnabled": true,
+                    "minPeriod": "ss"
+                },
+                "graphs": [ {
+                    "valueField": "lighting",
+                    "type": "line",
+                    "bullet": "round",
+                    "title": "lighting"
+                },
+                {
+                    "valueField": "hvac",
+                    "type": "line",
+                    "bullet": "round",
+                    "title": "hvac"
+                },
+                {
+                    "valueField": "sockets",
+                    "type": "line",
+                    "bullet": "round",
+                    "title": "sockets"
+                }],
+                "chartScrollbar": {
+                    "autoGridCount": true,
+                    "scrollbarHeight": 40,
+                    "oppositeAxis":false,
+                    "offset": 30
+                },
+                "chartCursor": {
+                    "cursorPosition": "mouse",
+                    "categoryBalloonEnabled": false
+                },
+                "valueAxes": [
+                    {
+                      "title": ""
+                    }
+                ],
+                "legend": {
+                    "position": "bottom"
+                },
+                "export": {
+                    "enabled": true
+                },
+                dataProvider: [{
+    year: 2003,
+    lighting: 1587,
+    hvac: 650,
+    sockets: 121},
+{
+    year: 2004,
+    lighting: 1567,
+    hvac: 683,
+    sockets: 146},
+{
+    year: 2005,
+    lighting: 1617,
+    hvac: 691,
+    sockets: 138},
+{
+    year: 2006,
+    lighting: 1630,
+    hvac: 642,
+    sockets: 127},
+{
+    year: 2007,
+    lighting: 1660,
+    hvac: 699,
+    sockets: 105},
+{
+    year: 2008,
+    lighting: 1683,
+    hvac: 721,
+    sockets: 109},
+{
+    year: 2009,
+    lighting: 1691,
+    hvac: 737,
+    sockets: 112},
+{
+    year: 2010,
+    lighting: 1298,
+    hvac: 680,
+    sockets: 101},
+{
+    year: 2011,
+    lighting: 1275,
+    hvac: 664,
+    sockets: 97},
+{
+    year: 2012,
+    lighting: 1246,
+    hvac: 648,
+    sockets: 93},
+{
+    year: 2013,
+    lighting: 1218,
+    hvac: 637,
+    sockets: 101},
+{
+    year: 2014,
+    lighting: 1213,
+    hvac: 633,
+    sockets: 87},
+{
+    year: 2015,
+    lighting: 1199,
+    hvac: 621,
+    sockets: 79},
+{
+    year: 2016,
+    lighting: 1110,
+    hvac: 210,
+    sockets: 81},
+{
+    year: 2017,
+    lighting: 1165,
+    hvac: 232,
+    sockets: 75},
+{
+    year: 2018,
+    lighting: 1145,
+    hvac: 219,
+    sockets: 88},
+{
+    year: 2019,
+    lighting: 1163,
+    hvac: 201,
+    sockets: 82},
+{
+    year: 2020,
+    lighting: 1180,
+    hvac: 285,
+    sockets: 87},
+{
+    year: 2021,
+    lighting: 1159,
+    hvac: 277,
+    sockets: 71}]
+            };   
+    </script>
+	
+	<script>
+		var config = {};
+		var initTable = function(extraColumns, data){
+
+			// Note the trick employed here for timestamps to get sorted correctly while inside DataTables is to put the 
+			// timestamp in unix epoch milliseconds as the first part in a hidden span, then the date in human readable format.
+			// Otherwise the sorting would be awry as it sorts the dates alphabetically. 
+			var tableColumns = [{ 
+				title: 'Time', 
+				data: 'timestamp',  
+				render: function(value, type, record) { 
+					return '<span style="display: none">' + value + '</span>' + moment(value).format('YYYY-MM-DD HH:mm');
+				} 
+			}];
+
+			if (!extraColumns && !data) {
+				// $('.sample-data-msg').show();
+				var sampleData  = widgetUtils.getSampleDataForEventTable4Columns();	
+				// extraColumns = sampleData.columns;
+				extraColumns = [
+					{title: "Description", data: "description", sTitle: "Description", mData: "description"},
+					{title: "Status", data: "status", sTitle: "Status", mData: "status"}
+				]
+				// data = sampleData.data;
+				data = [
+					{timestamp: 1624312564770, description: "Overload trip alarm", status: "Open"},
+					{timestamp: 1624208954770, description: "Voltage loss", status: "Acknowledged"},
+					//{timestamp: 1624305344770, description: "Speed Alert", status: "Some further details here"},
+					{timestamp: 1624101734770, description: "Threshold (V) exceeded ", status: "Closed"}
+				]
+			}
+			else {
+				// $('.sample-data-msg').hide();
+			}
+
+			// if (config.chartCfg && config.chartCfg.title && config.chartCfg.title.length > 0) {
+			// 	$('.widget-header').text(config.chartCfg.title);
+			// } else {
+			// 	$('.widget-header').remove();
+			// 	$('.widget-header-hr').remove();
+			// }
+
+			if (extraColumns) {
+				Array.prototype.push.apply(tableColumns, extraColumns);	            
+			}
+			// console.log('data: ' , data);
+			var filename = config.widgetTitle + '-' + moment(new Date()).format("YYYYMMDD_HHmmss");
+
+			// If the user saved a widgetConfig for table settings, superimpose them into the config of the table
+			var dataTableConfig = {
+				dom: 'Bfrtip',
+				bDestroy : true,
+				pageLength: 100,
+				info: true,
+				paging: true,
+				select: false,
+				columns: tableColumns,
+				order: [[ 0, 'desc' ]]
+			};
+			if(config.chartCfg && config.chartCfg.options) {
+				$.extend(dataTableConfig, config.chartCfg.options);
+			}
+
+			var datatable = $("#table").DataTable(dataTableConfig);
+			if (data) { 
+				$('#table').dataTable().fnClearTable();  
+				$('#table').dataTable().fnAddData(data); 
+			}
+		};
+			$().ready(function() {
+				// chart.events.on("datavalidated", function(ev) {
+				// 	var chart = ev.target;
+				// 	chart.svgContainer.htmlElement.style.height = 350 + "px";
+				// });
+				initTable(null, null);
+			});
+		</script>
+	
+	</body>
+</html>

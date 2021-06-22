@@ -282,3 +282,15 @@ button.close {
 .badge.bg-red {
     background-color: #dd4b39 !important;
 }
+.leaflet-pane.leaflet-popup-pane.wide .leaflet-popup-content-wrapper {
+    width: 666px !important;
+    /* was 366 */
+}
+.leaflet-pane.leaflet-popup-pane.wide .leaflet-popup-content {
+    width: 601px !important;
+    /* was 301 */
+}
+.leaflet-pane.leaflet-popup-pane.wide .poi-view-content {
+    width: 634px !important;
+    /* was 334 */
+}
