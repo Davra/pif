@@ -218,10 +218,11 @@ $(function () {
         return (y + ds + M0 + ds + d0 + ' ' + h + ':' + m)
     }
     var results = []
+    var start = 0
     function displayAlerts (success, resultsParm) {
         if (success) {
             results = resultsParm
-            pageAlerts(0)
+            pageAlerts(start)
         }
         else {
             map.openPopup('POI API query failed!', map.getCenter())
@@ -230,6 +231,8 @@ $(function () {
     function pageAlerts (start) {
         var html = []
         var count = 0
+        $('.alertsCount').text(results.length)
+        results.length > 0 ? $('.alertButton').show() : $('.alertButton').hide()
         for (var i = start, n = 5; i < n; i++) {
             var result = results[i]
             if (result) {
@@ -239,16 +242,30 @@ $(function () {
                 var date = new Date()
                 var evens = (i % 2) ? 'odd' : 'even'
                 // html.push('<div class="alertRow"><div class="col1">' + result.tags.split(' ')[0] + '</div><div class="col2">' + result.title + '</div><div class="col3">' + floorNumber + '</div></div>')
-                html.push('<div class="alertRow ' + evens + '" data-index="' + i + '"><div class="col1">' + formatTimestamp(date) + '</div><div class="col2">' + result.title + '</div><div class="col3">' + floorNumber + '</div></div>')
+                html.push('<div class="alertRow ' + evens + '" data-index="' + i + '"><div class="col1">' + formatTimestamp(date) + '</div><div class="col2">' + result.title + '</div><div class="col3">' + floorNumber + '</div>')
+                html.push('<div class="col4"><div class="recordToolbar">')
+                html.push('<button type="button" class="dismiss" title="Dismiss alert">')
+                html.push('<svg aria-hidden="true" focusable="false" data-index="' + i + '" data-prefix="fal" data-icon="check-square" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path class="kiwi" fill="currentColor" d="M413.505 91.951L133.49 371.966l-98.995-98.995c-4.686-4.686-12.284-4.686-16.971 0L6.211 284.284c-4.686 4.686-4.686 12.284 0 16.971l118.794 118.794c4.686 4.686 12.284 4.686 16.971 0l299.813-299.813c4.686-4.686 4.686-12.284 0-16.971l-11.314-11.314c-4.686-4.686-12.284-4.686-16.97 0z"></path></svg>')
+                html.push('</button>')
+                html.push('</div></div></div>')
             }
         }
         $('.alertsList').html(html.join(''))
-        $('.paginationDiv .text').text((start + 1) + '-' + (start + count) + ' of ' + results.length)
+        $('.paginationDiv .text').text((results.length > 0 ? start + 1 : 0) + '-' + (start + count) + ' of ' + results.length)
         $('.alertsList .alertRow').each(function (i, row) {
             $(row).click(function () {
                 var index = parseInt($(this).attr('data-index'))
                 var result = results[index]
                 goToResult (result)
+            })
+        })
+        $('.alertsList .alertRow button.dismiss').each(function (i, button) {
+            $(button).click(function (e) {
+                e.preventDefault()
+                e.stopPropagation()
+                var index = parseInt($(this).attr('data-index'))
+                results.splice(index, 1)
+                pageAlerts(start)
             })
         })
     }
@@ -258,11 +275,57 @@ $(function () {
     $('#alertsDiv .close').click(function (e) {
         $('#alertsDiv').slideToggle()
     })
+    function bounceToServer (headers, data) {
+        var form = document.getElementById('bounceForm')
+        if (!form) {
+            form = document.createElement('form')
+            form.style.display = 'none'
+            form.id = 'bounceForm'
+            form.name = 'bounceForm'
+            form.action = '/bounce'
+            form.method = 'POST'
+            var input = document.createElement('input')
+            input.type = 'hidden'
+            input.id = 'bounceString'
+            input.name = 'bounceString'
+            form.appendChild(input)
+            document.body.appendChild(form)
+        }
+        var obj = { headers: headers, data: data }
+        document.getElementById('bounceString').value = JSON.stringify(obj)
+        form.submit()
+    }
+    $('#alertsDiv .export').on('click', function () {
+        var lines = []
+        var header = ['Date', 'Description', 'Floor']
+        lines.push('"' + header.join('","') + '"')
+        results.forEach(function (result, i) {
+            var line = []
+            line.push(formatTimestamp(result.date || new Date()))
+            line.push(result.title)
+            line.push(result.floor_id + 2)
+            lines.push('"' + line.join('","') + '"')
+        })
+        var data = lines.join('\n')
+        var fileName = 'alerts.csv'
+        var headers = { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'inline; filename="' + fileName + '"' }
+        bounceToServer(headers, data)
+    })
+
     var poiApi = new WrldPoiApi('8d2d6eef6635955569c400073255f501')
     var radius = 1000
     var maxResults = 10
     var options = { range: radius, number: maxResults }
     poiApi.searchTags(['alert'], { lat: 24.763289081785917, lng: 46.63878573585767 }, displayAlerts, options)
+
+    $.get('/alerts' + '?t=' + new Date().getTime(), function (result) {
+        if (!result.success) {
+            console.error('Alerts failed: ' + result.message)
+        }
+        else {
+            console.log('Alerts', result.alerts)
+        }
+    })
 
     /*
     var poiApi = new WrldPoiApi('8d2d6eef6635955569c400073255f501');

@@ -86,15 +86,23 @@ button.export {
 button.export svg {
     height: 24px;
 }
+button.dismiss {
+    width: 40px;
+    border: none;
+    background-color: transparent;
+}
+button.dismiss svg {
+    height: 24px;
+}
 button .kiwi {
     /* fill: #689f38; */
     fill: #007a33;
 }
-button.export, .paginationDiv button {
+button.dismiss, button.export, .paginationDiv button {
     filter: alpha(opacity=60);
     opacity: .6;
 }
-button.export:hover, .paginationDiv button:hover {
+button.dismiss:hover, button.export:hover, .paginationDiv button:hover {
     cursor: pointer;
     filter: alpha(opacity=100);
     opacity: 1.0;
@@ -137,7 +145,7 @@ button.export:hover, .paginationDiv button:hover {
 #alertsDiv .alertRow {
     cursor: pointer;
     font-size: 14px;
-    padding: 10px 10px 10px 10px;
+    padding: 0 10px 5px 10px;
     border-bottom: solid 1px #eee;
     color: #333;
     font-weight: 400;
@@ -151,14 +159,21 @@ button.export:hover, .paginationDiv button:hover {
 #alertsDiv .col1 {
     display: inline-block;
     width: 20%;
+    vertical-align: super;
 }
 #alertsDiv .col2 {
     display: inline-block;
     width: 40%;
+    vertical-align: super;
 }
 #alertsDiv .col3 {
     display: inline-block;
     width: 10%;
+    vertical-align: super;
+}
+#alertsDiv .col4 {
+    display: inline-block;
+    width: 30%;
 }
 .modal-header .close {
     margin-top: -2px;
