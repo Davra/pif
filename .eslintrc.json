@@ -6,8 +6,8 @@
     },
     "extends": "standard",
     "parserOptions": {
-        "ecmaVersionXXX": 12,
-        "ecmaVersion": 6,
+        "ecmaVersion": 8,
+        "ecmaVersionXXX": 6,
         "sourceType": "module"
     },
     "rules": {

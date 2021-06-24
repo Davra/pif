@@ -30,15 +30,29 @@
 			.dataTables_wrapper .dataTables_filter {
 				float: right !important;
 			}
-			.dataTable {
+			.dataTable, .dataTables_info, .dataTables_paginate {
 				color: #000000;
 				font-family: "Poppins",Arial,"Droid Sans",sans-serif;
-				font-size: 13px;
+				font-size: 12px;
 				font-weight: 400;
 				line-height: 1.471;
 			}
 			.dataTables_wrapper .dt-buttons.btn-group, .dataTables_wrapper .dataTables_filter {
 				display: none;
+			}
+			.kpi {
+				display:inline-block;
+				width: 20%;
+				text-align: center;
+				background-color: #eee;
+				padding-top: 15px;
+				padding-bottom: 15px;
+				margin-bottom: 15px;
+				margin-left: 25px;
+				border-radius: 6px;
+			}
+			.tile_count {
+				margin-top: 5px;
 			}
 		</style>
 	</head>
@@ -48,28 +62,28 @@
 		<div id="widgetContent" class="row form-horizontal form-label-left" style="width: 98%">
 		  	<div class="row tile_count">
 				<div class="tile_stats_count">
-					<div style="display:inline-block; width:23%">
+					<div class="kpi">
 						<!-- <span class="count_top"><i class="fa fa-user"></i> Total Users</span> -->
 						<span class="count_top"></i>Total Usage</span>
-						<div class="count green">3,700</div>
+						<div class="count green">3,700 <span>kWh</span></div>
 						<span class="count_bottom"><i class="red"><i class="fa fa-sort-asc"></i>34% </i>WoW</span>
 					</div>
-					<div style="display:inline-block; width:23%">
+					<div class="kpi">
 						<!-- <span class="count_top"><i class="fa fa-user"></i> Total Users</span> -->
 						<span class="count_top"></i> Total Lighting</span>
-						<div class="count green">1,500</div>
+						<div class="count green">1,500 <span>kWh</span></div>
 						<span class="count_bottom"><i class="red"><i class="fa fa-sort-asc"></i>24% </i>WoW</span>
 					</div>
-					<div style="display:inline-block; width:23%">
+					<div class="kpi">
 						<!-- <span class="count_top"><i class="fa fa-user"></i> Total Users</span> -->
 						<span class="count_top"></i> Total HVAC</span>
-						<div class="count green">1,000</div>
+						<div class="count green">1,000 <span>kWh</span></div>
 						<span class="count_bottom"><i class="green"><i class="fa fa-sort-desc"></i>20% </i>WoW</span>
 					</div>
-					<div style="display:inline-block; width:23%">
+					<div class="kpi">
 						<!-- <span class="count_top"><i class="fa fa-user"></i> Total Users</span> -->
 						<span class="count_top"></i> Total Sockets</span>
-						<div class="count green">1,200</div>
+						<div class="count green">1,200 <span>kWh</span></div>
 						<span class="count_bottom"><i class="green"><i class="fa fa-sort-desc"></i>14% </i>WoW</span>
 					</div>
 				</div>
@@ -119,6 +133,19 @@
         <script src="https://pif.davra.com/ui/vendors/datatables.net-buttons-bs/js/buttons.bootstrap.min.js"></script>
         <!-- Sample-Data chart configuration goes here -->
         <script>
+			var balloonFunction = function(item, graph) {
+				var result = '';
+				var key = graph.balloonText;
+				if (item.dataContext.hasOwnProperty(key) && !isNaN(item.dataContext[key])) {
+					var formatted = AmCharts.formatNumber(item.dataContext[key], {
+						precision: chart.precision,
+						decimalSeparator: chart.decimalSeparator,
+						thousandsSeparator: chart.thousandsSeparator
+					}, 0);
+					result = formatted;
+				}
+				return result + ' kWh';
+			};
             var connecthingChartConfig = {
                 "theme": "connecthing",
                 "type": "serial",
@@ -133,19 +160,25 @@
                     "valueField": "lighting",
                     "type": "line",
                     "bullet": "round",
-                    "title": "lighting"
+                    "title": "Lighting",
+					"balloonText": "lighting",
+					"balloonFunction": balloonFunction
                 },
                 {
                     "valueField": "hvac",
                     "type": "line",
                     "bullet": "round",
-                    "title": "hvac"
+                    "title": "HVAC",
+					"balloonText": "hvac",
+					"balloonFunction": balloonFunction
                 },
                 {
                     "valueField": "sockets",
                     "type": "line",
                     "bullet": "round",
-                    "title": "sockets"
+                    "title": "Sockets",
+					"balloonText": "sockets",
+					"balloonFunction": balloonFunction
                 }],
                 "chartScrollbar": {
                     "autoGridCount": true,

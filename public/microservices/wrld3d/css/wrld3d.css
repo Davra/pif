@@ -203,13 +203,17 @@ button.close {
     z-index: 20;
     background-color: rgba(249, 242, 231, 0.8);
     padding: 5px 2px 0px 3px;
-    border-radius: 50%;
+    width: 10vw;
+    height: 10vw;
+    /* border-radius: 50%; */
 }
 .logo-image {
-    background: url(/microservices/wrld3d/img/PIF-logo.svg) no-repeat;
+    /* background: url(/microservices/wrld3d/img/PIF-logo.svg) no-repeat; */
+    background: url(/microservices/wrld3d/img/PIF-logo.png) no-repeat;
+    background-size: 100%;
     transition: all ease 1s !important;
-    width: 95px;
-    height: 95px;
+    width: 100%;
+    height: 100%;
     display: inline-block;
 }
 .footer {
