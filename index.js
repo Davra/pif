@@ -1,8 +1,6 @@
 const axios = require('axios')
-const bodyParser = require('body-parser')
 const express = require('express')
 const path = require('path')
-// const qs = require('qs')
 const app = express()
 const port = 8080
 
@@ -40,7 +38,7 @@ app.get('/beacon/:id', (req, res) => {
     })
     res.send(html.join(''))
 })
-app.post('/bounce', bodyParser.urlencoded({ extended: true }), (req, res) => {
+app.post('/bounce', express.urlencoded({ extended: true }), (req, res) => {
     const bounceString = req.body.bounceString
     const bounce = JSON.parse(bounceString)
     res.set(bounce.headers)

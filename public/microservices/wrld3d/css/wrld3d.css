@@ -76,6 +76,7 @@ h4.divToggle, h5.divToggle {
     color: rgba(0,0,0,.67);
 }
 button.export {
+    font-size: 24px;
     width: 40px;
     position: absolute;
     right: 50px;
@@ -87,12 +88,19 @@ button.export svg {
     height: 24px;
 }
 button.dismiss {
+    font-size: 24px;
     width: 40px;
     border: none;
     background-color: transparent;
 }
 button.dismiss svg {
     height: 24px;
+}
+.paginationDiv button {
+    font-size: 16px;
+}
+button.kiwi {
+    color: #007a33;
 }
 button .kiwi {
     /* fill: #689f38; */
@@ -124,7 +132,7 @@ button.dismiss:hover, button.export:hover, .paginationDiv button:hover {
     display: inline-block;
     font-size: 12px;
     position: relative;
-    bottom: 3px;
+    bottom: 1px;
 }
 #alertsDiv .wrapper {
     background-color: #f5f5f5;
@@ -197,7 +205,6 @@ button.close {
 .close:hover, .close:focus {
     color: #000;
     text-decoration: none;
-    cursor: pointer;
     filter: alpha(opacity=50);
     opacity: .5;
 }
@@ -271,6 +278,7 @@ button.close {
     padding: 10px;
     text-align: left;
     background-color: #fff;
+    cursor: pointer;
 }
 .action-buttons .alertButton:hover {
     background-color: #f4f4f4;
