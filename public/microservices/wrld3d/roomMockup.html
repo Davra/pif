@@ -1,0 +1,293 @@
+
+<html>
+	<head>
+		<link href="/ui/vendors/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+		<link href="/ui/vendors/bootstrap-daterangepicker/daterangepicker.css" rel="stylesheet">
+		<link href="/ui/vendors/bootstrap-colorpicker/css/bootstrap-colorpicker.min.css" rel="stylesheet">
+        <!-- <link href="/ui/vendors/font-awesome-5/css/fontawesome-all.min.css" rel="stylesheet" type="text/css" media="all" /> -->
+        <link href="/microservices/wrld3d/css/fontawesome-all.min.css" rel="stylesheet" type="text/css" media="all" />
+		<link href="/ui/assets/bootstrap-gentelella-theme-for-widgets.css" rel="stylesheet">
+        <link href="/ui/css/custom.min.css" rel="stylesheet" />
+        <link href="/ui/css/davra.css" rel="stylesheet" />
+		<style>
+			.meeting-room-photo {
+				display: inline-block;
+				vertical-align: top;
+				width: 160px;
+				height: 160px;
+				margin-right: 16px;
+				background-image: url(/microservices/wrld3d/img/meeting-room.png);
+			}
+			.meeting-room-details-wrapper {
+				display: inline-block;
+				vertical-align: top;
+			}
+			.meeting-room-details {
+				margin-top: 8px;
+			}
+			.phone-icon, .address-icon {
+				display: inline-block;
+				vertical-align: top;
+				margin-right: 0px;
+				width: 20px;
+				height: 20px;
+			}
+			.phone-number, .address {
+				display: inline-block;
+				vertical-align: top;
+			}
+
+			.sample-data-msg {
+				display: none;
+			}
+			.tile_count {
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-right: -20px;
+			}
+			.tile_count .tile_stats_count {
+				padding-left: 28px;
+			}
+			.tile_count .tile_stats_count .count {
+				line-height: 22px;
+				font-size: 22px;
+				margin-top: 5px;
+			}
+			.tile_count .tile_stats_count .count span {
+				line-height: 22px;
+				font-size: 22px;
+			}
+			.kpi {
+				display:inline-block;
+				width: 24%;
+				text-align: center;
+				background-color: #eee;
+				padding-top: 10px;
+				padding-bottom: 3px;
+				margin-bottom: 10px;
+				margin-left: 0px;
+				border-radius: 4px;
+			}
+			.kpi .count i {
+				margin-right: 10px;
+				height: 31px;
+			}
+			.kpi .count span {
+				height: 31px;
+			}
+			.kpi .count i.last {
+				margin-right: 0;
+			}
+			hr {
+				margin-top: 10px;
+    			margin-bottom: 5px;
+			}
+
+		</style>
+	</head>
+	
+	<body style="background: #FFFFFF">
+		<div class="meeting-room-overview">
+			<div class="meeting-room-photo"></div>
+			<div class="meeting-room-details-wrapper">
+				<div class="meeting-room-details">
+					<div class="phone-icon"><i class="fas fa-phone"></i></div>
+					<div class="phone-number">+44 1382 221 424</div>
+				</div>
+				<div class="meeting-room-details">
+					<div class="address-icon"><i class="fas fa-home"></i></div>
+					<div class="address">Suite 2<br>Building C, KAFD<br>Al Aqiq, Riyadh<br>Saudi Arabia<br>13519</div>		
+				</div>
+			</div>
+		</div>
+		<hr>	
+		<div class="row form-horizontal form-label-left" style="width: 98%">
+			<div class="row tile_count">
+				<div class="tile_stats_count">
+					<div class="kpi">
+						<span class="count_top"></i>Seats</span>
+						<div class="count green"><i class="fas fa-chair-office"></i><span>7</span></div>
+					</div>
+					<div class="kpi">
+						<span class="count_top">Projector</span>
+						<div class="count green"><i class="fas fa-projector"></i><i class="fas fa-check last"></i></div>
+					</div>
+					<div class="kpi">
+						<span class="count_top">Video Call</span>
+						<div class="count green"><i class="far fa-video"></i><i class="fas fa-check last"></i></div>
+					</div>
+					<div class="kpi">
+						<span class="count_top">Conference</span>
+						<div class="count green"><i class="far fa-microphone"></i><i class="fas fa-check last"></i></div>
+					</div>
+				</div>
+		  	</div>
+	  	</div>
+		<div class="recordHeading">
+			<ul class="tabbedMenu nav nav-tabs" role="tablist">
+				<li class="active" role="presentation">
+					<a class="tabOccupancy" href="#tabOccupancyPanel" role="tab" data-toggle="tab"><span>Occupancy</span></a>
+				</li>
+				<li role="presentation">
+					<a class="tabComfort" href="#tabComfortPanel" role="tab" data-toggle="tab"><span>Comfort</span></a>
+				</li>
+			</ul>
+		</div>
+		<div class="tab-content">
+			<div role="tabpanel" class="tab-pane fade in active" id="tabOccupancyPanel">
+				<div id="chartOccupancy" style="width: 1px; height: 1px; max-height: 200px;"></div>
+			</div>
+			<div role="tabpanel" class="tab-pane fade" id="tabComfortPanel">
+				<div id="chartComfort" style="width: 1px; height: 1px; max-height: 200px;"></div>
+			</div>
+		</div>
+
+		
+	<script src="/ui/vendors/underscore/underscore-min.js"></script>
+	<!-- <script src="/ui/vendors/jquery/3.2.1/jquery.min.js"></script> -->
+	<script src="/ui/vendors/jquery/2.2.4/jquery.min.js"></script>
+	<script src="/ui/vendors/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<script src="/ui/vendors/d3/d3.v3.js"></script>
+	<script src="/ui/vendors/moment/min/moment.min.js"></script>
+	<script src="/ui/vendors/bootstrap-daterangepicker/daterangepicker.js"></script>
+	<script src="/ui/assets/bootstrap-gentelella-theme-for-widgets.js"></script>
+	<script src="/ui/assets/widget-utilities.js"></script>
+	<script>
+        // Create a set of sample data to plot
+        var dataset = [];
+        for(var tmpDay = 1; tmpDay < 8; tmpDay++) {
+            for(var tmpHour = 1; tmpHour < 25; tmpHour++) {
+                var tmpDatapoint = {};
+                tmpDatapoint.day = tmpDay;
+                tmpDatapoint.hour = tmpHour;
+                tmpDatapoint.value = parseInt(Math.random() * 50);
+                dataset.push(tmpDatapoint);
+            }
+        }
+
+        var margin = { top: 50, right: 0, bottom: 100, left: 30 },
+          width = 960 - margin.left - margin.right,
+          height = 430 - margin.top - margin.bottom,
+          gridSize = Math.floor(width / 24),
+          legendElementWidth = gridSize*2,
+          buckets = 9,
+          colors = ["#ffffd9","#edf8b1","#c7e9b4","#7fcdbb","#41b6c4","#1d91c0","#225ea8","#253494","#081d58"], // alternatively colorbrewer.YlGnBu[9]
+          days = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+          times = ["1a", "2a", "3a", "4a", "5a", "6a", "7a", "8a", "9a", "10a", "11a", "12a", "1p", "2p", "3p", "4p", "5p", "6p", "7p", "8p", "9p", "10p", "11p", "12p"];
+
+        var svg = d3.select("#chartOccupancy").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        var dayLabels = svg.selectAll(".dayLabel")
+            .data(days)
+            .enter().append("text")
+                .text(function (d) { return d; })
+                .attr("x", 0)
+                .attr("y", function (d, i) { return i * gridSize; })
+                .style("text-anchor", "end")
+                .attr("transform", "translate(-6," + gridSize / 1.5 + ")")
+                .attr("class", function (d, i) { return ((i >= 0 && i <= 4) ? "dayLabel mono axis axis-workweek" : "dayLabel mono axis"); });
+
+        var timeLabels = svg.selectAll(".timeLabel")
+            .data(times)
+            .enter().append("text")
+                .text(function(d) { return d; })
+                .attr("x", function(d, i) { return i * gridSize; })
+                .attr("y", 0)
+                .style("text-anchor", "middle")
+                .attr("transform", "translate(" + gridSize / 2 + ", -6)")
+                .attr("class", function(d, i) { return ((i >= 7 && i <= 16) ? "timeLabel mono axis axis-worktime" : "timeLabel mono axis"); });
+
+        var heatmapChart = function(data) {
+                var colorScale = d3.scale.quantile()
+                    .domain([0, buckets - 1, d3.max(data, function (d) { return d.value; })])
+                    .range(colors);
+
+                var cards = svg.selectAll(".hour")
+                    .data(data, function(d) {return d.day+':'+d.hour;});
+
+                cards.append("title");
+
+                cards.enter().append("rect")
+                    .attr("x", function(d) { return (d.hour - 1) * gridSize; })
+                    .attr("y", function(d) { return (d.day - 1) * gridSize; })
+                    .attr("rx", 4)
+                    .attr("ry", 4)
+                    .attr("class", "hour bordered")
+                    .attr("width", gridSize)
+                    .attr("height", gridSize)
+                    .style("fill", colors[0]);
+
+                cards.transition().duration(1000)
+                    .style("fill", function(d) { return colorScale(d.value); });
+
+                cards.select("title").text(function(d) { return d.value; });
+                
+                cards.exit().remove();
+
+                var legend = svg.selectAll(".legend")
+                    .data([0].concat(colorScale.quantiles()), function(d) { return d; });
+
+                legend.enter().append("g")
+                    .attr("class", "legend");
+
+                legend.append("rect")
+                    .attr("x", function(d, i) { return legendElementWidth * i; })
+                    .attr("y", height)
+                    .attr("width", legendElementWidth)
+                    .attr("height", gridSize / 2)
+                    .style("fill", function(d, i) { return colors[i]; });
+
+                legend.append("text")
+                    .attr("class", "mono")
+                    .text(function(d) { return "= " + Math.round(d); })
+                    .attr("x", function(d, i) { return legendElementWidth * i; })
+                    .attr("y", height + gridSize);
+
+                legend.exit().remove();
+        };  
+        
+        heatmapChart(dataset);
+        
+
+
+
+
+        var runQuery = function() {
+            console.log('Widget starting to load configuration');
+            // Load the configuration for this widget
+            widgetUtils.loadWidgetSettings(function(err, widgetConfigData) {
+                if (widgetConfigData && widgetConfigData != null) {
+                    if(widgetConfigData.queryToRun) {
+                        var queryToRun = textboxConfig.queryToRun;
+                        widgetUtils.runTimeseriesApiQuery(JSON.stringify(queryToRun), function(err, resultData) {
+                            var outputData = connecthingSimpleTransformData(resultData);
+                            $('#myOutputDiv').text(JSON.stringify(outputData));
+                        });
+                    }
+                    // Place the configuration data into the div to demonstrate it loaded
+                    $("#myConfiguration").val(widgetConfigData);
+                }
+            });
+            
+        }
+
+        // This function will get called by the Connecthing Platform when the iframe has fully loaded
+        // Do not change the name of this function
+        function connecthingWidgetInit(context) {
+            console.log('Init: context arrived, starting widget initialisation');
+            //Listen for filter updates
+            context.filters.subscribe(handleFilterChange);
+        }
+
+        // This is an example of noticing the filters have changed
+        function handleFilterChange(filters) {
+            console.log('widget filterChange occurred ', filters);
+            $('#myFilterValues').text(JSON.stringify(filters));
+        }
+    </script>
+	</body>
+</html>
