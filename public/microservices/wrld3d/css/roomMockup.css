@@ -1,0 +1,87 @@
+.meeting-room-photo {
+    display: inline-block;
+    vertical-align: top;
+    width: 160px;
+    height: 160px;
+    margin-right: 16px;
+    background-image: url(/microservices/wrld3d/img/meeting-room.png);
+}
+.meeting-room-details-wrapper {
+    display: inline-block;
+    vertical-align: top;
+}
+.meeting-room-details {
+    margin-top: 8px;
+}
+.phone-icon, .address-icon {
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 0px;
+    width: 20px;
+    height: 20px;
+}
+.phone-number, .address {
+    display: inline-block;
+    vertical-align: top;
+}
+rect.bordered {
+    stroke: #E6E6E6;
+    stroke-width:2px;   
+}
+text.mono {
+    font-size: 9pt;
+    font-family: Consolas, courier;
+    fill: #aaa;
+}
+text.axis-workweek {
+    fill: #000;
+}
+text.axis-worktime {
+    fill: #000;
+}
+
+.sample-data-msg {
+    display: none;
+}
+.tile_count {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-right: -20px;
+}
+.tile_count .tile_stats_count {
+    padding-left: 28px;
+}
+.tile_count .tile_stats_count .count {
+    line-height: 22px;
+    font-size: 22px;
+    margin-top: 5px;
+}
+.tile_count .tile_stats_count .count span {
+    line-height: 22px;
+    font-size: 22px;
+}
+.kpi {
+    display:inline-block;
+    width: 24%;
+    text-align: center;
+    background-color: #eee;
+    padding-top: 10px;
+    padding-bottom: 3px;
+    margin-bottom: 10px;
+    margin-left: 0px;
+    border-radius: 4px;
+}
+.kpi .count i {
+    margin-right: 10px;
+    height: 31px;
+}
+.kpi .count span {
+    height: 31px;
+}
+.kpi .count i.last {
+    margin-right: 0;
+}
+hr {
+    margin-top: 10px;
+    margin-bottom: 5px;
+}

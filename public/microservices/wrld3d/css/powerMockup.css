@@ -1,0 +1,36 @@
+.sample-data-msg {
+    display: none;
+}
+.tile_count .tile_stats_count .count {
+    font-size: 20px;
+}
+.dt-buttons.btn-group, .dataTables_info {
+    float: left !important;
+}
+.dataTables_wrapper .dataTables_filter {
+    float: right !important;
+}
+.dataTable, .dataTables_info, .dataTables_paginate {
+    color: #000000;
+    font-family: "Poppins",Arial,"Droid Sans",sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.471;
+}
+.dataTables_wrapper .dt-buttons.btn-group, .dataTables_wrapper .dataTables_filter {
+    display: none;
+}
+.kpi {
+    display:inline-block;
+    width: 20%;
+    text-align: center;
+    background-color: #eee;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+    margin-left: 25px;
+    border-radius: 6px;
+}
+.tile_count {
+    margin-top: 5px;
+}

@@ -1,19 +1,18 @@
 {
     "env": {
-        "es2021XXX": true,
         "browser": true,
-        "node": true
+        "node": true,
+        "es2021": false
     },
     "extends": "standard",
     "parserOptions": {
-        "ecmaVersion": 8,
-        "ecmaVersionXXX": 6,
-        "sourceType": "module"
+        "ecmaVersion": 6
     },
     "rules": {
         "indent": ["error", 4],
         "standard/no-callback-literal": "off",
-        "brace-style": ["error", "stroustrup", { "allowSingleLine": true }]
+        "brace-style": ["error", "stroustrup", { "allowSingleLine": true }],
+        "no-var": "off" // no-var: warn is coming from somewhere mysterious
     },
     "globals": {
         "$": "readonly"

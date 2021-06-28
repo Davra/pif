@@ -1,8 +1,8 @@
-'use strict';
+'use strict'
 
 const http = require('http')
 const httpProxy = require('http-proxy')
-const prom = require('prom-client')
+// const prom = require('prom-client')
 const port = 8080
 
 const proxy = httpProxy.createProxyServer({})
@@ -11,9 +11,9 @@ proxy.on('error', function (err, req, res) {
     res.writeHead(500, {
         'Content-Type': 'text/plain'
     })
-    res.end('Something went wrong: ' + err);
+    res.end('Something went wrong: ' + err)
 })
-proxy.on('proxyReq', function(proxyReq, req, res, options) {
+proxy.on('proxyReq', function (proxyReq, req, res, options) {
     console.log('BioStar request:', req.url)
 })
 proxy.on('proxyRes', function (proxyRes, req, res) {
@@ -25,7 +25,7 @@ proxy.on('proxyRes', function (proxyRes, req, res) {
 // Davra Secure Proxy for microservices
 //
 /// ////////////////////////////////////////////////////////////////////////////
-
+/*
 var proxy = httpProxy.createProxyServer();
 
 const proxyLookupTime = new prom.Summary({
@@ -110,10 +110,9 @@ function doProxy (req, res, svc, prefix) {
         }
     });
 }
+*/
 
-
-
-const server = http.createServer(function(req, res) {
+const server = http.createServer(function (req, res) {
     // https://10.0.33.35/api/login
     proxy.web(req, res, {
         changeOrigin: true,

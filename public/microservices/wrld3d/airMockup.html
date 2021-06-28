@@ -9,34 +9,7 @@
 		<link href="/ui/assets/bootstrap-gentelella-theme-for-widgets.css" rel="stylesheet">
         <link href="/ui/css/custom.min.css" rel="stylesheet" />
         <link href="/ui/css/davra.css" rel="stylesheet" />
-		<style>
-			.sample-data-msg {
-				display: none;
-			}
-			.tile_count {
-				margin-top: 5px;
-				margin-bottom: 5px;
-				margin-right: -20px;
-			}
-			.tile_count .tile_stats_count .count {
-				line-height: 27px;
-				font-size: 20px;
-			}
-			.kpi {
-				display:inline-block;
-				width: 40%;
-				text-align: center;
-				background-color: #eee;
-				padding-top: 15px;
-				padding-bottom: 15px;
-				margin-bottom: 15px;
-				margin-left: 25px;
-				border-radius: 6px;
-			}
-			.amcharts-export-menu.amcharts-export-menu-top-right.amExportButton {
-				top: 60px;
-			}
-		</style>
+		<link href="/microservices/wrld3d/css/airMockup.css" rel="stylesheet"/>
 	</head>
 	
 	<body style="background: #FFFFFF">
@@ -46,13 +19,13 @@
 				<div class="tile_stats_count">
 					<div class="kpi">
 						<!-- <span class="count_top"><i class="fa fa-user"></i> Total Users</span> -->
-						<span class="count_top"></i>AQI Current</span>
+						<span class="count_top">AQI Current</span>
 						<div class="count green">8.6</div>
 						<span class="count_bottom"><i class="red"><i class="fas fa-sort-down"></i>1% </i>HoH</span>
 					</div>
 					<div class="kpi">
 						<!-- <span class="count_top"><i class="fa fa-user"></i> Total Users</span> -->
-						<span class="count_top"></i>AQI Average</span>
+						<span class="count_top">AQI Average</span>
 						<div class="count green">8.3</div>
 						<span class="count_bottom"><i class="green"><i class="fas fa-sort-up"></i>5% </i>MoM</span>
 					</div>
@@ -80,85 +53,6 @@
 		<script src="/ui/vendors/bootstrap-daterangepicker/daterangepicker.js"></script>
 		<script src="/ui/assets/bootstrap-gentelella-theme-for-widgets.js"></script>
 		<script src="/ui/assets/widget-utilities.js"></script>
-        <script>
-			var data = []
-			var now = new Date()
-			var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30)
-			for (var i = 0, n = 30; i < n; i++) {
-				var aqi = 8 + ((Math.random() * 20) / 10)
-				// console.log(d.getDate() + '/' + (d.getMonth() + 1), aqi)
-				data.push({ date: d.getDate() + '/' + (d.getMonth() + 1), aqi: aqi })
-				d.setDate(d.getDate() + 1)
-			}
-			var balloonFunction = function(item, graph) {
-				var result = ''
-				var key = graph.balloonText
-				if (item.dataContext.hasOwnProperty(key) && !isNaN(item.dataContext[key])) {
-					// console.log(item.dataContext[key], chart.precision)
-					var formatted = AmCharts.formatNumber(item.dataContext[key], {
-						precision: chart.precision,
-						decimalSeparator: chart.decimalSeparator,
-						thousandsSeparator: chart.thousandsSeparator
-					}, 1)
-					result = formatted
-				}
-				return result + ' AQI'
-			};
-            var connecthingChartConfig = {
-                "theme": "connecthing",
-                "type": "serial",
-                "categoryField": "date",
-				"precision": 1,
-                "categoryAxis": {
-                    "parseDates": false,
-                    "dashLength": 1,
-                    "minorGridEnabled": true,
-                    "minPeriod": "ss"
-                },
-                "graphs": [
-					{
-						"valueField": "aqi",
-						"type": "line",
-						"bullet": "round",
-						"title": "AQI",
-						"balloonText": "aqi",
-						"balloonFunction": balloonFunction
-					}
-				],
-                "chartScrollbar": {
-                    "autoGridCount": true,
-                    "scrollbarHeight": 40,
-                    "oppositeAxis": false,
-                    "offset": 30
-                },
-                "chartCursor": {
-                    "cursorPosition": "mouse",
-                    "categoryBalloonEnabled": false
-                },
-                "valueAxes": [
-                    {
-                    //   "title": "AQI",
-						"precision": 1,
-					  	"minimum": 0,
-					  	"maximum": 10
-                    }
-                ],
-				"guides": [
-					{
-						"fillColor": "red",
-						"fillAlpha": 0.90,
-						"value": 3,
-						"toValue": 3
-					}
-				],
-				// "legend": {
-                //     "position": "bottom"
-                // },
-                "export": {
-                    "enabled": true
-                },
-                dataProvider: data
-			}
-    	</script>
+		<script src="/microservices/wrld3d/js/airMockup.js"></script>
 	</body>
 </html>

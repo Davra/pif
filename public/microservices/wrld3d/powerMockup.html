@@ -12,69 +12,31 @@
         <link href="/ui/vendors/bootstrap/dist/css/less/pagination.less" rel="stylesheet" />
         <link href="/ui/css/custom.min.css" rel="stylesheet" />
         <link href="/ui/css/davra.css" rel="stylesheet" />
-		<style>
-			.sample-data-msg {
-				display: none;
-			}
-			.tile_count .tile_stats_count .count {
-				font-size: 20px;
-			}
-			.dt-buttons.btn-group, .dataTables_info {
-				float: left !important;
-			}
-			.dataTables_wrapper .dataTables_filter {
-				float: right !important;
-			}
-			.dataTable, .dataTables_info, .dataTables_paginate {
-				color: #000000;
-				font-family: "Poppins",Arial,"Droid Sans",sans-serif;
-				font-size: 12px;
-				font-weight: 400;
-				line-height: 1.471;
-			}
-			.dataTables_wrapper .dt-buttons.btn-group, .dataTables_wrapper .dataTables_filter {
-				display: none;
-			}
-			.kpi {
-				display:inline-block;
-				width: 20%;
-				text-align: center;
-				background-color: #eee;
-				padding-top: 15px;
-				padding-bottom: 15px;
-				margin-bottom: 15px;
-				margin-left: 25px;
-				border-radius: 6px;
-			}
-			.tile_count {
-				margin-top: 5px;
-			}
-		</style>
+		<link href="/microservices/wrld3d/css/powerMockup.css" rel="stylesheet"/>
 	</head>
 	
 	<body style="background: #FFFFFF">
-	
 		<div id="widgetContent" class="row form-horizontal form-label-left" style="width: 98%">
 		  	<div class="row tile_count">
 				<div class="tile_stats_count">
 					<div class="kpi">
 						<!-- <span class="count_top"><i class="fa fa-user"></i> Total Users</span> -->
-						<span class="count_top"></i>Total Usage</span>
+						<span class="count_top">Total Usage</span>
 						<div class="count green">3,700 <span>kWh</span></div>
 						<span class="count_bottom"><i class="red"><i class="fas fa-sort-up"></i>34% </i>WoW</span>
 					</div>
 					<div class="kpi">
-						<span class="count_top"></i> Total Lighting</span>
+						<span class="count_top">Total Lighting</span>
 						<div class="count green">1,500 <span>kWh</span></div>
 						<span class="count_bottom"><i class="red"><i class="fas fa-sort-up"></i>24% </i>WoW</span>
 					</div>
 					<div class="kpi">
-						<span class="count_top"></i> Total HVAC</span>
+						<span class="count_top">Total HVAC</span>
 						<div class="count green">1,000 <span>kWh</span></div>
 						<span class="count_bottom"><i class="green"><i class="fas fa-sort-down"></i>20% </i>WoW</span>
 					</div>
 					<div class="kpi">
-						<span class="count_top"></i> Total Sockets</span>
+						<span class="count_top">Total Sockets</span>
 						<div class="count green">1,200 <span>kWh</span></div>
 						<span class="count_bottom"><i class="green"><i class="fas fa-sort-down"></i>14% </i>WoW</span>
 					</div>
@@ -109,254 +71,9 @@
 		<script src="/ui/vendors/bootstrap-daterangepicker/daterangepicker.js"></script>
 		<script src="/ui/assets/bootstrap-gentelella-theme-for-widgets.js"></script>
 		<script src="/ui/assets/widget-utilities.js"></script>
-        <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.15/datatables.min.js"></script>
-        <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-3.1.3/pdfmake-0.1.27/dt-1.10.15/b-1.4.0/b-colvis-1.4.0/b-flash-1.4.0/b-html5-1.4.0/b-print-1.4.0/r-2.1.1/sc-1.4.2/datatables.min.js"></script>
+        <script src="https://cdn.datatables.net/v/dt/dt-1.10.15/datatables.min.js"></script>
+        <script src="https://cdn.datatables.net/v/dt/jszip-3.1.3/pdfmake-0.1.27/dt-1.10.15/b-1.4.0/b-colvis-1.4.0/b-flash-1.4.0/b-html5-1.4.0/b-print-1.4.0/r-2.1.1/sc-1.4.2/datatables.min.js"></script>
         <script src="/ui/vendors/datatables.net-buttons-bs/js/buttons.bootstrap.min.js"></script>
-        <!-- Sample-Data chart configuration goes here -->
-        <script>
-			var balloonFunction = function(item, graph) {
-				var result = '';
-				var key = graph.balloonText;
-				if (item.dataContext.hasOwnProperty(key) && !isNaN(item.dataContext[key])) {
-					var formatted = AmCharts.formatNumber(item.dataContext[key], {
-						precision: chart.precision,
-						decimalSeparator: chart.decimalSeparator,
-						thousandsSeparator: chart.thousandsSeparator
-					}, 0);
-					result = formatted;
-				}
-				return result + ' kWh';
-			};
-            var connecthingChartConfig = {
-                "theme": "connecthing",
-                "type": "serial",
-                "categoryField": "year",
-                "categoryAxis": {
-                    "parseDates": false,
-                    "dashLength": 1,
-                    "minorGridEnabled": true,
-                    "minPeriod": "ss"
-                },
-                "graphs": [ {
-                    "valueField": "lighting",
-                    "type": "line",
-                    "bullet": "round",
-                    "title": "Lighting",
-					"balloonText": "lighting",
-					"balloonFunction": balloonFunction
-                },
-                {
-                    "valueField": "hvac",
-                    "type": "line",
-                    "bullet": "round",
-                    "title": "HVAC",
-					"balloonText": "hvac",
-					"balloonFunction": balloonFunction
-                },
-                {
-                    "valueField": "sockets",
-                    "type": "line",
-                    "bullet": "round",
-                    "title": "Sockets",
-					"balloonText": "sockets",
-					"balloonFunction": balloonFunction
-                }],
-                "chartScrollbar": {
-                    "autoGridCount": true,
-                    "scrollbarHeight": 40,
-                    "oppositeAxis":false,
-                    "offset": 30
-                },
-                "chartCursor": {
-                    "cursorPosition": "mouse",
-                    "categoryBalloonEnabled": false
-                },
-                "valueAxes": [
-                    {
-                      "title": ""
-                    }
-                ],
-                "legend": {
-                    "position": "bottom"
-                },
-                "export": {
-                    "enabled": true
-                },
-                dataProvider: [{
-    year: 2003,
-    lighting: 1587,
-    hvac: 650,
-    sockets: 121},
-{
-    year: 2004,
-    lighting: 1567,
-    hvac: 683,
-    sockets: 146},
-{
-    year: 2005,
-    lighting: 1617,
-    hvac: 691,
-    sockets: 138},
-{
-    year: 2006,
-    lighting: 1630,
-    hvac: 642,
-    sockets: 127},
-{
-    year: 2007,
-    lighting: 1660,
-    hvac: 699,
-    sockets: 105},
-{
-    year: 2008,
-    lighting: 1683,
-    hvac: 721,
-    sockets: 109},
-{
-    year: 2009,
-    lighting: 1691,
-    hvac: 737,
-    sockets: 112},
-{
-    year: 2010,
-    lighting: 1298,
-    hvac: 680,
-    sockets: 101},
-{
-    year: 2011,
-    lighting: 1275,
-    hvac: 664,
-    sockets: 97},
-{
-    year: 2012,
-    lighting: 1246,
-    hvac: 648,
-    sockets: 93},
-{
-    year: 2013,
-    lighting: 1218,
-    hvac: 637,
-    sockets: 101},
-{
-    year: 2014,
-    lighting: 1213,
-    hvac: 633,
-    sockets: 87},
-{
-    year: 2015,
-    lighting: 1199,
-    hvac: 621,
-    sockets: 79},
-{
-    year: 2016,
-    lighting: 1110,
-    hvac: 210,
-    sockets: 81},
-{
-    year: 2017,
-    lighting: 1165,
-    hvac: 232,
-    sockets: 75},
-{
-    year: 2018,
-    lighting: 1145,
-    hvac: 219,
-    sockets: 88},
-{
-    year: 2019,
-    lighting: 1163,
-    hvac: 201,
-    sockets: 82},
-{
-    year: 2020,
-    lighting: 1180,
-    hvac: 285,
-    sockets: 87},
-{
-    year: 2021,
-    lighting: 1159,
-    hvac: 277,
-    sockets: 71}]
-            };   
-    </script>
-	
-	<script>
-		var config = {};
-		var initTable = function(extraColumns, data){
-
-			// Note the trick employed here for timestamps to get sorted correctly while inside DataTables is to put the 
-			// timestamp in unix epoch milliseconds as the first part in a hidden span, then the date in human readable format.
-			// Otherwise the sorting would be awry as it sorts the dates alphabetically. 
-			var tableColumns = [{ 
-				title: 'Time', 
-				data: 'timestamp',  
-				render: function(value, type, record) { 
-					return '<span style="display: none">' + value + '</span>' + moment(value).format('YYYY-MM-DD HH:mm');
-				} 
-			}];
-
-			if (!extraColumns && !data) {
-				// $('.sample-data-msg').show();
-				var sampleData  = widgetUtils.getSampleDataForEventTable4Columns();	
-				// extraColumns = sampleData.columns;
-				extraColumns = [
-					{title: "Description", data: "description", sTitle: "Description", mData: "description"},
-					{title: "Status", data: "status", sTitle: "Status", mData: "status"}
-				]
-				// data = sampleData.data;
-				data = [
-					{timestamp: 1624312564770, description: "Overload trip alarm", status: "Open"},
-					{timestamp: 1624208954770, description: "Voltage loss", status: "Acknowledged"},
-					//{timestamp: 1624305344770, description: "Speed Alert", status: "Some further details here"},
-					{timestamp: 1624101734770, description: "Threshold (V) exceeded ", status: "Closed"}
-				]
-			}
-			else {
-				// $('.sample-data-msg').hide();
-			}
-
-			// if (config.chartCfg && config.chartCfg.title && config.chartCfg.title.length > 0) {
-			// 	$('.widget-header').text(config.chartCfg.title);
-			// } else {
-			// 	$('.widget-header').remove();
-			// 	$('.widget-header-hr').remove();
-			// }
-
-			if (extraColumns) {
-				Array.prototype.push.apply(tableColumns, extraColumns);	            
-			}
-			// console.log('data: ' , data);
-			var filename = config.widgetTitle + '-' + moment(new Date()).format("YYYYMMDD_HHmmss");
-
-			// If the user saved a widgetConfig for table settings, superimpose them into the config of the table
-			var dataTableConfig = {
-				dom: 'Bfrtip',
-				bDestroy : true,
-				pageLength: 100,
-				info: true,
-				paging: true,
-				select: false,
-				columns: tableColumns,
-				order: [[ 0, 'desc' ]]
-			};
-			if(config.chartCfg && config.chartCfg.options) {
-				$.extend(dataTableConfig, config.chartCfg.options);
-			}
-
-			var datatable = $("#table").DataTable(dataTableConfig);
-			if (data) { 
-				$('#table').dataTable().fnClearTable();  
-				$('#table').dataTable().fnAddData(data); 
-			}
-		};
-			$().ready(function() {
-				// chart.events.on("datavalidated", function(ev) {
-				// 	var chart = ev.target;
-				// 	chart.svgContainer.htmlElement.style.height = 350 + "px";
-				// });
-				initTable(null, null);
-			});
-		</script>
-	
+		<script src="/microservices/wrld3d/js/powerMockup.js"></script>
 	</body>
 </html>

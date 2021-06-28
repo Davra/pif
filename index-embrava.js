@@ -8,15 +8,15 @@ proxy.on('error', function (err, req, res) {
     res.writeHead(500, {
         'Content-Type': 'text/plain'
     })
-    res.end('Something went wrong: ' + err);
+    res.end('Something went wrong: ' + err)
 })
-proxy.on('proxyReq', function(proxyReq, req, res, options) {
+proxy.on('proxyReq', function (proxyReq, req, res, options) {
     console.log('Embrava request:', req.url)
 })
 proxy.on('proxyRes', function (proxyRes, req, res) {
     console.log('Embrava response status:', proxyRes.statusMessage)
 })
-const server = http.createServer(function(req, res) {
+const server = http.createServer(function (req, res) {
     // https://eusfuncapp01.azurewebsites.net/api/Authentication
     // https://pif.davra.com/microservices/wrld3d/api/Authentication
     proxy.web(req, res, {

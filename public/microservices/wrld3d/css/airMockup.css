@@ -1,0 +1,26 @@
+.sample-data-msg {
+    display: none;
+}
+.tile_count {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-right: -20px;
+}
+.tile_count .tile_stats_count .count {
+    line-height: 27px;
+    font-size: 20px;
+}
+.kpi {
+    display:inline-block;
+    width: 40%;
+    text-align: center;
+    background-color: #eee;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+    margin-left: 25px;
+    border-radius: 6px;
+}
+.amcharts-export-menu.amcharts-export-menu-top-right.amExportButton {
+    top: 60px;
+}
