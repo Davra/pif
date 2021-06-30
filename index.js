@@ -16,7 +16,7 @@ app.get('/alerts', async (req, res) => {
             method: 'get',
             url: 'https://pif.davra.com/api/v1/twins?digitalTwinTypeName=stateful_incident&labels.stateful_status=open',
             headers: {
-                'Authorization': 'Bearer EEgkMVI9hbF1fpYKlcrbCHGlBKcZ6gtSTPML7Ost3mgmABwy'
+                Authorization: 'Bearer EEgkMVI9hbF1fpYKlcrbCHGlBKcZ6gtSTPML7Ost3mgmABwy'
             }
         })
         res.send({ success: true, alerts: response.data })
