@@ -8,13 +8,27 @@ $(function () {
     }
     var poi = getPoiValue()
     var type = (poi && poi.user_data.title.substr(poi.user_data.title.length - 1)) || '1'
-    if (type === '1') $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/available.jpg'
-    else if (type === '2') $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/checked-in.jpg'
-    else $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/reserved.jpg'
-    // var x = Math.random()
-    // if (x < 0.3) $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/checked-in.jpg'
-    // else if (x < 0.6) $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/reserved.jpg'
-    // else $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/available.jpg'
+    $('.address-icon.finger i').addClass('fas fa-times')
+    $('.address-icon.face i').addClass('fas fa-times')
+    $('.address-icon.wifi i').addClass('fas fa-times')
+    $('.address-icon.display i').addClass('fas fa-times')
+    $('.address-icon.keypad i').addClass('fas fa-times')
+    if (type === '1') {
+        $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/FaceStation.jpg'
+        $('.address-icon.finger i').removeClass('fa-times').addClass('fa-check')
+        $('.address-icon.face i').removeClass('fa-times').addClass('fa-check')
+        $('.address-icon.display i').removeClass('fa-times').addClass('fa-check')
+        $('.address-icon.keypad i').removeClass('fa-times').addClass('fa-check')
+    }
+    else if (type === '2') {
+        $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/FaceLite.png'
+        $('.address-icon.finger i').removeClass('fa-times').addClass('fa-check')
+        $('.address-icon.face i').removeClass('fa-times').addClass('fa-check')
+        $('.address-icon.display i').removeClass('fa-times').addClass('fa-check')
+    }
+    else {
+        $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/SpeedBlade.png'
+    }
     // Create a set of sample data to plot
     var dataset = []
     for (var tmpDay = 1; tmpDay < 6; tmpDay++) {
@@ -22,8 +36,8 @@ $(function () {
             var tmpDatapoint = {}
             tmpDatapoint.day = tmpDay
             tmpDatapoint.hour = tmpHour
-            // weighted to the afternoon?
-            if (tmpHour >= 8 && tmpHour <= 12) {
+            // weighted to the morning, lunch and evening rush hours
+            if (tmpHour === 3 || tmpHour === 7 || tmpHour === 12) {
                 tmpDatapoint.value = 0 + parseInt(Math.random() * 10)
             }
             else {
