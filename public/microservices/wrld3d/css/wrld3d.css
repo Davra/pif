@@ -1,3 +1,4 @@
+@import url("/ui/vendors/fonts.googleapis.com/css/cssfamilyPoppins.css");
 @font-face { 
     font-family: "Sakkal"; 
     font-style: normal; 
@@ -8,10 +9,38 @@
     url('/microservices/wrld3d/fonts/SakkalMajallaBold.ttf') format("truetype"),
     url('/microservices/wrld3d/fonts/SakkalMajallaBold.svg') format("svg")
 }
+
 html, body {
     height: 100%;
     margin: 0;
-    padding: 0
+    padding: 0;
+}
+.poi-view-content .poi-view-header .title-text {
+    font: 22px "Poppins",Arial,"Droid Sans",sans-serif;
+    color: #000;
+    /* position: relative;
+    top: 4px; */
+    padding-left: 40px;
+}
+.poi-view-content .poi-view-header .close-button:before {
+    content: "\00D7";
+}
+.poi-view-content .poi-view-header .close-button {
+    background: none;
+    font-size: 28px;
+    font-weight: bold;
+    line-height: 1;
+    color: #000;
+    text-shadow: 0 1px 0 #fff;
+    filter: alpha(opacity=20);
+    opacity: .2;
+}
+.poi-view-content .poi-view-header .close-button:hover {
+    background: none;
+    color: #000;
+    text-decoration: none;
+    filter: alpha(opacity=50);
+    opacity: .5;
 }
 #pageDiv {
     position: relative;

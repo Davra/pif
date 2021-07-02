@@ -235,7 +235,10 @@ var initTable = function (extraColumns, data) {
         select: false,
         columns: tableColumns,
         autoWidth: false,
-        order: [[0, 'desc']]
+        order: [[0, 'desc']],
+        language: {
+            paginate: { previous: '<', next: '>' }
+        }
     }
     if (config.chartCfg && config.chartCfg.options) {
         $.extend(dataTableConfig, config.chartCfg.options)
@@ -253,6 +256,4 @@ $().ready(function () {
     // chart.svgContainer.htmlElement.style.height = 350 + 'px'
     // })
     initTable(null, null)
-    $('.dataTables_wrapper .dataTables_paginate .paginate_button.previous').text('<')
-    $('.dataTables_wrapper .dataTables_paginate .paginate_button.next').text('>')
 })

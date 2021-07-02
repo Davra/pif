@@ -2,41 +2,39 @@
     display: inline-block;
     vertical-align: top;
     width: 120px;
-    height: 160px;
+    height: 90px;
     margin-right: 16px;
-    /* background-image: url(/microservices/wrld3d/img/available.jpg); */
 }
 .meeting-room-details-wrapper {
     display: inline-block;
     vertical-align: top;
-    margin-top: 5px;
-    margin-left: 20px;
+    margin-top: 15px;
+    margin-left: 0px;
 }
 .meeting-room-details {
     margin-top: 8px;
 }
-.meeting-room-details .status span.online {
+.meeting-room-details .status span.online, .meeting-room-details .sync span.online {
     color: #0bff00;
 }
-.meeting-room-details.indent {
-    margin-left: 25px;
-    margin-top: 0px;
-    font-size: 12px;
+.meeting-room-details .status span.offline, .meeting-room-details .sync span.offline {
+    color: red;
 }
-.status-icon, .address-icon {
+.status-icon, .sync-icon {
     display: inline-block;
     vertical-align: top;
     margin-right: 0px;
     width: 20px;
     height: 20px;
 }
-.status, .address {
+.meeting-room-details .status, .meeting-room-details .sync {
     display: inline-block;
     vertical-align: top;
 }
+/*
 rect.bordered {
     stroke: #E6E6E6;
-    stroke-width:2px;   
+    stroke-width: 2px;   
 }
 text.mono {
     font-size: 9pt;
@@ -49,6 +47,7 @@ text.axis-workweek {
 text.axis-worktime {
     fill: #000;
 }
+*/
 .sample-data-msg {
     display: none;
 }
