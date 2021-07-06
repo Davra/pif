@@ -25,6 +25,9 @@ html, body {
 .poi-view-content .poi-view-header .close-button:before {
     content: "\00D7";
 }
+.poi-view-content .poi-view-html-container {
+    border-top-color: #ccc;
+}
 .poi-view-content .poi-view-header .close-button {
     background: none;
     font-size: 28px;
@@ -71,6 +74,12 @@ html, body {
 .eegeo-indoor-control #eegeo-exit-interior-button-container button {
     border-radius: 4px;
     color: #1976d2;
+}
+#eegeo-results-container .search-results-group .search-result-elements-container .search-result-row .details .tag-icon {
+    display: none;
+}
+#eegeo-results-container .search-results-group .search-result-elements-container .search-result-row .details .tags {
+    display: none;
 }
 #searchbar-container .text-field-container {
     border-radius: 6px;

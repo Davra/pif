@@ -14,10 +14,10 @@
 .meeting-room-details {
     margin-top: 8px;
 }
-.meeting-room-details .status span.online, .meeting-room-details .disablement span.online {
+.meeting-room-details .status span.online {
     color: #0bff00;
 }
-.meeting-room-details .status span.offline, .meeting-room-details .disablement span.offline {
+.meeting-room-details .status span.offline {
     color: red;
 }
 .status-icon, .sync-icon {

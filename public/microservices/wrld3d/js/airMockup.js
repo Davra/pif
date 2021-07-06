@@ -3,7 +3,7 @@ var data = []
 var now = new Date()
 var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30)
 for (var i = 0, n = 30; i < n; i++) {
-    var aqi = 8 + ((Math.random() * 20) / 10)
+    var aqi = 8 + ((Math.random() * 60) / 10)
     // console.log(d.getDate() + '/' + (d.getMonth() + 1), aqi)
     data.push({ date: d.getDate() + '/' + (d.getMonth() + 1), aqi: aqi })
     d.setDate(d.getDate() + 1)
@@ -59,15 +59,15 @@ var connecthingChartConfig = {
         //   title: 'AQI',
             precision: 1,
             minimum: 0,
-            maximum: 10
+            maximum: 300
         }
     ],
     guides: [
         {
             fillColor: 'red',
             fillAlpha: 0.90,
-            value: 3,
-            toValue: 3
+            value: 100,
+            toValue: 100
         }
     ],
     // 'legend: {

@@ -90,54 +90,7 @@ var connecthingChartConfig = {
         { year: 2021, lighting: 1159, hvac: 277, sockets: 71 }
     ]
 }
-
-var config = {}
-var initTable = function (extraColumns, data) {
-    // Note the trick employed here for timestamps to get sorted correctly while inside DataTables is to put the
-    // timestamp in unix epoch milliseconds as the first part in a hidden span, then the date in human readable format.
-    // Otherwise the sorting would be awry as it sorts the dates alphabetically.
-    var tableColumns = [{
-        title: 'Time',
-        data: 'timestamp',
-        render: function (value, type, record) {
-            return '<span style="display: none">' + value + '</span>' + moment(value).format('YYYY-MM-DD HH:mm')
-        }
-    }]
-
-    if (!extraColumns && !data) {
-        // $('.sample-data-msg').show();
-        // var sampleData  = widgetUtils.getSampleDataForEventTable4Columns()
-        // extraColumns = sampleData.columns;
-        extraColumns = [
-            { title: 'Description', data: 'description', sTitle: 'Description', mData: 'description' },
-            { title: 'Status', data: 'status', sTitle: 'Status', mData: 'status' }
-        ]
-        // data = sampleData.data;
-        data = [
-            { timestamp: 1624312564770, description: 'Overload trip alarm', status: 'Open' },
-            { timestamp: 1624208954770, description: 'Voltage loss', status: 'Acknowledged' },
-            // { timestamp: 1624305344770, description: 'Speed Alert', status: 'Some further details here' },
-            { timestamp: 1624101734770, description: 'Threshold (V) exceeded ', status: 'Closed' }
-        ]
-    }
-    else {
-        // $('.sample-data-msg').hide();
-    }
-
-    // if (config.chartCfg && config.chartCfg.title && config.chartCfg.title.length > 0) {
-    // $('.widget-header').text(config.chartCfg.title);
-    // } else {
-    // $('.widget-header').remove();
-    // $('.widget-header-hr').remove();
-    // }
-
-    if (extraColumns) {
-        Array.prototype.push.apply(tableColumns, extraColumns)
-    }
-    // console.log('data: ' , data);
-    // var filename = config.widgetTitle + '-' + moment(new Date()).format('YYYYMMDD_HHmmss');
-
-    // If the user saved a widgetConfig for table settings, superimpose them into the config of the table
+var initTable = function (tableId, tableColumns, data) {
     var dataTableConfig = {
         dom: 'Bfrtip',
         bDestroy: true,
@@ -146,22 +99,55 @@ var initTable = function (extraColumns, data) {
         paging: true,
         select: false,
         columns: tableColumns,
-        order: [[0, 'desc']]
+        autoWidth: false,
+        order: [[0, 'desc']],
+        language: {
+            paginate: { previous: '<', next: '>' }
+        }
     }
-    if (config.chartCfg && config.chartCfg.options) {
-        $.extend(dataTableConfig, config.chartCfg.options)
-    }
-
-    $('#table').DataTable(dataTableConfig)
+    $(tableId).DataTable(dataTableConfig)
     if (data) {
-        $('#table').dataTable().fnClearTable()
-        $('#table').dataTable().fnAddData(data)
+        $(tableId).dataTable().fnClearTable()
+        $(tableId).dataTable().fnAddData(data)
     }
 }
 $().ready(function () {
-    // chart.events.on('datavalidated', function(ev) {
-    // var chart = ev.target
-    // chart.svgContainer.htmlElement.style.height = 350 + 'px'
-    // })
-    initTable(null, null)
+    var alerts = parent.alerts
+    // console.log(JSON.stringify(alerts))
+    function getPoiValue () {
+        var key = 'poi'
+        var value = decodeURIComponent(window.location.search.replace(new RegExp('^(?:.*[&\\?]' + key + '(?:\\=([^&]*))?)?.*$', 'i'), '$1'))
+        return value ? JSON.parse(value) : null
+    }
+    var poi = getPoiValue()
+    var id = (poi && poi.user_data.title.substr(poi.user_data.title.length - 3)) || '1'
+    // var title = (poi && poi.user_data.title) || '1'
+    var tableColumns = [
+        {
+            title: 'Time',
+            data: 'timestamp',
+            render: function (value, type, record) {
+                return '<span style="display: none">' + value + '</span>' + moment(value).format('YYYY-MM-DD HH:mm')
+            }
+        },
+        { title: 'Description', data: 'description', sTitle: 'Description', mData: 'description' },
+        { title: 'Status', data: 'status', sTitle: 'Status', mData: 'status' }
+    ]
+    var data = []
+    if (id === '2.1') {
+        data.push({ timestamp: alerts[0].date, description: 'Overload trip alarm', status: alerts[0].open ? 'Open' : 'Acknowledged' })
+        if (alerts[0].open) {
+            var checkOpen = setInterval(function () {
+                console.log(alerts[0].open)
+                if (!alerts[0].open) {
+                    clearInterval(checkOpen)
+                    data[0].status = 'Acknowledged'
+                    $('#table').dataTable().fnUpdate(data[0].status, [0], 2, false)
+                }
+            }, 300)
+        }
+    }
+    data.push({ timestamp: 1624208954770, description: 'Voltage loss', status: 'Acknowledged' })
+    data.push({ timestamp: 1624101734770, description: 'Threshold (V) exceeded ', status: 'Closed' })
+    initTable('#table', tableColumns, data)
 })

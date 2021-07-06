@@ -197,7 +197,7 @@ var initTable = function (extraColumns, data) {
         render: function (value, type, record) {
             return '<span style="display: none">' + value + '</span>' + moment(value).format('YYYY-MM-DD HH:mm')
         },
-        width: '40%'
+        width: '50%'
     }]
 
     if (!extraColumns && !data) {
@@ -206,8 +206,8 @@ var initTable = function (extraColumns, data) {
         // extraColumns = sampleData.columns;
         extraColumns = [
             // { title: 'Desc', data: 'description', sTitle: 'Desc', mData: 'description' },
-            { title: 'Duration', data: 'duration', sTitle: 'Duration', mData: 'duration', width: '35%' },
-            { title: 'User', data: 'userId', sTitle: 'User', mData: 'userId', width: '25%' }
+            { title: 'Duration', data: 'duration', sTitle: 'Duration', mData: 'duration', width: '35%' }
+            // { title: 'User', data: 'userId', sTitle: 'User', mData: 'userId', width: '25%' }
         ]
         // data = sampleData.data;
         data = [

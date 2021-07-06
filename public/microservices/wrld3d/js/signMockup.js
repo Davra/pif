@@ -33,12 +33,11 @@ var data = []
 var now = new Date()
 var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30)
 for (var i = 0, n = 30; i < n; i++) {
-    var fire = i === 23 ? 10 + roundTo2(Math.random() * 10) : 0
-    var idle = i === 11 ? 5 + roundTo2(Math.random() * 20) : 0
-    var remainder = 100 - (fire + idle)
-    var events = roundTo2(remainder * Math.random())
-    var birthdays = roundTo2(remainder - events)
-    // console.log(d.getDate() + '/' + (d.getMonth() + 1), remainder, fire, idle, events, birthdays)
+    var fire = i === 23 ? roundTo2(10 + Math.random() * 10) : 0
+    var birthdays = (i === 3 || i === 5 || i === 7 || i === 11 || i === 13 || i === 17 || i === 23 || i === 29) ? 12 : 0
+    var idle = roundTo2(Math.random() * 20)
+    var events = roundTo2(100 - (fire + birthdays + idle))
+    // console.log(d.getDate() + '/' + (d.getMonth() + 1), fire, idle, events, birthdays)
     data.push({ date: d.getDate() + '/' + (d.getMonth() + 1), fire: fire, idle: idle, events: events, birthdays: birthdays })
     d.setDate(d.getDate() + 1)
 }

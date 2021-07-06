@@ -1,6 +1,7 @@
-/* global L, WrldCompassControl, WrldIndoorControl, WrldSearchbar, WrldMarkerController, WrldPoiApi */
+/* global L, WrldCompassControl, WrldIndoorControl, WrldSearchbar, WrldMarkerController */
 // https://maps.wrld3d.com/?lat=24.760670&lon=46.639152&zoom=14.868738475598787&coverage_tree_manifest=https://cdn-webgl.eegeo.com/coverage-trees/vjsdavra/v38/manifest.bin.gz
 // https://mapdesigner.wrld3d.com/poi/latest/?&coverage_tree_manifest=https://cdn-webgl.eegeo.com/coverage-trees/vjsdavra/v38/manifest.bin.gz
+var alerts = []
 $(function () {
     var prefix = window.location.hostname === 'localhost' ? '' : '/microservices/wrld3d'
     var map = L.Wrld.map('map', '8d2d6eef6635955569c400073255f501', {
@@ -116,6 +117,7 @@ $(function () {
     searchbar.on('searchresultselect', handleResult)
 
     function handleResult (event) {
+        console.log(JSON.stringify(event.result.data))
         goToResult(event.result.data)
     }
     function goToResult (result) {
@@ -160,6 +162,7 @@ $(function () {
             markerOptions.poiView.imageUrl = ''
             markerOptions.poiView.customView = airMockup
             markerOptions.poiView.customViewHeight = 320
+            // markerOptions.iconKey = 'air_quality_alert'
         }
         if (markerOptions.iconKey === 'badge_reader') {
             markerOptions.poiView.imageUrl = ''
@@ -248,11 +251,21 @@ $(function () {
         var ds = '-'
         return (y + ds + M0 + ds + d0 + ' ' + h + ':' + m)
     }
-    var results = []
+    alerts = [
+        { id: 3000365, title: 'HVAC/lighting/electricity 2.1', subtitle: 'Beside Huddle Rooms', tags: 'electricity_meter', lat: 24.7628846, lon: 46.6387049, height_offset: 0, indoor: true, indoor_id: 'EIM-45842b67-da47-484b-8d9a-34e4276f8837', floor_id: 0, user_data: {} },
+        { id: 3000356, title: 'Air quality 2.1', subtitle: 'Street Café', tags: 'air_quality_good air_quality', lat: 24.7627937, lon: 46.638645, height_offset: 0, indoor: true, indoor_id: 'EIM-45842b67-da47-484b-8d9a-34e4276f8837', floor_id: 0, user_data: {} },
+        { id: 3000368, title: 'Fire control panel 3.1', subtitle: 'Behind HiTech Corner', tags: 'fire_extinguisher', lat: 24.7629645, lon: 46.6386773, height_offset: 0, indoor: true, indoor_id: 'EIM-45842b67-da47-484b-8d9a-34e4276f8837', floor_id: 1, user_data: {} }
+    ]
+    var now = new Date()
+    alerts.forEach(function (alert, i) {
+        now.setMinutes(now.getMinutes() - ((i + 1) * 73))
+        alert.date = now.getTime()
+        alert.open = true
+    })
     var start = 0
-    function displayAlerts (success, resultsParm) {
+    function displayAlerts (success, alertsParm) {
         if (success) {
-            results = resultsParm
+            alerts = alertsParm
             pageAlerts(start)
         }
         else {
@@ -262,28 +275,28 @@ $(function () {
     function pageAlerts (start) {
         var html = []
         var count = 0
-        $('.alertsCount').text(results.length)
-        results.length > 0 ? $('.alertButton').show() : $('.alertButton').hide()
         for (var i = start, n = 5; i < n; i++) {
-            var result = results[i]
-            if (result) {
+            var alert = alerts[i]
+            if (alert && alert.open) {
                 count++
-                console.log(JSON.stringify(result))
-                var floorNumber = result.floor_id + 2
-                var date = new Date()
+                console.log(JSON.stringify(alert))
+                var floorNumber = alert.floor_id + 2
                 var evens = (i % 2) ? 'odd' : 'even'
-                html.push('<div class="alertRow ' + evens + '" data-index="' + i + '"><div class="col1">' + formatTimestamp(date) + '</div><div class="col2">' + result.title + '</div><div class="col3">' + floorNumber + '</div>')
+                var date = new Date(alert.date)
+                html.push('<div class="alertRow ' + evens + '" data-index="' + i + '"><div class="col1">' + formatTimestamp(date) + '</div><div class="col2">' + alert.title + '</div><div class="col3">' + floorNumber + '</div>')
                 html.push('<div class="col4"><div class="recordToolbar">')
                 html.push('<button type="button" class="dismiss kiwi" data-index="' + i + '" title="Dismiss alert"><i class="fal fa-check"></i></button>')
                 html.push('</div></div></div>')
             }
         }
         $('.alertsList').html(html.join(''))
-        $('.paginationDiv .text').text((results.length > 0 ? start + 1 : 0) + '-' + (start + count) + ' of ' + results.length)
+        $('.alertsCount').text(count)
+        count > 0 ? $('.alertButton').show() : $('.alertButton').hide()
+        $('.paginationDiv .text').text((count > 0 ? start + 1 : 0) + '-' + (start + count) + ' of ' + count)
         $('.alertsList .alertRow').each(function (i, row) {
             $(row).click(function () {
                 var index = parseInt($(this).attr('data-index'))
-                var result = results[index]
+                var result = alerts[index]
                 goToResult(result)
             })
         })
@@ -292,7 +305,8 @@ $(function () {
                 e.preventDefault()
                 e.stopPropagation()
                 var index = parseInt($(this).attr('data-index'))
-                results.splice(index, 1)
+                // alerts.splice(index, 1)
+                alerts[index].open = false
                 pageAlerts(start)
             })
         })
@@ -327,7 +341,7 @@ $(function () {
         var lines = []
         var header = ['Date', 'Description', 'Floor']
         lines.push('"' + header.join('","') + '"')
-        results.forEach(function (result, i) {
+        alerts.forEach(function (result, i) {
             var line = []
             line.push(formatTimestamp(result.date || new Date()))
             line.push(result.title)
@@ -340,20 +354,21 @@ $(function () {
         bounceToServer(headers, data)
     })
 
-    var poiApi = new WrldPoiApi('8d2d6eef6635955569c400073255f501')
-    var radius = 1000
-    var maxResults = 10
-    var options = { range: radius, number: maxResults }
-    poiApi.searchTags(['alert'], { lat: 24.763289081785917, lng: 46.63878573585767 }, displayAlerts, options)
+    // var poiApi = new WrldPoiApi('8d2d6eef6635955569c400073255f501')
+    // var radius = 1000
+    // var maxResults = 10
+    // var options = { range: radius, number: maxResults }
+    // poiApi.searchTags(['alert'], { lat: 24.763289081785917, lng: 46.63878573585767 }, displayAlerts, options)
+    displayAlerts(true, alerts)
 
-    $.get('/alerts' + '?t=' + new Date().getTime(), function (result) {
-        if (!result.success) {
-            console.error('Alerts failed: ' + result.message)
-        }
-        else {
-            console.log('Alerts', result.alerts)
-        }
-    })
+    // $.get('/alerts' + '?t=' + new Date().getTime(), function (result) {
+    //     if (!result.success) {
+    //         console.error('Alerts failed: ' + result.message)
+    //     }
+    //     else {
+    //         console.log('Alerts', result.alerts)
+    //     }
+    // })
 
     /*
     var poiApi = new WrldPoiApi('8d2d6eef6635955569c400073255f501');
