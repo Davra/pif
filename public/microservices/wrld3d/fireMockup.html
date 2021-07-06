@@ -1,0 +1,109 @@
+
+<html>
+	<head>
+		<link href="/ui/vendors/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+		<link href="/ui/vendors/bootstrap-daterangepicker/daterangepicker.css" rel="stylesheet">
+		<link href="/ui/vendors/bootstrap-colorpicker/css/bootstrap-colorpicker.min.css" rel="stylesheet">
+        <!-- <link href="/ui/vendors/font-awesome-5/css/fontawesome-all.min.css" rel="stylesheet" type="text/css" media="all" /> -->
+        <link href="/microservices/wrld3d/css/fontawesome-all.min.css" rel="stylesheet" type="text/css" media="all" />
+		<link href="/ui/vendors/amcharts/amcharts/plugins/export/export.css" rel="stylesheet" type="text/css" media="all" />
+		<link href="/ui/assets/bootstrap-gentelella-theme-for-widgets.css" rel="stylesheet">
+        <link href="/ui/vendors/datatables.net-bs/css/dataTables.bootstrap.min.css" rel="stylesheet" />  
+        <link href="https://cdn.datatables.net/v/dt/jszip-3.1.3/pdfmake-0.1.27/dt-1.10.15/b-1.4.0/b-colvis-1.4.0/b-flash-1.4.0/b-html5-1.4.0/b-print-1.4.0/r-2.1.1/sc-1.4.2/datatables.min.css" rel="stylesheet" type="text/css" />
+        <link href="/ui/vendors/bootstrap/dist/css/less/pagination.less" rel="stylesheet" />
+        <link href="/ui/css/custom.min.css" rel="stylesheet" />
+        <link href="/ui/css/davra.css" rel="stylesheet" />
+		<link href="/microservices/wrld3d/css/fireMockup.css" rel="stylesheet"/>
+	</head>
+	<body style="background: #FFFFFF">
+		<div class="meeting-room-overview">
+			<!-- <div class="meeting-room-photo"><img width="160px"></div> -->
+			<div class="meeting-room-photo">
+				<div id="screen-carousel" class="carousel slide" data-ride="carousel" data-interval="4000">
+					<!-- <ol class="carousel-indicators">
+					  	<li data-target="#screen-carousel" data-slide-to="0" class="active"></li>
+					  	<li data-target="#screen-carousel" data-slide-to="1"></li>
+					</ol> -->
+					<div class="carousel-inner" role="listbox">
+					  	<div class="item active">
+							<img class="img1">
+							<div class="carousel-caption"></div>
+					  	</div>
+					  	<!-- <div class="item">
+							<img class="img2">
+							<div class="carousel-caption"></div>
+					  	</div> -->
+					</div>
+					<!-- <a class="left carousel-control" href="#screen-carousel" role="button" data-slide="prev">
+					  	<span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+					  	<span class="sr-only">Previous</span>
+					</a> -->
+					<!-- <a class="right carousel-control" href="#screen-carousel" role="button" data-slide="next">
+					  	<span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+					  	<span class="sr-only">Next</span>
+					</a> -->
+				</div>
+			</div>
+			<div class="meeting-room-details-wrapper">
+				<div class="meeting-room-details">
+					<div class="status-icon"><i class="fas fa-eye"></i></div>
+					<div class="status">Fault status: <span></span></div>
+				</div>
+				<div class="meeting-room-details">
+					<div class="sync-icon"><i class="fas fa-wrench"></i></div>
+					<div class="lastFault">Last: <span></span></div>		
+				</div>
+				<div class="meeting-room-details">
+					<div class="status-icon"><i class="fas fa-eye"></i></div>
+					<div class="disablement">Disablement: <span></span></div>
+				</div>
+				<div class="meeting-room-details">
+					<div class="sync-icon"><i class="fas fa-wrench"></i></div>
+					<div class="lastDisablement">Last: <span></span></div>		
+				</div>
+			</div>
+		</div>
+		<hr>	
+		<div class="recordHeading">
+			<ul class="tabbedMenu nav nav-tabs" role="tablist">
+				<li class="active" role="presentation">
+					<a class="tabFaults" href="#tabFaultsPanel" role="tab" data-toggle="tab"><span>Faults</span></a>
+				</li>
+				<li role="presentation">
+					<a class="tabEvents" href="#tabEventsPanel" role="tab" data-toggle="tab"><span>Disablements</span></a>
+				</li>
+			</ul>
+		</div>
+		<div class="tab-content">
+			<div role="tabpanel" class="tab-pane fade in active" id="tabFaultsPanel">
+				<div class="table-container">
+					<table width="100%" class="table dataTable dt-bootstrap dt-responsive"></table>
+				</div>
+			</div>
+			<div role="tabpanel" class="tab-pane fade" id="tabEventsPanel">
+				<div class="table-container">
+					<table width="100%" class="table dataTable dt-bootstrap dt-responsive"></table>
+				</div>
+				<div class="modal" id="loading-mask">Loading ... </div>
+			</div>
+		</div>
+        <script src="/ui/vendors/amcharts/amcharts/amcharts.js"></script>  
+        <script src="/ui/vendors/amcharts/amcharts/serial.js"></script>
+        <script src="/ui/vendors/amcharts/amcharts/plugins/export/export.min.js"></script>
+		<script src="/ui/vendors/underscore/underscore-min.js"></script>
+		<!-- <script src="/ui/vendors/jquery/3.2.1/jquery.min.js"></script> -->
+		<script src="/ui/vendors/jquery/2.2.4/jquery.min.js"></script>
+		<script src="/ui/vendors/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+		<!-- <script src="/ui/vendors/d3/d3.v3.js"></script> -->
+		<script src="/ui/vendors/moment/min/moment.min.js"></script>
+		<script src="/ui/vendors/bootstrap-daterangepicker/daterangepicker.js"></script>
+		<script src="/ui/assets/bootstrap-gentelella-theme-for-widgets.js"></script>
+		<script src="/ui/assets/widget-utilities.js"></script>
+        <script src="/ui/assets/templates/amcharts-connecthing-theme.js"></script>
+        <script src="/ui/assets/templates/amcharts-connecthing-widgets.js"></script>  
+        <script src="https://cdn.datatables.net/v/dt/dt-1.10.15/datatables.min.js"></script>
+        <script src="https://cdn.datatables.net/v/dt/jszip-3.1.3/pdfmake-0.1.27/dt-1.10.15/b-1.4.0/b-colvis-1.4.0/b-flash-1.4.0/b-html5-1.4.0/b-print-1.4.0/r-2.1.1/sc-1.4.2/datatables.min.js"></script>
+        <script src="/ui/vendors/datatables.net-buttons-bs/js/buttons.bootstrap.min.js"></script>
+		<script src="/microservices/wrld3d/js/fireMockup.js"></script>
+	</body>
+</html>

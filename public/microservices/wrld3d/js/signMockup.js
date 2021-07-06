@@ -25,7 +25,7 @@ $(function () {
 })
 
 function roundTo2 (num) {
-    return Math.floor(num * 100) / 100
+    return Math.round(num * 100) / 100
 }
 
 // chartCards
@@ -37,8 +37,8 @@ for (var i = 0, n = 30; i < n; i++) {
     var idle = i === 11 ? 5 + roundTo2(Math.random() * 20) : 0
     var remainder = 100 - (fire + idle)
     var events = roundTo2(remainder * Math.random())
-    var birthdays = remainder - events
-    // console.log(d.getDate() + '/' + (d.getMonth() + 1), fire, idle, events)
+    var birthdays = roundTo2(remainder - events)
+    // console.log(d.getDate() + '/' + (d.getMonth() + 1), remainder, fire, idle, events, birthdays)
     data.push({ date: d.getDate() + '/' + (d.getMonth() + 1), fire: fire, idle: idle, events: events, birthdays: birthdays })
     d.setDate(d.getDate() + 1)
 }
