@@ -1,4 +1,4 @@
-/* global L, WrldCompassControl, WrldIndoorControl, WrldSearchbar, WrldMarkerController */
+/* global AmCharts, L, WrldCompassControl, WrldIndoorControl, WrldSearchbar, WrldMarkerController */
 // https://maps.wrld3d.com/?lat=24.760670&lon=46.639152&zoom=14.868738475598787&coverage_tree_manifest=https://cdn-webgl.eegeo.com/coverage-trees/vjsdavra/v38/manifest.bin.gz
 // https://mapdesigner.wrld3d.com/poi/latest/?&coverage_tree_manifest=https://cdn-webgl.eegeo.com/coverage-trees/vjsdavra/v38/manifest.bin.gz
 var alerts = []
@@ -253,7 +253,7 @@ $(function () {
     }
     alerts = [
         { id: 3000365, title: 'HVAC/lighting/electricity 2.1', subtitle: 'Beside Huddle Rooms', tags: 'electricity_meter', lat: 24.7628846, lon: 46.6387049, height_offset: 0, indoor: true, indoor_id: 'EIM-45842b67-da47-484b-8d9a-34e4276f8837', floor_id: 0, user_data: {} },
-        { id: 3000356, title: 'Air quality 2.1', subtitle: 'Street Café', tags: 'air_quality_good air_quality', lat: 24.7627937, lon: 46.638645, height_offset: 0, indoor: true, indoor_id: 'EIM-45842b67-da47-484b-8d9a-34e4276f8837', floor_id: 0, user_data: {} },
+        // { id: 3000356, title: 'Air quality 2.1', subtitle: 'Street Café', tags: 'air_quality_good air_quality', lat: 24.7627937, lon: 46.638645, height_offset: 0, indoor: true, indoor_id: 'EIM-45842b67-da47-484b-8d9a-34e4276f8837', floor_id: 0, user_data: {} },
         { id: 3000368, title: 'Fire control panel 3.1', subtitle: 'Behind HiTech Corner', tags: 'fire_extinguisher', lat: 24.7629645, lon: 46.6386773, height_offset: 0, indoor: true, indoor_id: 'EIM-45842b67-da47-484b-8d9a-34e4276f8837', floor_id: 1, user_data: {} }
     ]
     var now = new Date()
@@ -353,7 +353,223 @@ $(function () {
         var headers = { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'inline; filename="' + fileName + '"' }
         bounceToServer(headers, data)
     })
-
+    var aqiGauge = AmCharts.makeChart('aqiGauge', {
+        type: 'gauge',
+        theme: 'none',
+        // titles: [
+        //     {
+        //         text: 'AQI',
+        //         size: 10
+        //     }
+        // ],
+        // var colors = ['#0bff00', '#70ed00', '#99db00', '#b6c700', '#cdb200', '#df9b00', '#ee8200', '#f86600', '#fe4400', '#ff0000'] // See https://colordesigner.io/gradient-generator (green to red)
+        axes: [
+            {
+                axisThickness: 1,
+                axisAlpha: 0.2,
+                tickAlpha: 0.2,
+                // valueInterval: 300,
+                valueInterval: 100,
+                radius: '100%',
+                // inside: false,
+                bands: [
+                    {
+                        color: '#00ff00',
+                        // gradientRatio: [-0.9, 0, 0.9],
+                        startValue: 0,
+                        endValue: 60
+                    },
+                    {
+                        color: '#aaff00',
+                        startValue: 60,
+                        endValue: 120
+                    },
+                    {
+                        color: '#fffa00',
+                        startValue: 120,
+                        endValue: 180
+                    },
+                    {
+                        color: '#ff7d00',
+                        startValue: 180,
+                        endValue: 240
+                    },
+                    {
+                        color: '#ff0000',
+                        startValue: 240,
+                        endValue: 300
+                        // innerRadius: '95%'
+                    }
+                ],
+                bottomText: '0 ',
+                bottomTextYOffset: 0,
+                endValue: 300
+            }
+        ],
+        arrows: [{}],
+        export: {
+            enabled: true
+        }
+    })
+    var comfortGauge = AmCharts.makeChart('comfortGauge', {
+        type: 'gauge',
+        theme: 'none',
+        // titles: [
+        //     {
+        //         text: 'AQI',
+        //         size: 10
+        //     }
+        // ],
+        // var colors = ['#0bff00', '#70ed00', '#99db00', '#b6c700', '#cdb200', '#df9b00', '#ee8200', '#f86600', '#fe4400', '#ff0000'] // See https://colordesigner.io/gradient-generator (green to red)
+        axes: [
+            {
+                axisThickness: 1,
+                axisAlpha: 0.2,
+                tickAlpha: 0.2,
+                // valueInterval: 300,
+                valueInterval: 100,
+                radius: '100%',
+                // inside: false,
+                bands: [
+                    {
+                        color: '#0000ff',
+                        // gradientRatio: [-0.9, 0, 0.9],
+                        startValue: 0,
+                        endValue: 60
+                    },
+                    {
+                        color: '#0087ff',
+                        startValue: 60,
+                        endValue: 120
+                    },
+                    {
+                        color: '#00ff00',
+                        startValue: 120,
+                        endValue: 180
+                    },
+                    {
+                        color: '#ff7d00',
+                        startValue: 180,
+                        endValue: 240
+                    },
+                    {
+                        color: '#ff0000',
+                        startValue: 240,
+                        endValue: 300
+                        // innerRadius: '95%'
+                    }
+                ],
+                bottomText: '0 ',
+                bottomTextYOffset: 0,
+                endValue: 300
+            }
+        ],
+        arrows: [{}],
+        export: {
+            enabled: true
+        }
+    })
+    var powerGauge = AmCharts.makeChart('powerGauge', {
+        type: 'gauge',
+        theme: 'none',
+        axes: [
+            {
+                axisThickness: 1,
+                axisAlpha: 0.2,
+                tickAlpha: 0.2,
+                valueInterval: 80,
+                radius: '100%',
+                // inside: false,
+                bands: [
+                    {
+                        color: '#00ff00',
+                        // gradientRatio: [-0.9, 0, 0.9],
+                        startValue: 0,
+                        endValue: 60
+                    },
+                    {
+                        color: '#aaff00',
+                        startValue: 60,
+                        endValue: 120
+                    },
+                    {
+                        color: '#fffa00',
+                        startValue: 120,
+                        endValue: 180
+                    },
+                    {
+                        color: '#ff7d00',
+                        startValue: 180,
+                        endValue: 240
+                    },
+                    {
+                        color: '#ff0000',
+                        startValue: 240,
+                        endValue: 320
+                        // innerRadius: '95%'
+                    }
+                ],
+                bottomText: '0 ',
+                bottomTextYOffset: 0,
+                endValue: 320
+            }
+        ],
+        arrows: [{}],
+        export: {
+            enabled: true
+        }
+    })
+    // setInterval(randomValue, 2000)
+    var aqiInterval = setInterval(setAqiValue, 2000)
+    var comfortInterval = setInterval(setComfortValue, 2000)
+    var powerInterval = setInterval(setPowerValue, 2500)
+    // set random value
+    function setAqiValue () {
+        // var value = Math.round(Math.random() * 200)
+        var value = 12.4
+        if (aqiGauge) {
+            if (aqiGauge.arrows) {
+                if (aqiGauge.arrows[0]) {
+                    if (aqiGauge.arrows[0].setValue) {
+                        aqiGauge.arrows[0].setValue(value)
+                        aqiGauge.axes[0].setBottomText(value + '')
+                        clearInterval(aqiInterval)
+                    }
+                }
+            }
+        }
+    }
+    function setComfortValue () {
+        var value = 163
+        if (comfortGauge) {
+            if (comfortGauge.arrows) {
+                if (comfortGauge.arrows[0]) {
+                    if (comfortGauge.arrows[0].setValue) {
+                        comfortGauge.arrows[0].setValue(value)
+                        comfortGauge.axes[0].setBottomText(value + '')
+                        $('.comfortTemperature').html('<span>26&deg;C</span>')
+                        $('.comfortHumidity').html('<span>42%</span>')
+                        clearInterval(comfortInterval)
+                    }
+                }
+            }
+        }
+    }
+    function setPowerValue () {
+        // var value = Math.round(Math.random() * 200)
+        var value = 84.9
+        if (powerGauge) {
+            if (powerGauge.arrows) {
+                if (aqiGauge.arrows[0]) {
+                    if (powerGauge.arrows[0].setValue) {
+                        powerGauge.arrows[0].setValue(value)
+                        powerGauge.axes[0].setBottomText(value + '')
+                        clearInterval(powerInterval)
+                    }
+                }
+            }
+        }
+    }
     // var poiApi = new WrldPoiApi('8d2d6eef6635955569c400073255f501')
     // var radius = 1000
     // var maxResults = 10

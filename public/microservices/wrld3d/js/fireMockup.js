@@ -69,7 +69,7 @@ $().ready(function () {
         // { title: 'User', data: 'userId', sTitle: 'User', mData: 'userId', width: '25%' }
     ]
     data = [
-        { timestamp: alerts[2].date, description: 'The Fire Alarm Routing Equipment FARE is faulty', duration: '24hr', userId: 'ABC123' },
+        { timestamp: alerts[1].date, description: 'The Fire Alarm Routing Equipment FARE is faulty', duration: '24hr', userId: 'ABC123' },
         { timestamp: 1624208954770, description: 'The battery supply to the Control Panel is fully discharged', duration: '3hr', userId: 'D45678' },
         // { timestamp: 1624305344770, description: 'There is a short circuit on the loop n wiring', duration: '1hr', userId: 'X566489' },
         { timestamp: 1624101734770, description: 'There is an open or short circuit fault on the master alarm wiring', duration: '10hr', userId: 'AYS5412' }

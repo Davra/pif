@@ -138,7 +138,7 @@ $().ready(function () {
         data.push({ timestamp: alerts[0].date, description: 'Overload trip alarm', status: alerts[0].open ? 'Open' : 'Acknowledged' })
         if (alerts[0].open) {
             var checkOpen = setInterval(function () {
-                console.log(alerts[0].open)
+                // console.log(alerts[0].open)
                 if (!alerts[0].open) {
                     clearInterval(checkOpen)
                     data[0].status = 'Acknowledged'
