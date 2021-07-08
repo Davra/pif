@@ -4,7 +4,7 @@ const http = require('http')
 const httpProxy = require('http-proxy')
 const prom = require('prom-client')
 const port = 8080
-const svc = { tenantId: 'pif', microserviceName: 'biostar' }
+const svc = { tenantId: 'pif', microserviceName: 'embrava' }
 const proxyCount = new prom.Counter({
     name: 'davra_api_microservice_proxy_count',
     help: 'A count of proxy calls to microservices',
