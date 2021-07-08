@@ -25,6 +25,26 @@
 			"outFiles": []
         },
         {
+            "name": "BioStar",
+            "type": "node",
+            "request": "launch",
+			"program": "${workspaceRoot}/index-biostar.js",
+			"stopOnEntry": false,
+			"args": [],
+			"cwd": "${workspaceRoot}",
+			"runtimeExecutable": null,
+			"runtimeArgs": [
+				"--nolazy"
+			],
+			"env": {
+				"NODE_ENV": "local"
+			},
+			"console": "internalConsole",
+			"outputCapture": "std",
+			"sourceMaps": false,
+			"outFiles": []
+        },
+        {
             "name": "Embrava",
             "type": "node",
             "request": "launch",
