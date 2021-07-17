@@ -5,6 +5,7 @@ const httpProxy = require('http-proxy')
 const prom = require('prom-client')
 const port = 8080
 const svc = { tenantId: 'pif', microserviceName: 'biostar' }
+prom.collectDefaultMetrics()
 const proxyCount = new prom.Counter({
     name: 'davra_api_microservice_proxy_count',
     help: 'A count of proxy calls to microservices',
@@ -17,7 +18,7 @@ const proxyErrorCount = new prom.Counter({
 })
 const proxyRequestSize = new prom.Summary({
     name: 'davra_api_microservice_proxy_request_size',
-    help: 'A summary of the quest sizes for proxy calls to microservices',
+    help: 'A summary of the request sizes for proxy calls to microservices',
     maxAgeSeconds: 900,
     ageBuckets: 4,
     labelNames: ['tenantId', 'microserviceName', 'method', 'statusCode'],
@@ -39,13 +40,6 @@ const proxyResponseTime = new prom.Summary({
     percentiles: [0.25, 0.50, 0.75, 0.9, 0.95, 0.99],
     labelNames: ['tenantId', 'microserviceName', 'method', 'statusCode']
 })
-const register = new prom.Registry()
-register.registerMetric(proxyCount)
-register.registerMetric(proxyErrorCount)
-register.registerMetric(proxyRequestSize)
-register.registerMetric(proxyResponseSize)
-register.registerMetric(proxyResponseTime)
-
 const proxy = httpProxy.createProxyServer({})
 proxy.on('error', function (err, req, res) {
     console.error(err)
@@ -67,11 +61,10 @@ proxy.on('proxyRes', function (proxyRes, req, res) {
     proxyResponseSize.labels(svc.tenantId, svc.microserviceName, req.method, res.statusCode).observe(req.socket.bytesWritten)
     console.log('BioStar response status:', proxyRes.statusCode, proxyRes.statusMessage)
 })
-
 const server = http.createServer(async function (req, res) {
     if (req.method === 'GET' && req.url === '/metrics') {
-        res.writeHead(200, { 'Content-Type': register.contentType })
-        res.end(await register.metrics())
+        res.writeHead(200, { 'Content-Type': prom.register.contentType })
+        res.end(await prom.register.metrics())
     }
     else if (req.method === 'GET' && req.url === '/favicon.ico') {
         res.writeHead(200, { 'Content-Type': 'text/plain' })
