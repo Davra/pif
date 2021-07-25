@@ -46,6 +46,7 @@ test/errorShots
 # local secrets file
 config/env/developmentSecrets.js
 config/env/aws-credentials
+config/*
 
 # OSX files
 .DS_Store

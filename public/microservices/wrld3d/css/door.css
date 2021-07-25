@@ -18,6 +18,9 @@
 .meeting-room-details .status span.online {
     color: #0bff00;
 }
+.meeting-room-details .status span.offline {
+    color: red;
+}
 .meeting-room-details.indent {
     margin-left: 25px;
     margin-bottom: 0px;
