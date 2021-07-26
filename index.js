@@ -47,10 +47,10 @@ app.get('/beacon/:id', (req, res) => {
     })
     res.send(html.join(''))
 })
-// app.get('/door/create', async (req, res) => {
-//     const count = await scripts.doorUsage()
-//     return res.send({ success: true, data: count })
-// })
+app.get('/door/create', async (req, res) => {
+    const count = await scripts.doorCreate()
+    return res.send({ success: true, data: count })
+})
 app.get('/door/capability/:id', async (req, res) => {
     const id = decodeURIComponent(req.params.id)
     const data = await scripts.doorCapability(id)
@@ -61,6 +61,14 @@ app.get('/door/status/:id', async (req, res) => {
     const id = decodeURIComponent(req.params.id)
     const status = await scripts.doorStatus(id)
     res.send({ success: true, status: status })
+})
+app.get('/door/usage/start', async (req, res) => {
+    scripts.doorUsageStart()
+    res.send({ success: true, message: 'Door usage started' })
+})
+app.get('/door/usage/stop', async (req, res) => {
+    scripts.doorUsageStop()
+    res.send({ success: true, message: 'Door usage stopping...' })
 })
 app.post('/bounce', express.urlencoded({ extended: true }), (req, res) => {
     const bounceString = req.body.bounceString
@@ -76,5 +84,5 @@ security.init(app)
 // const intervals = {}
 scripts.init(app)
 // intervals.doorUsage = setInterval(scripts.doorUsage, 10 * 1000)
-scripts.doorUsage()
+// scripts.doorUsage()
 // scripts.doorCreate()

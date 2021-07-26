@@ -62,7 +62,16 @@ exports.doorStatus = async function (id) {
     const status = door ? door.status : '0'
     return status
 }
-exports.doorUsage = async function () {
+exports.doorUsageStart = async function () {
+    biostar.stop = false
+    doorUsage()
+    return true
+}
+exports.doorUsageStop = async function () {
+    biostar.stop = true
+    return true
+}
+async function doorUsage () {
     console.log('doorUsage running...')
     var count = 0
     if (!biostar.doors) {
@@ -81,6 +90,8 @@ exports.doorUsage = async function () {
         config.biostar.startTime = '2021-01-01T00:00:00.000Z'
     }
     for (const event of await eventList()) {
+        if (biostar.stop) break
+        if (event.datetime > config.biostar.startTime) config.biostar.startTime = event.datetime
         const door = biostar.doors[event.device_id.id]
         if (!door) continue
         const eventType = biostar.eventTypes[event.event_type_id.code]
@@ -99,13 +110,15 @@ exports.doorUsage = async function () {
         }
         count++
         console.log('doorUsage: ', event.datetime, event.id, event.event_type_id.code, eventType.name)
-        if (event.datetime > config.biostar.startTime) config.biostar.startTime = event.datetime
     }
     console.log('doorUsage total: ' + count)
     console.log(path.join(__dirname, '/../config/config.json'))
     fs.writeFileSync(path.join(__dirname, '/../config/config.json'), JSON.stringify(config, null, 4))
+    const interval = config.biostar.doorUsageInterval
+    if (interval && !biostar.stop) setTimeout(doorUsage, interval)
     return count
 }
+exports.doorUsage = doorUsage
 async function doorConnect (door, event, eventType) {
     if (eventType.name.indexOf('_DISCONNECT') >= 0) { // DEVICE_, LINK_, RS485_, TCP_
         if (!door.disconnectTime) {
@@ -229,7 +242,7 @@ async function eventList () {
             },
             data: {
                 Query: {
-                    limit: 100000,
+                    limit: 1000,
                     conditions: [{
                         column: 'datetime',
                         operator: 5,

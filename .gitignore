@@ -61,3 +61,8 @@ __pycache__
 
 cypress/screenshots
 cypress/videos
+
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tgz
