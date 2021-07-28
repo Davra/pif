@@ -11,8 +11,24 @@ const app = express()
 const port = 8080
 
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, '/config/config.json')))
-app.set('config', config)
-app.set('security', security)
+axios({
+    method: 'get',
+    url: config.davra.url + '/api/v1/features?name=config',
+    headers: {
+        Authorization: 'Bearer ' + config.davra.token
+    }
+}).then(function (response) {
+    config.uuid = response.data[0].UUID
+    const runtimeConfig = response.data[0].customAttributes
+    for (const attr in runtimeConfig) { config[attr] = runtimeConfig[attr] }
+    app.set('config', config)
+    app.set('security', security)
+    security.init(app)
+    scripts.init(app)
+}).catch(function (err) {
+    console.error('Runtime config error: ' + err)
+    process.exit(1)
+})
 app.use(express.static(path.join(__dirname, 'public')))
 
 app.get('/', (req, res) => {
@@ -23,9 +39,9 @@ app.get('/alerts', async (req, res) => {
     try {
         const response = await axios({
             method: 'get',
-            url: 'https://pif.davra.com/api/v1/twins?digitalTwinTypeName=stateful_incident&labels.stateful_status=open',
+            url: config.davra.url + '/api/v1/twins?digitalTwinTypeName=stateful_incident&labels.stateful_status=open',
             headers: {
-                Authorization: 'Bearer EEgkMVI9hbF1fpYKlcrbCHGlBKcZ6gtSTPML7Ost3mgmABwy'
+                Authorization: 'Bearer ' + config.davra.token
             }
         })
         res.send({ success: true, alerts: response.data })
@@ -34,6 +50,16 @@ app.get('/alerts', async (req, res) => {
         console.error('Alerts error: ' + err)
         return res.send({ success: false, message: 'Alerts error' })
     }
+})
+app.get('/api/webhooks', (req, res) => {
+})
+app.get('/api/webhooks/:id', (req, res) => {
+})
+app.delete('/api/webhooks/:id', (req, res) => {
+})
+app.put('/api/webhooks/:id', (req, res) => {
+})
+app.post('/api/webhooks', (req, res) => {
 })
 app.get('/beacon/:id', (req, res) => {
     const id = decodeURIComponent(req.params.id)
@@ -79,10 +105,8 @@ app.post('/bounce', express.urlencoded({ extended: true }), (req, res) => {
 app.listen(port, () => {
     console.log(`Davra PIF server listening on port ${port}`)
 })
-security.init(app)
 // security.getBioStarSessionId()
 // const intervals = {}
-scripts.init(app)
 // intervals.doorUsage = setInterval(scripts.doorUsage, 10 * 1000)
 // scripts.doorUsage()
 // scripts.doorCreate()
