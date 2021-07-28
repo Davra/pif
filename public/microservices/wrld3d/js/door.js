@@ -7,6 +7,15 @@ $(function () {
         return value ? JSON.parse(value) : null
     }
     var poi = getPoiValue()
+    poi.davraUrl = ''
+    poi.davraMs = ''
+    if (window.location.hostname === 'localhost') {
+        $.ajaxSetup({ headers: { Authorization: 'Bearer ' + poi.user_data.token } })
+        poi.davraUrl = 'https://pif.davra.com'
+    }
+    else {
+        poi.davraMs = '/microservices/wrld3d'
+    }
     var type = (poi && poi.user_data.title.substr(poi.user_data.title.length - 1)) || '1'
     $('.address-icon.finger i').addClass('fas fa-times')
     $('.address-icon.face i').addClass('fas fa-times')
@@ -15,7 +24,7 @@ $(function () {
     $('.address-icon.keypad i').addClass('fas fa-times')
     var doorId = (poi && poi.user_data.twitter) || '' // twitter account is the deviceId
     if (doorId) {
-        $.get('/door/capability/' + encodeURIComponent(doorId), function (result) {
+        $.get(poi.davraMs + '/door/capability/' + encodeURIComponent(doorId), function (result) {
             if (!result.success) {
                 console.error('Door capability failed: ' + result.message)
             }
@@ -27,7 +36,7 @@ $(function () {
                 if (result.data.keypad) $('.address-icon.keypad i').removeClass('fa-times').addClass('fa-check')
             }
         })
-        $.get('/door/status/' + encodeURIComponent(doorId), function (result) {
+        $.get(poi.davraMs + '/door/status/' + encodeURIComponent(doorId), function (result) {
             if (result.success) {
                 console.log('Door status', result.status)
                 if (result.status === '1') {
@@ -108,8 +117,7 @@ function doOccupancy (poi, doorId) {
             start_absolute: endDate - (30 * 24 * 60 * 60 * 1000),
             end_absolute: endDate
         }
-        if (window.location.hostname === 'localhost') $.ajaxSetup({ headers: { Authorization: 'Bearer ' + poi.user_data.token } })
-        $.post('https://pif.davra.com/api/v2/timeseriesData', JSON.stringify(data), function (result) {
+        $.post(poi.davraUrl + '/api/v2/timeseriesData', JSON.stringify(data), function (result) {
             console.log(result)
             var values = result.queries[0].results[0].values
             var datapoints = {}
@@ -232,8 +240,7 @@ function doUptime (poi, doorId) {
             start_absolute: endDate - (365 * 24 * 60 * 60 * 1000),
             end_absolute: endDate
         }
-        if (window.location.hostname === 'localhost') $.ajaxSetup({ headers: { Authorization: 'Bearer ' + poi.user_data.token } })
-        $.post('https://pif.davra.com/api/v2/timeseriesData', JSON.stringify(data), function (result) {
+        $.post(poi.davraUrl + '/api/v2/timeseriesData', JSON.stringify(data), function (result) {
             console.log(result)
             var values1 = result.queries[0].results[0].values
             var values2 = result.queries[1].results[0].values
@@ -279,8 +286,7 @@ function doOutages (poi, doorId) {
             start_absolute: endDate - (30 * 24 * 60 * 60 * 1000),
             end_absolute: endDate
         }
-        if (window.location.hostname === 'localhost') $.ajaxSetup({ headers: { Authorization: 'Bearer ' + poi.user_data.token } })
-        $.post('https://pif.davra.com/api/v2/timeseriesData', JSON.stringify(data), function (result) {
+        $.post(poi.davraUrl + '/api/v2/timeseriesData', JSON.stringify(data), function (result) {
             console.log(result)
             var values = result.queries[0].results[0].values
             var data = []

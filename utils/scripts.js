@@ -1,6 +1,4 @@
 const axios = require('axios')
-const fs = require('fs')
-const path = require('path')
 var config, security
 const biostar = {}
 exports.init = function (app) {
@@ -112,8 +110,9 @@ async function doorUsage () {
         console.log('doorUsage: ', event.datetime, event.id, event.event_type_id.code, eventType.name)
     }
     console.log('doorUsage total: ' + count)
-    console.log(path.join(__dirname, '/../config/config.json'))
-    fs.writeFileSync(path.join(__dirname, '/../config/config.json'), JSON.stringify(config, null, 4))
+    // console.log(path.join(__dirname, '/../config/config.json'))
+    // fs.writeFileSync(path.join(__dirname, '/../config/config.json'), JSON.stringify(config, null, 4))
+    updateConfig('biostar.startTime', config.biostar.startTime)
     const interval = config.biostar.doorUsageInterval
     if (interval && !biostar.stop) setTimeout(doorUsage, interval)
     return count
@@ -268,3 +267,26 @@ async function eventList () {
         console.error('Event list error: ' + err)
     }
 }
+async function updateConfig (key, value) {
+    console.log('updateConfig running...')
+    const data = {}
+    data[key] = value
+    try {
+        const response = await axios({
+            method: 'patch',
+            url: config.davra.url + '/api/v1/features/' + config.uuid + '/attributes',
+            headers: {
+                Authorization: 'Bearer ' + config.davra.token
+            },
+            data: data
+        })
+        if (response.status !== 200) {
+            console.error('updateConfig error: ', response.status, JSON.stringify(response.data))
+        }
+        console.log('updateConfig:', config.uuid, key, value)
+    }
+    catch (err) {
+        console.error('updateConfig error: ' + err)
+    }
+}
+exports.updateConfig = updateConfig
