@@ -1,12 +1,11 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
 const axios = require('axios')
-// const config = require('./config/config.js')
 const express = require('express')
 const fs = require('fs')
 const path = require('path')
-const scripts = require('./utils/scripts')
-const security = require('./utils/security')
+// const doors = require('./routes/doors')
+// const security = require('./utils/security')
 const app = express()
 const port = 8080
 
@@ -22,9 +21,8 @@ axios({
     const runtimeConfig = response.data[0].customAttributes
     for (const attr in runtimeConfig) { config[attr] = runtimeConfig[attr] }
     app.set('config', config)
-    app.set('security', security)
-    security.init(app)
-    scripts.init(app)
+    require('./routes/security.js').init(app) // initialise security first
+    require('./routes/doors.js').init(app)
 }).catch(function (err) {
     console.error('Runtime config error: ' + err)
     process.exit(1)
@@ -51,16 +49,6 @@ app.get('/alerts', async (req, res) => {
         return res.send({ success: false, message: 'Alerts error' })
     }
 })
-app.get('/api/webhooks', (req, res) => {
-})
-app.get('/api/webhooks/:id', (req, res) => {
-})
-app.delete('/api/webhooks/:id', (req, res) => {
-})
-app.put('/api/webhooks/:id', (req, res) => {
-})
-app.post('/api/webhooks', (req, res) => {
-})
 app.get('/beacon/:id', (req, res) => {
     const id = decodeURIComponent(req.params.id)
     console.log('Beacon ID: ' + id)
@@ -73,29 +61,6 @@ app.get('/beacon/:id', (req, res) => {
     })
     res.send(html.join(''))
 })
-app.get('/door/create', async (req, res) => {
-    const count = await scripts.doorCreate()
-    return res.send({ success: true, data: count })
-})
-app.get('/door/capability/:id', async (req, res) => {
-    const id = decodeURIComponent(req.params.id)
-    const data = await scripts.doorCapability(id)
-    if (data) return res.send({ success: true, data: data })
-    res.send({ success: false, message: 'Door capability error' })
-})
-app.get('/door/status/:id', async (req, res) => {
-    const id = decodeURIComponent(req.params.id)
-    const status = await scripts.doorStatus(id)
-    res.send({ success: true, status: status })
-})
-app.get('/door/usage/start', async (req, res) => {
-    scripts.doorUsageStart()
-    res.send({ success: true, message: 'Door usage started' })
-})
-app.get('/door/usage/stop', async (req, res) => {
-    scripts.doorUsageStop()
-    res.send({ success: true, message: 'Door usage stopping...' })
-})
 app.post('/bounce', express.urlencoded({ extended: true }), (req, res) => {
     const bounceString = req.body.bounceString
     const bounce = JSON.parse(bounceString)
@@ -107,6 +72,6 @@ app.listen(port, () => {
 })
 // security.getBioStarSessionId()
 // const intervals = {}
-// intervals.doorUsage = setInterval(scripts.doorUsage, 10 * 1000)
-// scripts.doorUsage()
-// scripts.doorCreate()
+// intervals.doorUsage = setInterval(doors.doorUsage, 10 * 1000)
+// doors.doorUsage()
+// doors.doorCreate()
