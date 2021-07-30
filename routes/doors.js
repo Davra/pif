@@ -6,7 +6,6 @@ var config
 const biostar = {}
 exports.init = async function (app) {
     config = app.get('config')
-    if (!biostar.hooks) await hookList()
     app.get('/api/biostar/hooks', (req, res) => {
         const userId = getUserId(req, config)
         if (!userId) return res.send({ success: false, message: 'Not signed on' })
@@ -20,28 +19,30 @@ exports.init = async function (app) {
         if (!userId) return res.send({ success: false, message: 'Not logged in' })
         const userHooks = biostar.hooks[userId] || []
         if (userHooks.length === 0) return res.send({ success: false, message: 'No hooks defined' })
-        for (const hook in userHooks) {
+        for (const hook of userHooks) {
             if (hook.id === id) return res.send({ success: true, data: hook })
         }
         res.send({ success: false, message: `Hook ${id} not found` })
     })
-    app.delete('/api/biostar/hooks/:id', (req, res) => {
+    app.delete('/api/biostar/hooks/:id', async (req, res) => {
         const id = decodeURIComponent(req.params.id)
         const userId = getUserId(req, config)
         if (!userId) return res.send({ success: false, message: 'Not logged in' })
         const userHooks = biostar.hooks[userId] || []
         if (userHooks.length === 0) return res.send({ success: false, message: 'No hooks defined' })
-        userHooks.forEach(async (hook, i) => {
+        var i = 0
+        for (const hook of userHooks) {
             if (hook.id === id) {
-                userHooks.slice(i, 1)
+                userHooks.splice(i, 1)
                 await updateHooks(userId, userHooks)
                 console.log(`Hook ${id} deleted for user ${userId}`)
                 return res.send({ success: true, message: `Hook ${id} deleted`, data: hook })
             }
-        })
+            i++
+        }
         res.send({ success: false, message: `Hook ${id} not found` })
     })
-    app.put('/api/biostar/hooks/:id', express.json(), (req, res) => {
+    app.put('/api/biostar/hooks/:id', express.json(), async (req, res) => {
         const id = decodeURIComponent(req.params.id)
         const userId = getUserId(req, config)
         if (!userId) return res.send({ success: false, message: 'Not logged in' })
@@ -50,21 +51,21 @@ exports.init = async function (app) {
         if (!newHook.url || !newHook.type) {
             return res.send({ success: false, message: 'URL and type required for webhook' })
         }
-        userHooks.forEach(async (hook) => {
+        for (const hook of userHooks) {
             if (hook.id === id) {
                 for (const attr in newHook) { if (attr !== 'id') hook[attr] = newHook[attr] }
                 await updateHooks(userId, userHooks)
                 console.log(`Hook ${id} updated for user ${userId}`)
                 return res.send({ success: true, message: `Hook ${id} updated`, data: hook })
             }
-        })
+        }
         res.send({ success: false, message: `Hook ${id} not found` })
     })
     app.post('/api/biostar/hooks', express.json(), async (req, res) => {
-        const id = decodeURIComponent(req.params.id)
         const userId = getUserId(req, config)
         if (!userId) return res.send({ success: false, message: 'Not logged in' })
-        const userHooks = biostar.hooks[userId] || []
+        if (!biostar.hooks[userId]) biostar.hooks[userId] = []
+        const userHooks = biostar.hooks[userId]
         const newHook = req.body
         if (!newHook.url || !newHook.type) {
             return res.send({ success: false, message: 'URL and type required for webhook' })
@@ -72,8 +73,14 @@ exports.init = async function (app) {
         newHook.id = uuidv4()
         userHooks.push(newHook)
         await updateHooks(userId, userHooks)
-        console.log(`Hook ${id} updated for user ${userId}`)
-        return res.send({ success: true, message: `Hook ${id} updated`, data: newHook })
+        console.log(`Hook ${newHook.id} created for user ${userId}`)
+        return res.send({ success: true, message: `Hook ${newHook.id} created`, data: newHook })
+    })
+    app.post('/api/biostar/hooksTest', express.json(), async (req, res) => {
+        const userId = getUserId(req, config)
+        if (!userId) return res.send({ success: false, message: 'Not logged in' })
+        runWebhooks(req.body.name, req.body.event)
+        return res.send({ success: true, message: 'Running webhooks' })
     })
     app.get('/door/create', async (req, res) => {
         const count = await doorCreate()
@@ -98,10 +105,11 @@ exports.init = async function (app) {
         doorUsageStop()
         res.send({ success: true, message: 'Door usage stopping...' })
     })
+    doorUsageStart()
 }
 function getUserId (req, config) {
     var userId = req.headers['x-user-id'] || ''
-    if (userId && config.env === 'dev') userId = 'admin' // default to admin for testing
+    if (!userId && config.davra.env === 'dev') userId = 'admin' // default to admin for testing
     return userId
 }
 async function doorCapability (id) {
@@ -234,6 +242,7 @@ async function doorUsageStop () {
 async function doorUsage () {
     console.log('doorUsage running...')
     var count = 0
+    if (!biostar.hooks) await hookList()
     if (!biostar.doors) {
         biostar.doors = {}
         for (const door of await doorList()) {
@@ -256,6 +265,7 @@ async function doorUsage () {
         if (!door) continue
         const eventType = biostar.eventTypes[event.event_type_id.code]
         if (!eventType) continue
+        runWebhooks(eventType.name, event)
         if (['DELETE_SUCCESS', 'ENROLL_SUCCESS', 'UPDATE_SUCCESS'].indexOf(eventType.name) >= 0) continue
         if (eventType.name.indexOf('CONNECT') >= 0) { // could be connect or disconnect
             // metricName = 'door.connect'
@@ -351,10 +361,30 @@ async function hookList () {
         biostar.hooksUuid = response.data[0].UUID
         biostar.hooks = response.data[0].customAttributes
         console.log('hookList OK')
+        updateHooksLookup()
     }
     catch (err) {
         console.error('hookList error: ' + err)
         process.exit(1)
+    }
+}
+function runWebhooks (name, event) {
+    var type = ''
+    if (name.indexOf('_DISCONNECT') >= 0) type = 'disconnect' // DEVICE_, LINK_, RS485_, TCP_
+    else if (name === 'ENROLL_SUCCESS' || name === 'UPDATE_SUCCESS') type = 'enroll'
+    else if (name.indexOf('VERIFY_SUCCESS') >= 0) type = 'verify'
+    if (!type) return
+    const hooks = biostar.hooksLookup[type]
+    if (!hooks) return
+    for (const hook of hooks) {
+        const doc = { method: 'post', url: hook.url, data: event }
+        if (hook.secret) doc.headers = { Authorization: 'Bearer ' + hook.secret }
+        console.log('Running webhook:', hook.id, hook.url)
+        axios(doc).then(response => {
+            console.log('Response from webhook', hook.url, response.status, JSON.stringify(response.data))
+        }).catch(function (err) {
+            console.error('Run webhook error:', err, hook.id, hook.url)
+        })
     }
 }
 async function sendIotData (deviceId, metricName, timestamp, value, tags) {
