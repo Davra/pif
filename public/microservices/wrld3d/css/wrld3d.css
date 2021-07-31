@@ -51,12 +51,16 @@ html, body {
 }
 #indoor-container {
     position: absolute;
-    left: 15px;
-    top: 120px
+    left: auto;
+    right: 15px;
+    top: 150px
+}
+.wrld-navwidget-container {
+    border-top-right-radius: 6px;
 }
 #compass-container {
     position: absolute;
-    right: 20px;
+    right: 10px;
     bottom: 10px
 }
 #map {
@@ -71,7 +75,7 @@ html, body {
     border-radius: 6px;
     box-shadow: none;
 }
-.eegeo-indoor-control #eegeo-exit-interior-button-container button {
+#eegeo-exit-interior-button-container button {
     border-radius: 4px;
     color: #1976d2;
 }
@@ -270,14 +274,16 @@ button.close {
 .logo-wrap {
     position: absolute;
     top: 12px;
-    right: 12px;
-    /* z-index: 20; */
+    right: 15px;
+    z-index: 700;
     /* background-color: rgba(249, 242, 231, 0.8); */
     background-color: #fff;
     opacity: 0.9;
     padding: 5px 2px 0px 3px;
     width: 10vw;
     height: 10vw;
+    max-width: 121px;
+    max-height: 121px;
     /* border-radius: 50%; */
     border-radius: 4px;
 }
@@ -308,6 +314,7 @@ button.close {
     background-color: rgba(0, 122, 51, 0.8);
     padding: 0px 10px;
     border-radius: 5px;
+    z-index: 700;
 }
 .tilt-button {
     font-family: 'Open Sans', sans-serif;
@@ -320,7 +327,7 @@ button.close {
     left: 440px;
     height: 40px;
     width: 820px;
-    z-index: 10;
+    z-index: 800;
     opacity: 0.9;
 }
 .action-buttons .alertButton {
@@ -387,6 +394,7 @@ button.close {
     margin-left: 10px;
     cursor: pointer;
     position: relative;
+    z-index: 800;
 }
 .comfortTemperature {
     position: absolute;
@@ -420,4 +428,23 @@ button.close {
 #aqiGauge .amcharts-export-menu, #comfortGauge .amcharts-export-menu, #powerGauge .amcharts-export-menu {
     display: none;
 }
-
+.show-directions {
+    display: none;
+    position: absolute;
+    top: 120px;
+    left: 0;
+    width: 46px;
+    height: 46px;
+    z-index: 99;
+    border-bottom-right-radius: 4px;
+    border-top-right-radius: 4px;
+    border: none;
+    opacity: 0.9;
+    color: #1976d2;
+    background-color: #fff;
+    cursor: pointer;
+    font-size: 24px;
+}
+.show-directions:hover {
+    background-color: #f4f4f4;
+}

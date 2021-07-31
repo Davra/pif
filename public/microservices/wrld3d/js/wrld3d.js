@@ -1,16 +1,54 @@
-/* global AmCharts, L, WrldCompassControl, WrldIndoorControl, WrldSearchbar, WrldMarkerController */
+/* global AmCharts, L, WrldCompassControl, WrldIndoorControl, WrldMarkerController, WrldNavigation, WrldRouteView, WrldSearchbar */
 // https://maps.wrld3d.com/?lat=24.760670&lon=46.639152&zoom=14.868738475598787&coverage_tree_manifest=https://cdn-webgl.eegeo.com/coverage-trees/vjsdavra/v38/manifest.bin.gz
 // https://mapdesigner.wrld3d.com/poi/latest/?&coverage_tree_manifest=https://cdn-webgl.eegeo.com/coverage-trees/vjsdavra/v38/manifest.bin.gz
 var alerts = []
 $(function () {
+    var apiKey = '8d2d6eef6635955569c400073255f501'
+    var indoorId = 'EIM-45842b67-da47-484b-8d9a-34e4276f8837'
+    var startMarkerId = 9001
+    var endMarkerId = 9002
+    var startMarker = null
+    var endMarker = null
     var prefix = window.location.hostname === 'localhost' ? '' : '/microservices/wrld3d'
-    var map = L.Wrld.map('map', '8d2d6eef6635955569c400073255f501', {
+    var map = L.Wrld.map('map', apiKey, {
         // center: [37.7952, -122.4028],
         center: [24.763289081785917, 46.63878573585767], // Riyadh
         zoom: 17,
         indoorsEnabled: true,
         coverageTreeManifest: 'https://cdn-webgl.eegeo.com/coverage-trees/vjsdavra/v38/manifest.bin.gz'
     })
+
+    var navigation = new WrldNavigation('navigation-container', map, apiKey)
+    var routeView = new WrldRouteView(map)
+    // function clearRoute () {
+    //     routeView.clearDirections()
+    // }
+    function findRoute () {
+        // var startLocation = WrldNavigation.buildLocation('Meeting Room 2.1', 24.762709, 46.6385792, indoorId, 0)
+        // var endLocation = WrldNavigation.buildLocation('Meeting Room 2.3', 24.7631257, 46.6388835, indoorId, 0)
+        // var endLocation = WrldNavigation.buildLocation('HVAC/electricity 3.2', 24.7632335, 46.6388565, indoorId, 1)
+        var startLocation = WrldNavigation.buildLocation('Start', startMarker._latlng.lat, startMarker._latlng.lng, indoorId, startMarker.floorIndex)
+        var endLocation = WrldNavigation.buildLocation('Finish', endMarker._latlng.lat, endMarker._latlng.lng, indoorId, endMarker.floorIndex)
+        navigation.setStartLocation(startLocation)
+        navigation.setEndLocation(endLocation)
+        navigation.findRoute(startLocation, endLocation, findRouteCallback)
+    }
+    function findRouteCallback (result) {
+        if (result.route) {
+            navigation.buildDirectionsForRoute(result.route, buildDirectionsCallback)
+        }
+    }
+    function buildDirectionsCallback (result) {
+        if (result.directions) {
+            markerController.removeMarker(endMarker) // route shows its own start/finish markers
+            markerController.removeMarker(startMarker)
+            routeView.setDirections(result.directions)
+            navigation.setDirections(result.directions)
+            navigation.setRouteDuration(result.route.routeDuration)
+            $('.show-directions').show()
+        }
+    }
+
     map.themes.setTheme(
         L.Wrld.themes.season.Summer,
         L.Wrld.themes.time.Day,
@@ -20,7 +58,7 @@ $(function () {
     new WrldIndoorControl('indoor-container', map) // eslint-disable-line no-new
     // https://www.wrld3d.com/wrld.js/latest/docs/api/Widgets/WrldMarkerController/#iconkey-values
     var searchbarConfig = {
-        apiKey: '8d2d6eef6635955569c400073255f501',
+        apiKey: apiKey,
         skipYelpSearch: true,
         overrideIndoorSearchMenuItems: true,
         outdoorSearchMenuItems: [
@@ -59,8 +97,6 @@ $(function () {
     map.indoors.on('indoormapenter', function (e) {
         // console.log('Entered an indoor map')
         $('#wrld-indoor-map-watermark0').hide()
-        // $('.eegeo-indoor-control')[0].style.height = 147
-        // $('.eegeo-floor-slider')[0].style.height = 81
         // the floor slider sets 3D mode on mousedown, so reflect the status here
         $('.eegeo-floor-slider-thumb').mousedown(function () {
             $('.tilt-button').attr('data-mode', '3d')
@@ -77,17 +113,66 @@ $(function () {
                 pendingMarkerId = 0
             }, 1000)
         }
+        // findRoute()
     })
-    map.indoors.on('indoormapfloorchange', function (e) {
-        console.log('Floor changed on indoor map')
-        if (pendingMarkerId) {
-            setTimeout(function () {
-                markerController.showMarker(pendingMarkerId)
-                markerController.openPoiView(pendingMarkerId)
-                pendingMarkerId = 0
-            }, 1000)
+    // var marker = markerController.addMarker(markerId, [56.459941, -2.978211], { iconKey: 'nav_start' })
+    // var marker = markerController.addMarker(markerId, [56.459941, -2.978211], { iconKey: 'nav_finish' })
+    // https://cdn-webgl.wrld3d.com/wrldjs/addons/navigation/v305/resources/small_depart.svg
+    // https://cdn-webgl.wrld3d.com/wrldjs/addons/navigation/v305/resources/small_arrive.svg
+    // https://cdn-webgl.wrld3d.com/wrldjs/addons/navigation/v305/resources/searchbox_destination.svg
+    // https://cdn-webgl.wrld3d.com/wrld-search/latest/assets/svg/icon1_nav_finish.svg
+    // map.indoors.on('indoorentityclick', function (e) {
+    //     console.log('########################indoorentityclick', e)
+    // })
+    map.on('click', function (e) {
+        // console.log('########################click', e)
+        if (!map.indoors.isIndoors()) return
+        if (endMarker) { // third click clears the route
+            endMarker = null
+            startMarker = null
+            routeView.clearDirections()
+            $('.show-directions').hide()
+            return
         }
+        var floorIndex = map.indoors.getFloor().getFloorIndex()
+        var poiView = { title: 'Click somewhere else to find route' }
+        if (startMarker) {
+            endMarker = markerController.addMarker(endMarkerId, e.latlng, { floorIndex: floorIndex, iconKey: 'nav_finish' })
+            endMarker.floorIndex = floorIndex
+            endMarker.on('click', function (e) { markerController.selectMarker(endMarker) })
+            findRoute()
+        }
+        else {
+            startMarker = markerController.addMarker(startMarkerId, e.latlng, { floorIndex: floorIndex, iconKey: 'nav_start', poiView })
+            startMarker.on('click', function (e) { markerController.selectMarker(startMarker) })
+            startMarker.floorIndex = floorIndex
+        }
+        // console.log('########################marker', marker)
     })
+    // var mouseDownPoint = null
+    // function onMouseDown (event) {
+    //     mouseDownPoint = event.layerPoint
+    // }
+    // function onMouseUp (event) {
+    //     var mouseUpPoint = event.layerPoint
+    //     var mouseMoved = mouseUpPoint.distanceTo(mouseDownPoint) > 5
+    //     if (!mouseMoved) {
+    //         var latlng = event.latlng
+    //         var marker = L.marker(latlng).addTo(map)
+    //     }
+    // }
+    // map.on('mousedown', onMouseDown)
+    // map.on('mouseup', onMouseUp)
+    // map.indoors.on('indoormapfloorchange', function (e) {
+    //     console.log('Floor changed on indoor map')
+    //     if (pendingMarkerId) {
+    //         setTimeout(function () {
+    //             markerController.showMarker(pendingMarkerId)
+    //             markerController.openPoiView(pendingMarkerId)
+    //             pendingMarkerId = 0
+    //         }, 1000)
+    //     }
+    // })
     $('.tilt-button').click(function (e) {
         e.preventDefault()
         var mode = $(this).attr('data-mode')
@@ -113,6 +198,9 @@ $(function () {
         var zoom = map.getZoom()
         var center = map.getCenter()
         map.setView(center, zoom - 1)
+    })
+    $('.show-directions').click(function (e) {
+        navigation.openControl()
     })
     searchbar.on('searchresultselect', handleResult)
 
@@ -223,21 +311,6 @@ $(function () {
             }
         }
     }
-    // function goToResultXXX (event) {
-    //     markerController.openPoiView(event.result.sourceId)
-    //     if (!map.indoors.isIndoors()) {
-    //         map.indoors.enter(event.result.location.indoorId, {
-    //             animate: false
-    //         })
-    //         pendingFloorIndex = event.result.location.floorIndex
-    //     }
-    //     else {
-    //         var floorIndex = map.indoors.getFloor().getFloorIndex()
-    //         if (event.result.location.floorIndex !== floorIndex) map.indoors.setFloor(event.result.location.floorIndex)
-    //     }
-
-    //     // map.setView(event.result.location.latLng, 15);
-    // }
     function formatTimestamp (date, format) {
         if (!date) return ''
         var y = date.getFullYear()
@@ -253,9 +326,9 @@ $(function () {
         return (y + ds + M0 + ds + d0 + ' ' + h + ':' + m)
     }
     alerts = [
-        { id: 3000365, title: 'HVAC/lighting/electricity 2.1', subtitle: 'Beside Huddle Rooms', tags: 'electricity_meter', lat: 24.7628846, lon: 46.6387049, height_offset: 0, indoor: true, indoor_id: 'EIM-45842b67-da47-484b-8d9a-34e4276f8837', floor_id: 0, user_data: {} },
-        // { id: 3000356, title: 'Air quality 2.1', subtitle: 'Street Café', tags: 'air_quality_good air_quality', lat: 24.7627937, lon: 46.638645, height_offset: 0, indoor: true, indoor_id: 'EIM-45842b67-da47-484b-8d9a-34e4276f8837', floor_id: 0, user_data: {} },
-        { id: 3000368, title: 'Fire control panel 3.1', subtitle: 'Behind HiTech Corner', tags: 'fire_extinguisher', lat: 24.7629645, lon: 46.6386773, height_offset: 0, indoor: true, indoor_id: 'EIM-45842b67-da47-484b-8d9a-34e4276f8837', floor_id: 1, user_data: {} }
+        { id: 3000365, title: 'HVAC/lighting/electricity 2.1', subtitle: 'Beside Huddle Rooms', tags: 'electricity_meter', lat: 24.7628846, lon: 46.6387049, height_offset: 0, indoor: true, indoor_id: indoorId, floor_id: 0, user_data: {} },
+        // { id: 3000356, title: 'Air quality 2.1', subtitle: 'Street Café', tags: 'air_quality_good air_quality', lat: 24.7627937, lon: 46.638645, height_offset: 0, indoor: true, indoor_id: indoorId, floor_id: 0, user_data: {} },
+        { id: 3000368, title: 'Fire control panel 3.1', subtitle: 'Behind HiTech Corner', tags: 'fire_extinguisher', lat: 24.7629645, lon: 46.6386773, height_offset: 0, indoor: true, indoor_id: indoorId, floor_id: 1, user_data: {} }
     ]
     var now = new Date()
     alerts.forEach(function (alert, i) {
@@ -571,7 +644,7 @@ $(function () {
             }
         }
     }
-    // var poiApi = new WrldPoiApi('8d2d6eef6635955569c400073255f501')
+    // var poiApi = new WrldPoiApi(apiKey)
     // var radius = 1000
     // var maxResults = 10
     // var options = { range: radius, number: maxResults }
@@ -588,7 +661,7 @@ $(function () {
     // })
 
     /*
-    var poiApi = new WrldPoiApi('8d2d6eef6635955569c400073255f501');
+    var poiApi = new WrldPoiApi(apiKey);
     var markers = [];
 
     function displaySearchResults(success, results) {

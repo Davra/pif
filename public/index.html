@@ -15,6 +15,8 @@
     <script src="https://cdn-webgl.wrld3d.com/wrldjs/addons/indoor_control/latest/indoor_control.js"></script>
     <script src="https://cdn-webgl.wrld3d.com/wrldjs/addons/compass_control/latest/compass_control.js"></script>
     <script src="https://cdn-webgl.wrld3d.com/wrldjs/addons/marker_controller/latest/marker_controller.js"></script>
+    <script src="https://cdn-webgl.wrld3d.com/wrldjs/addons/navigation/latest/navigation.js"></script>
+    <script src="https://cdn-webgl.wrld3d.com/wrldjs/addons/routeview/latest/routeview.js"></script>
     <script src="/ui/vendors/amcharts/amcharts/amcharts.js"></script>  
     <script src="/ui/vendors/amcharts/amcharts/gauge.js"></script>  
     <script src="/ui/vendors/amcharts/amcharts/plugins/export/export.min.js"></script>
@@ -32,9 +34,7 @@
         </div>
     </div>
     <div id="searchbar-container" class="wrld-widget-container"></div>
-    <!-- <div id="tilt-button-container" class="tilt-button-container">
-        <button class="ripple-button tilt-button" data-mode="3d">2D</button>
-    </div> -->
+    <button class="show-directions" title="Show directions"><i class="fas fa-arrow-right"></i></button>
     <div class="action-buttons">
         <button type="button" class="alertButton" title="Show/hide alerts"><img src="/microservices/wrld3d/img/bell.svg" alt="Bell image"/><div class="alertsCount badge bg-red">2</div></button>
         <button type="button" class="aqiButton" title="Drill in dashboard coming soon..."><div id="aqiGauge"></div><div class="aqiTitle">AQI</div></button>
@@ -45,7 +45,8 @@
         </button>
         <button type="button" class="powerButton" title="Drill in dashboard coming soon..."><div id="powerGauge"></div><div class="powerTitle">kWh/m2/year</div></button>
     </div>
-    <div id="indoor-container"></div>
+    <div id="indoor-container" class="wrld-widget-container"></div>
+    <div id="navigation-container" style="position: absolute; left: 0px; right: 0px; top: 117px; bottom: 0px; overflow: hidden;"></div>
     <div id="compass-container"></div>
     <div id="alertsDiv">
         <h4 class="divToggle">
