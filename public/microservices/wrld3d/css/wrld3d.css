@@ -448,3 +448,9 @@ button.close {
 .show-directions:hover {
     background-color: #f4f4f4;
 }
+.wrld-setup-journey-panel .nav-location-container .clear-icon {
+    cursor: default;
+}
+.wrld-setup-journey-panel .switch-fields-button {
+    cursor: pointer;
+}

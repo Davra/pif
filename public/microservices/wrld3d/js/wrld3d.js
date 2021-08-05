@@ -5,10 +5,10 @@ var alerts = []
 $(function () {
     var apiKey = '8d2d6eef6635955569c400073255f501'
     var indoorId = 'EIM-45842b67-da47-484b-8d9a-34e4276f8837'
-    var startMarkerId = 9001
-    var endMarkerId = 9002
     var startMarker = null
     var endMarker = null
+    var route = null
+    var routeMarker = null
     var prefix = window.location.hostname === 'localhost' ? '' : '/microservices/wrld3d'
     var map = L.Wrld.map('map', apiKey, {
         // center: [37.7952, -122.4028],
@@ -20,6 +20,8 @@ $(function () {
 
     var navigation = new WrldNavigation('navigation-container', map, apiKey)
     var routeView = new WrldRouteView(map)
+    var startLocation
+    var endLocation
     // function clearRoute () {
     //     routeView.clearDirections()
     // }
@@ -27,25 +29,71 @@ $(function () {
         // var startLocation = WrldNavigation.buildLocation('Meeting Room 2.1', 24.762709, 46.6385792, indoorId, 0)
         // var endLocation = WrldNavigation.buildLocation('Meeting Room 2.3', 24.7631257, 46.6388835, indoorId, 0)
         // var endLocation = WrldNavigation.buildLocation('HVAC/electricity 3.2', 24.7632335, 46.6388565, indoorId, 1)
-        var startLocation = WrldNavigation.buildLocation('Start', startMarker._latlng.lat, startMarker._latlng.lng, indoorId, startMarker.floorIndex)
-        var endLocation = WrldNavigation.buildLocation('Finish', endMarker._latlng.lat, endMarker._latlng.lng, indoorId, endMarker.floorIndex)
+        startLocation = WrldNavigation.buildLocation('Start', startMarker._latlng.lat, startMarker._latlng.lng, indoorId, startMarker.options.indoorMapFloorId)
+        endLocation = WrldNavigation.buildLocation('Finish', endMarker._latlng.lat, endMarker._latlng.lng, indoorId, endMarker.options.indoorMapFloorId)
         navigation.setStartLocation(startLocation)
         navigation.setEndLocation(endLocation)
         navigation.findRoute(startLocation, endLocation, findRouteCallback)
     }
     function findRouteCallback (result) {
         if (result.route) {
+            route = result.route
             navigation.buildDirectionsForRoute(result.route, buildDirectionsCallback)
         }
     }
+    function switchLocations () {
+        var startLocationSave = endLocation
+        endLocation = startLocation
+        startLocation = startLocationSave
+        navigation.setStartLocation(startLocation)
+        navigation.setEndLocation(endLocation)
+        navigation.findRoute(startLocation, endLocation, findRouteCallback)
+    }
+    $('.wrld-setup-journey-panel .nav-location-container .clear-icon').attr('disabled', 'disabled')
+    $('.wrld-setup-journey-panel .switch-fields-button').click(switchLocations)
     function buildDirectionsCallback (result) {
         if (result.directions) {
-            markerController.removeMarker(endMarker) // route shows its own start/finish markers
-            markerController.removeMarker(startMarker)
+            endMarker.removeFrom(map) // route shows its own start/finish markers
+            startMarker.removeFrom(map)
             routeView.setDirections(result.directions)
             navigation.setDirections(result.directions)
             navigation.setRouteDuration(result.route.routeDuration)
+            $('.wrld-navwidget-container .direction-row').each(function (i, row) {
+                $(row).attr('data-index', i)
+                $(row).click(stepClick)
+                // console.log(i, row)
+            })
             $('.show-directions').show()
+        }
+    }
+    function stepClick () {
+        var index = $(this).attr('data-index')
+        var step = route.sections[0].steps[index]
+        // console.log(step)
+        if (step) {
+            if (routeMarker) routeMarker.removeFrom(map)
+            var r = '<span style="background-color: #ff0000;' + // #dd4b39 is too subtle
+                'width: 2rem;height: 2rem;display: block;' +
+                'left: -1.0rem;top: -1.0rem;position: relative;' +
+                'border-radius: 2rem 2rem 0;transform: rotate(45deg);border: 1px solid #FFFFFF"></span>'
+            var icon = L.divIcon({
+                className: 'red-marker',
+                iconAnchor: [0, 24],
+                popupAnchor: [0, -34],
+                // iconSize: null,
+                html: r
+            })
+            routeMarker = L.marker(step.directions.location, {
+                icon: icon,
+                // title: 'This is indoors!',
+                zIndexOffset: 1000,
+                indoorMapId: step.indoorMapId,
+                indoorMapFloorId: step.indoorMapFloorId
+            }).addTo(map)
+            var floorIndex = map.indoors.getFloor().getFloorIndex()
+            if (step.indoorMapFloorId !== floorIndex) {
+                map.indoors.setFloor(step.indoorMapFloorId)
+            }
         }
     }
 
@@ -124,55 +172,47 @@ $(function () {
     // map.indoors.on('indoorentityclick', function (e) {
     //     console.log('########################indoorentityclick', e)
     // })
-    map.on('click', function (e) {
-        // console.log('########################click', e)
+    function onMapClick (e) {
         if (!map.indoors.isIndoors()) return
         if (endMarker) { // third click clears the route
             endMarker = null
             startMarker = null
+            if (routeMarker) routeMarker.removeFrom(map)
+            routeMarker = null
             routeView.clearDirections()
+            navigation.closeControl()
             $('.show-directions').hide()
             return
         }
-        var floorIndex = map.indoors.getFloor().getFloorIndex()
-        var poiView = { title: 'Click somewhere else to find route' }
         if (startMarker) {
-            endMarker = markerController.addMarker(endMarkerId, e.latlng, { floorIndex: floorIndex, iconKey: 'nav_finish' })
-            endMarker.floorIndex = floorIndex
-            endMarker.on('click', function (e) { markerController.selectMarker(endMarker) })
+            endMarker = createMarker(e.latlng, 'https://cdn-webgl.wrld3d.com/wrldjs/addons/navigation/v305/resources/small_arrive.svg')
+            endMarker.addTo(map)
             findRoute()
         }
         else {
-            startMarker = markerController.addMarker(startMarkerId, e.latlng, { floorIndex: floorIndex, iconKey: 'nav_start', poiView })
-            startMarker.on('click', function (e) { markerController.selectMarker(startMarker) })
-            startMarker.floorIndex = floorIndex
+            startMarker = createMarker(e.latlng, 'https://cdn-webgl.wrld3d.com/wrldjs/addons/navigation/v305/resources/small_depart.svg')
+            startMarker.addTo(map)
+            startMarker.bindPopup('Right-click somewhere else to find route').openPopup()
         }
-        // console.log('########################marker', marker)
-    })
-    // var mouseDownPoint = null
-    // function onMouseDown (event) {
-    //     mouseDownPoint = event.layerPoint
-    // }
-    // function onMouseUp (event) {
-    //     var mouseUpPoint = event.layerPoint
-    //     var mouseMoved = mouseUpPoint.distanceTo(mouseDownPoint) > 5
-    //     if (!mouseMoved) {
-    //         var latlng = event.latlng
-    //         var marker = L.marker(latlng).addTo(map)
-    //     }
-    // }
-    // map.on('mousedown', onMouseDown)
-    // map.on('mouseup', onMouseUp)
-    // map.indoors.on('indoormapfloorchange', function (e) {
-    //     console.log('Floor changed on indoor map')
-    //     if (pendingMarkerId) {
-    //         setTimeout(function () {
-    //             markerController.showMarker(pendingMarkerId)
-    //             markerController.openPoiView(pendingMarkerId)
-    //             pendingMarkerId = 0
-    //         }, 1000)
-    //     }
-    // })
+    }
+    function createMarker (latlng, url) {
+        var containerUrl = 'https://cdn-webgl.wrld3d.com/wrld-search/latest/assets/svg/icon1_nav_container.svg'
+        var r = '<div class="wrld-routeview-marker-container" style="background-image: url(' + containerUrl + ')"></div>' +
+                '<div class="wrld-routeview-marker-icon" style="background-image: url(' + url + ')"></div>'
+        var icon = L.divIcon({
+            className: 'wrld-routeview-marker',
+            popupAnchor: [0, -34],
+            iconSize: null,
+            html: r
+        })
+        var floorIndex = map.indoors.getFloor().getFloorIndex()
+        return L.marker(latlng, {
+            icon: icon,
+            indoorMapId: indoorId,
+            indoorMapFloorId: floorIndex
+        })
+    }
+    map.on('contextmenu', onMapClick)
     $('.tilt-button').click(function (e) {
         e.preventDefault()
         var mode = $(this).attr('data-mode')
@@ -205,7 +245,7 @@ $(function () {
     searchbar.on('searchresultselect', handleResult)
 
     function handleResult (event) {
-        console.log(JSON.stringify(event.result.data))
+        // console.log(JSON.stringify(event.result.data))
         goToResult(event.result.data)
     }
     function goToResult (result) {

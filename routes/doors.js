@@ -103,6 +103,7 @@ exports.init = async function (app) {
     })
     app.get('/door/usage/stop', async (req, res) => {
         doorUsageStop()
+        console.log('Door usage stopping...')
         res.send({ success: true, message: 'Door usage stopping...' })
     })
     doorUsageStart()
