@@ -212,7 +212,20 @@ $(function () {
             indoorMapFloorId: floorIndex
         })
     }
-    map.on('contextmenu', onMapClick)
+    var mouseDownPoint = null
+    function onMouseDown (event) {
+        if (event.originalEvent.button === 2) mouseDownPoint = event.layerPoint // right click only
+    }
+    function onMouseUp (event) {
+        if (!mouseDownPoint) return
+        var mouseUpPoint = event.layerPoint
+        var mouseMoved = mouseUpPoint.distanceTo(mouseDownPoint) > 0
+        mouseDownPoint = null
+        if (!mouseMoved) onMapClick(event)
+    }
+    map.on('mousedown', onMouseDown)
+    map.on('mouseup', onMouseUp)
+    // map.on('contextmenu', onMapClick)
     $('.tilt-button').click(function (e) {
         e.preventDefault()
         var mode = $(this).attr('data-mode')

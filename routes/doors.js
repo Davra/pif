@@ -117,7 +117,7 @@ async function doorCapability (id) {
     console.log('Door ID: ' + id)
     try {
         const response = await axios({
-            method: 'get',
+            method: 'post',
             url: config.biostar.url + '/api/devices/capability',
             headers: {
                 'bs-session-id': await security.getBioStarSessionId()
