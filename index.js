@@ -24,11 +24,17 @@ axios({
     require('./routes/security.js').init(app) // initialise security first
     require('./routes/doors.js').init(app)
 }).catch(function (err) {
-    console.error('Runtime config error: ' + err)
+    console.error('Runtime config error:', err.response)
     process.exit(1)
 })
-app.use(express.static(path.join(__dirname, 'public')))
+process.on('unhandledRejection', (err, promise) => {
+    console.error('**************************************************************')
+    console.error('****************** Unhandled rejection ***********************')
+    console.error('**************************************************************')
+    console.error('Reason: ', err)
+})
 
+app.use(express.static(path.join(__dirname, 'public')))
 app.get('/', (req, res) => {
     res.send('Hello World!')
 })

@@ -113,8 +113,24 @@ function getUserId (req, config) {
     if (!userId && config.davra.env === 'dev') userId = 'admin' // default to admin for testing
     return userId
 }
+async function deviceList () {
+    try {
+        const response = await axios({
+            method: 'get',
+            url: config.davra.url + '/api/v1/devices',
+            headers: {
+                Authorization: 'Bearer ' + config.davra.token
+            }
+        })
+        return response.data.records
+    }
+    catch (err) {
+        console.error('deviceList error:', err.response)
+        return null
+    }
+}
 async function doorCapability (id) {
-    console.log('Door ID: ' + id)
+    console.log('Door ID:', id)
     try {
         const response = await axios({
             method: 'post',
@@ -128,39 +144,9 @@ async function doorCapability (id) {
         return response.data.DeviceTypeCollection.rows[0]
     }
     catch (err) {
-        console.error('Door capabilities error: ' + err)
+        console.error('Door capabilities error:', err.response)
         return null
     }
-}
-async function doorCreate () {
-    console.log('doorCreate running...')
-    var count = 0
-    for (const door of await doorList()) {
-        try {
-            const response = await axios({
-                method: 'post',
-                url: config.davra.url + '/api/v1/devices',
-                headers: {
-                    Authorization: 'Bearer ' + config.davra.token
-                },
-                data: {
-                    serialNumber: door.id,
-                    name: door.name
-                }
-            })
-            if (response.status !== 200) {
-                console.error('doorCreate error: ', response.status, JSON.stringify(response.data))
-                continue
-            }
-            count++
-            console.log('doorCreate: ' + door.name)
-        }
-        catch (err) {
-            console.error('doorCreate error: ' + err)
-        }
-    }
-    console.log('doorCreate total: ' + count)
-    return count
 }
 async function doorConnect (door, event, eventType) {
     if (eventType.name.indexOf('_DISCONNECT') >= 0) { // DEVICE_, LINK_, RS485_, TCP_
@@ -204,6 +190,37 @@ async function doorConnect (door, event, eventType) {
         }
     }
 }
+async function doorCreate () {
+    console.log('doorCreate running...')
+    var count = 0
+    const devices = {}
+    for (const device of await deviceList()) {
+        devices[device.serialNumber] = device
+    }
+    for (const door of await doorList()) {
+        if (devices[door.id]) continue // door already created
+        try {
+            await axios({
+                method: 'post',
+                url: config.davra.url + '/api/v1/devices',
+                headers: {
+                    Authorization: 'Bearer ' + config.davra.token
+                },
+                data: {
+                    serialNumber: door.id,
+                    name: door.name
+                }
+            })
+            count++
+            console.log('doorCreate:', door.id, door.name)
+        }
+        catch (err) {
+            console.error('doorCreate error:', err.response)
+        }
+    }
+    console.log('doorCreate total:', count)
+    return count
+}
 async function doorList () {
     console.log('doorList running...')
     try {
@@ -218,15 +235,15 @@ async function doorList () {
             console.error('No doors returned')
             return []
         }
-        console.log('Doors: ' + response.data.DeviceCollection.rows.length)
+        console.log('Doors:', response.data.DeviceCollection.rows.length)
         return response.data.DeviceCollection.rows
     }
     catch (err) {
-        console.error('Door list error: ' + err)
+        console.error('Door list error:', err.response)
     }
 }
 async function doorStatus (id) {
-    console.log('Door ID: ' + id)
+    console.log('Door ID:', id)
     const door = biostar.doors ? biostar.doors[id] : null
     const status = door ? door.status : '0'
     return status
@@ -280,9 +297,9 @@ async function doorUsage () {
             continue
         }
         count++
-        console.log('doorUsage: ', event.datetime, event.id, event.event_type_id.code, eventType.name)
+        console.log('doorUsage:', event.datetime, event.id, event.event_type_id.code, eventType.name)
     }
-    console.log('doorUsage total: ' + count)
+    console.log('doorUsage total:', count)
     // console.log(path.join(__dirname, '/../config/config.json'))
     // fs.writeFileSync(path.join(__dirname, '/../config/config.json'), JSON.stringify(config, null, 4))
     updateConfig('biostar.startTime', config.biostar.startTime)
@@ -304,11 +321,11 @@ async function eventTypeList () {
             console.error('No eventTypes returned')
             return []
         }
-        console.log('EventTypes: ' + response.data.EventTypeCollection.rows.length)
+        console.log('EventTypes:', response.data.EventTypeCollection.rows.length)
         return response.data.EventTypeCollection.rows
     }
     catch (err) {
-        console.error('EventType list error: ' + err)
+        console.error('EventType list error:', err.response)
     }
 }
 async function eventList () {
@@ -341,11 +358,11 @@ async function eventList () {
             console.error('No events returned')
             return []
         }
-        console.log('Events: ' + response.data.EventCollection.rows.length)
+        console.log('Events:', response.data.EventCollection.rows.length)
         return response.data.EventCollection.rows
     }
     catch (err) {
-        console.error('Event list error: ' + err)
+        console.error('Event list error:', err.response)
     }
 }
 async function hookList () {
@@ -365,7 +382,7 @@ async function hookList () {
         updateHooksLookup()
     }
     catch (err) {
-        console.error('hookList error: ' + err)
+        console.error('hookList error:', err.response)
         process.exit(1)
     }
 }
@@ -390,7 +407,7 @@ function runWebhooks (name, event) {
 }
 async function sendIotData (deviceId, metricName, timestamp, value, tags) {
     try {
-        const response = await axios({
+        await axios({
             method: 'put',
             url: config.davra.url + '/api/v1/iotdata',
             headers: {
@@ -405,13 +422,9 @@ async function sendIotData (deviceId, metricName, timestamp, value, tags) {
                 tags: tags
             }]
         })
-        if (response.status !== 200) {
-            console.error('sendIotData error: ', response.status, JSON.stringify(response.data))
-            return false
-        }
     }
     catch (err) {
-        console.error('sendIotData error: ' + err)
+        console.error('sendIotData error:', err.response)
         return false
     }
     return true
@@ -426,13 +439,12 @@ async function updateConfig (key, value) {
             headers: {
                 Authorization: 'Bearer ' + config.davra.token
             },
-            data: data,
-            validateStatus: status => status === 200
+            data: data
         })
         console.log('updateConfig:', config.uuid, key, value)
     }
     catch (err) {
-        console.error('updateConfig error: ' + err)
+        console.error('updateConfig error:', err.response)
     }
 }
 async function updateHooksLookup () {
@@ -455,13 +467,12 @@ async function updateHooks (userId, hooks) {
             headers: {
                 Authorization: 'Bearer ' + config.davra.token
             },
-            data: data,
-            validateStatus: status => status === 200
+            data: data
         })
         console.log('updateHooks:', biostar.hooksUuid, userId, hooks)
         updateHooksLookup()
     }
     catch (err) {
-        console.error('updateHooks error: ' + err)
+        console.error('updateHooks error:', err.response)
     }
 }

@@ -4,7 +4,7 @@
 var alerts = []
 $(function () {
     var apiKey = '8d2d6eef6635955569c400073255f501'
-    var indoorId = 'EIM-45842b67-da47-484b-8d9a-34e4276f8837'
+    var indoorMapId = 'EIM-45842b67-da47-484b-8d9a-34e4276f8837'
     var startMarker = null
     var endMarker = null
     var route = null
@@ -26,11 +26,11 @@ $(function () {
     //     routeView.clearDirections()
     // }
     function findRoute () {
-        // var startLocation = WrldNavigation.buildLocation('Meeting Room 2.1', 24.762709, 46.6385792, indoorId, 0)
-        // var endLocation = WrldNavigation.buildLocation('Meeting Room 2.3', 24.7631257, 46.6388835, indoorId, 0)
-        // var endLocation = WrldNavigation.buildLocation('HVAC/electricity 3.2', 24.7632335, 46.6388565, indoorId, 1)
-        startLocation = WrldNavigation.buildLocation('Start', startMarker._latlng.lat, startMarker._latlng.lng, indoorId, startMarker.options.indoorMapFloorId)
-        endLocation = WrldNavigation.buildLocation('Finish', endMarker._latlng.lat, endMarker._latlng.lng, indoorId, endMarker.options.indoorMapFloorId)
+        // var startLocation = WrldNavigation.buildLocation('Meeting Room 2.1', 24.762709, 46.6385792, indoorMapId, 0)
+        // var endLocation = WrldNavigation.buildLocation('Meeting Room 2.3', 24.7631257, 46.6388835, indoorMapId, 0)
+        // var endLocation = WrldNavigation.buildLocation('HVAC/electricity 3.2', 24.7632335, 46.6388565, indoorMapId, 1)
+        startLocation = WrldNavigation.buildLocation('Start', startMarker._latlng.lat, startMarker._latlng.lng, indoorMapId, startMarker.options.indoorMapFloorId)
+        endLocation = WrldNavigation.buildLocation('Finish', endMarker._latlng.lat, endMarker._latlng.lng, indoorMapId, endMarker.options.indoorMapFloorId)
         navigation.setStartLocation(startLocation)
         navigation.setEndLocation(endLocation)
         navigation.findRoute(startLocation, endLocation, findRouteCallback)
@@ -187,6 +187,7 @@ $(function () {
         if (startMarker) {
             endMarker = createMarker(e.latlng, 'https://cdn-webgl.wrld3d.com/wrldjs/addons/navigation/v305/resources/small_arrive.svg')
             endMarker.addTo(map)
+            endMarker.bindPopup('Finding route...').openPopup()
             findRoute()
         }
         else {
@@ -208,24 +209,80 @@ $(function () {
         var floorIndex = map.indoors.getFloor().getFloorIndex()
         return L.marker(latlng, {
             icon: icon,
-            indoorMapId: indoorId,
+            indoorMapId: indoorMapId,
             indoorMapFloorId: floorIndex
         })
     }
+    function onInitialStreamingComplete () {
+        L.Wrld.indoorMapFloorOutlines.indoorMapFloorOutlineInformation(indoorMapId, 0).addTo(map)
+        L.Wrld.indoorMapFloorOutlines.indoorMapFloorOutlineInformation(indoorMapId, 1).addTo(map)
+    }
+    var floorOutlines = {}
+    function onIndoormapFloorOutlineInformationLoaded (event) {
+        var outlineInformation = event.indoorMapFloorOutlineInformation
+        var indoorMapFloorId = outlineInformation.getIndoorMapFloorId()
+        var polygons = outlineInformation.getIndoorMapFloorOutlinePolygons()
+        floorOutlines[indoorMapId + '.' + indoorMapFloorId] = []
+        polygons.forEach(function (polygon) {
+            var polyPoints = []
+            polyPoints.push(polygon.getOuterRing().getLatLngPoints())
+            polygon.getInnerRings().forEach(function (innerRing) {
+                polyPoints.push(innerRing.getLatLngPoints())
+            })
+            floorOutlines[indoorMapId + '.' + indoorMapFloorId].push(polyPoints)
+            // draw the outline
+            // var polygonOptions = { indoorMapId: indoorMapId, indoorMapFloorId: indoorMapFloorId }
+            // L.polygon(polyPoints, polygonOptions).addTo(map)
+        })
+    }
+    function isPointInsidePolygon (latlng, polygons) {
+        var x = latlng.lat
+        var y = latlng.lng
+        var inside = false
+        // the first polygon is the outer ring, any subsequent polygons are holes (donuts) within it
+        for (var m = 0, n = polygons.length; m < n; m++) {
+            var polyPoints = polygons[m]
+            for (var i = 0, j = polyPoints.length - 1; i < polyPoints.length; j = i++) {
+                var xi = polyPoints[i].lat
+                var yi = polyPoints[i].lng
+                var xj = polyPoints[j].lat
+                var yj = polyPoints[j].lng
+                var intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)
+                if (intersect) inside = !inside
+            }
+        }
+        return inside
+    }
     var mouseDownPoint = null
     function onMouseDown (event) {
-        if (event.originalEvent.button === 2) mouseDownPoint = event.layerPoint // right click only
+        if (map.indoors.isIndoors() && event.originalEvent.button === 2) { // right click only
+            var floorIndex = map.indoors.getFloor().getFloorIndex()
+            // a floor can comprise separate islands, so see if we are inside any of them
+            var floorOutline = floorOutlines[indoorMapId + '.' + floorIndex]
+            for (var i = 0, n = floorOutline.length; i < n; i++) {
+                var polyPoints = floorOutline[i]
+                if (isPointInsidePolygon(event.latlng, polyPoints)) {
+                    mouseDownPoint = event.layerPoint
+                    event.originalEvent.preventDefault()
+                    event.originalEvent.stopPropagation()
+                    return
+                }
+            }
+        }
     }
     function onMouseUp (event) {
         if (!mouseDownPoint) return
         var mouseUpPoint = event.layerPoint
         var mouseMoved = mouseUpPoint.distanceTo(mouseDownPoint) > 0
         mouseDownPoint = null
-        if (!mouseMoved) onMapClick(event)
+        if (mouseMoved) return
+        onMapClick(event)
     }
     map.on('mousedown', onMouseDown)
     map.on('mouseup', onMouseUp)
     // map.on('contextmenu', onMapClick)
+    map.on('initialstreamingcomplete', onInitialStreamingComplete)
+    map.indoorMapFloorOutlines.on('indoormapflooroutlineinformationloaded', onIndoormapFloorOutlineInformationLoaded)
     $('.tilt-button').click(function (e) {
         e.preventDefault()
         var mode = $(this).attr('data-mode')
@@ -379,9 +436,9 @@ $(function () {
         return (y + ds + M0 + ds + d0 + ' ' + h + ':' + m)
     }
     alerts = [
-        { id: 3000365, title: 'HVAC/lighting/electricity 2.1', subtitle: 'Beside Huddle Rooms', tags: 'electricity_meter', lat: 24.7628846, lon: 46.6387049, height_offset: 0, indoor: true, indoor_id: indoorId, floor_id: 0, user_data: {} },
-        // { id: 3000356, title: 'Air quality 2.1', subtitle: 'Street Café', tags: 'air_quality_good air_quality', lat: 24.7627937, lon: 46.638645, height_offset: 0, indoor: true, indoor_id: indoorId, floor_id: 0, user_data: {} },
-        { id: 3000368, title: 'Fire control panel 3.1', subtitle: 'Behind HiTech Corner', tags: 'fire_extinguisher', lat: 24.7629645, lon: 46.6386773, height_offset: 0, indoor: true, indoor_id: indoorId, floor_id: 1, user_data: {} }
+        { id: 3000365, title: 'HVAC/lighting/electricity 2.1', subtitle: 'Beside Huddle Rooms', tags: 'electricity_meter', lat: 24.7628846, lon: 46.6387049, height_offset: 0, indoor: true, indoor_id: indoorMapId, floor_id: 0, user_data: {} },
+        // { id: 3000356, title: 'Air quality 2.1', subtitle: 'Street Café', tags: 'air_quality_good air_quality', lat: 24.7627937, lon: 46.638645, height_offset: 0, indoor: true, indoor_id: indoorMapId, floor_id: 0, user_data: {} },
+        { id: 3000368, title: 'Fire control panel 3.1', subtitle: 'Behind HiTech Corner', tags: 'fire_extinguisher', lat: 24.7629645, lon: 46.6386773, height_offset: 0, indoor: true, indoor_id: indoorMapId, floor_id: 1, user_data: {} }
     ]
     var now = new Date()
     alerts.forEach(function (alert, i) {
@@ -646,10 +703,72 @@ $(function () {
             enabled: true
         }
     })
+    AmCharts.makeChart('assetGauge', {
+        type: 'serial',
+        theme: 'light',
+        autoMargins: false,
+        marginLeft: 40,
+        marginRight: 0,
+        marginTop: 30,
+        marginBottom: 30,
+        legend: {
+            enabled: false
+        },
+        fillColors: ['green', 'red'],
+        dataProvider: [
+            { year: 'Asset', uptime: 57.0, downtime: 43.0 },
+            { year: 'Room', uptime: 81.4, downtime: 18.6 }
+        ],
+        valueAxes: [{
+            stackType: '100%',
+            axisAlpha: 0.5,
+            gridAlpha: 0
+        }],
+        graphs: [{
+            balloonText: '<b>[[title]]</b><br><span style="font-size:14px">[[category]]: <b>[[value]]%</b></span>',
+            fillColors: '#008800',
+            fillAlpha: 1,
+            // "pattern": {
+            //     "url": "https://www.amcharts.com/lib/3/patterns/black/pattern8.png",
+            //     "width": 4,
+            //     "height": 4
+            // },
+            fillAlphas: 0.8,
+            labelText: '[[value]]',
+            lineAlpha: 0.3,
+            title: 'In use',
+            type: 'column',
+            color: '#000000',
+            valueField: 'uptime'
+        }, {
+            balloonText: '<b>[[title]]</b><br><span style="font-size:14px">[[category]]: <b>[[value]]%</b></span>',
+            fillColors: '#ff0000',
+            fillAlpha: 1,
+            fillAlphas: 0.8,
+            labelText: '[[value]]',
+            lineAlpha: 0.3,
+            title: 'Idle',
+            type: 'column',
+            color: '#000000',
+            valueField: 'downtime'
+        }],
+        rotate: false,
+        categoryField: 'year',
+        categoryAxis: {
+            gridPosition: 'start',
+            axisAlpha: 0,
+            gridAlpha: 0,
+            position: 'top'
+        },
+        export: {
+            enabled: false
+        }
+    })
     // setInterval(randomValue, 2000)
     var aqiInterval = setInterval(setAqiValue, 2000)
     var comfortInterval = setInterval(setComfortValue, 2000)
     var powerInterval = setInterval(setPowerValue, 2500)
+    // var assetInterval = setInterval(setAssetValue, 3000)
     // set random value
     function setAqiValue () {
         // var value = Math.round(Math.random() * 200)
@@ -687,7 +806,7 @@ $(function () {
         var value = 84.9
         if (powerGauge) {
             if (powerGauge.arrows) {
-                if (aqiGauge.arrows[0]) {
+                if (powerGauge.arrows[0]) {
                     if (powerGauge.arrows[0].setValue) {
                         powerGauge.arrows[0].setValue(value)
                         powerGauge.axes[0].setBottomText(value + '')
@@ -697,6 +816,20 @@ $(function () {
             }
         }
     }
+    // function setAssetValue () {
+    //     var value = 84.9
+    //     if (assetGauge) {
+    //         if (assetGauge.arrows) {
+    //             if (assetGauge.arrows[0]) {
+    //                 if (assetGauge.arrows[0].setValue) {
+    //                     assetGauge.arrows[0].setValue(value)
+    //                     assetGauge.axes[0].setBottomText(value + '')
+    //                     clearInterval(assetInterval)
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
     // var poiApi = new WrldPoiApi(apiKey)
     // var radius = 1000
     // var maxResults = 10
