@@ -48,6 +48,7 @@ html, body {
 #pageDiv {
     position: relative;
     height: 100%;
+    overflow: hidden;
 }
 #indoor-container {
     position: absolute;
