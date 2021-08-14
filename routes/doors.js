@@ -42,15 +42,25 @@ exports.init = async function (app) {
         }
         res.send({ success: false, message: `Hook ${id} not found` })
     })
+    function editWebhook (req, res) {
+        const hook = { url: req.body.url, type: req.body.type }
+        if (!hook.url || !hook.type) {
+            res.send({ success: false, message: 'URL and type required for webhook' })
+            return null
+        }
+        if (hook.type !== 'disconnect' && hook.type !== 'enroll' && hook.type !== 'verify') {
+            res.send({ success: false, message: 'Type must be disconnect, enroll or verify' })
+            return null
+        }
+        return hook
+    }
     app.put('/api/biostar/hooks/:id', express.json(), async (req, res) => {
         const id = decodeURIComponent(req.params.id)
         const userId = getUserId(req, config)
         if (!userId) return res.send({ success: false, message: 'Not logged in' })
         const userHooks = biostar.hooks[userId] || []
-        const newHook = req.body
-        if (!newHook.url || !newHook.type) {
-            return res.send({ success: false, message: 'URL and type required for webhook' })
-        }
+        const newHook = editWebhook(req, res)
+        if (!newHook) return
         for (const hook of userHooks) {
             if (hook.id === id) {
                 for (const attr in newHook) { if (attr !== 'id') hook[attr] = newHook[attr] }
@@ -66,10 +76,8 @@ exports.init = async function (app) {
         if (!userId) return res.send({ success: false, message: 'Not logged in' })
         if (!biostar.hooks[userId]) biostar.hooks[userId] = []
         const userHooks = biostar.hooks[userId]
-        const newHook = req.body
-        if (!newHook.url || !newHook.type) {
-            return res.send({ success: false, message: 'URL and type required for webhook' })
-        }
+        const newHook = editWebhook(req, res)
+        if (!newHook) return
         newHook.id = uuidv4()
         userHooks.push(newHook)
         await updateHooks(userId, userHooks)
@@ -97,6 +105,10 @@ exports.init = async function (app) {
         const status = await doorStatus(id)
         res.send({ success: true, status: status })
     })
+    app.get('/door/update', async (req, res) => {
+        const count = await doorUpdate()
+        return res.send({ success: true, data: count })
+    })
     app.get('/door/usage/start', async (req, res) => {
         doorUsageStart()
         res.send({ success: true, message: 'Door usage started' })
@@ -113,11 +125,11 @@ function getUserId (req, config) {
     if (!userId && config.davra.env === 'dev') userId = 'admin' // default to admin for testing
     return userId
 }
-async function deviceList () {
+async function deviceList (type) {
     try {
         const response = await axios({
             method: 'get',
-            url: config.davra.url + '/api/v1/devices',
+            url: config.davra.url + '/api/v1/devices' + (type ? '?labels.type=' + type : ''),
             headers: {
                 Authorization: 'Bearer ' + config.davra.token
             }
@@ -208,7 +220,8 @@ async function doorCreate () {
                 },
                 data: {
                     serialNumber: door.id,
-                    name: door.name
+                    name: door.name,
+                    labels: { type: 'door' }
                 }
             })
             count++
@@ -247,6 +260,35 @@ async function doorStatus (id) {
     const door = biostar.doors ? biostar.doors[id] : null
     const status = door ? door.status : '0'
     return status
+}
+// make sure all devices have labels.type=door - this is a one-time patch
+// but shows how to update devices
+async function doorUpdate () {
+    console.log('doorUpdate running...')
+    var count = 0
+    for (const device of await deviceList()) {
+        if (!device.labels || !device.labels.type) {
+            try {
+                await axios({
+                    method: 'put',
+                    url: config.davra.url + '/api/v1/devices/' + device.UUID,
+                    headers: {
+                        Authorization: 'Bearer ' + config.davra.token
+                    },
+                    data: {
+                        labels: { type: 'door' }
+                    }
+                })
+                count++
+                console.log('doorUpdate:', device.UUID, device.serialNumber, device.name)
+            }
+            catch (err) {
+                console.error('doorUpdate error:', err.response)
+            }
+        }
+    }
+    console.log('doorUpdate total:', count)
+    return count
 }
 async function doorUsageStart () {
     biostar.stop = false
@@ -390,7 +432,7 @@ function runWebhooks (name, event) {
     var type = ''
     if (name.indexOf('_DISCONNECT') >= 0) type = 'disconnect' // DEVICE_, LINK_, RS485_, TCP_
     else if (name === 'ENROLL_SUCCESS' || name === 'UPDATE_SUCCESS') type = 'enroll'
-    else if (name.indexOf('VERIFY_SUCCESS') >= 0) type = 'verify'
+    else if (name.indexOf('IDENTIFY_SUCCESS') >= 0 || name.indexOf('VERIFY_SUCCESS') >= 0) type = 'verify'
     if (!type) return
     const hooks = biostar.hooksLookup[type]
     if (!hooks) return
