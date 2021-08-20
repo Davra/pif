@@ -90,10 +90,6 @@ exports.init = async function (app) {
         runWebhooks(req.body.name, req.body.event)
         return res.send({ success: true, message: 'Running webhooks' })
     })
-    app.get('/door/create', async (req, res) => {
-        const count = await doorCreate()
-        return res.send({ success: true, data: count })
-    })
     app.get('/door/capability/:id', async (req, res) => {
         const id = decodeURIComponent(req.params.id)
         const data = await doorCapability(id)
@@ -105,10 +101,14 @@ exports.init = async function (app) {
         const status = await doorStatus(id)
         res.send({ success: true, status: status })
     })
-    app.get('/door/update', async (req, res) => {
-        const count = await doorUpdate()
+    app.get('/door/sync', async (req, res) => {
+        const count = await doorSync()
         return res.send({ success: true, data: count })
     })
+    // app.get('/door/update', async (req, res) => {
+    //     const count = await doorUpdate()
+    //     return res.send({ success: true, data: count })
+    // })
     app.get('/door/usage/start', async (req, res) => {
         doorUsageStart()
         res.send({ success: true, message: 'Door usage started' })
@@ -202,38 +202,6 @@ async function doorConnect (door, event, eventType) {
         }
     }
 }
-async function doorCreate () {
-    console.log('doorCreate running...')
-    var count = 0
-    const devices = {}
-    for (const device of await deviceList()) {
-        devices[device.serialNumber] = device
-    }
-    for (const door of await doorList()) {
-        if (devices[door.id]) continue // door already created
-        try {
-            await axios({
-                method: 'post',
-                url: config.davra.url + '/api/v1/devices',
-                headers: {
-                    Authorization: 'Bearer ' + config.davra.token
-                },
-                data: {
-                    serialNumber: door.id,
-                    name: door.name,
-                    labels: { type: 'door' }
-                }
-            })
-            count++
-            console.log('doorCreate:', door.id, door.name)
-        }
-        catch (err) {
-            console.error('doorCreate error:', err.response)
-        }
-    }
-    console.log('doorCreate total:', count)
-    return count
-}
 async function doorList () {
     console.log('doorList running...')
     try {
@@ -261,35 +229,95 @@ async function doorStatus (id) {
     const status = door ? door.status : '0'
     return status
 }
-// make sure all devices have labels.type=door - this is a one-time patch
-// but shows how to update devices
-async function doorUpdate () {
-    console.log('doorUpdate running...')
-    var count = 0
+async function doorSync () {
+    console.log('doorSync running...')
+    var counts = { added: 0, changed: 0 }
+    const devices = {}
     for (const device of await deviceList()) {
-        if (!device.labels || !device.labels.type) {
+        devices[device.serialNumber] = device
+    }
+    for (const door of await doorList()) {
+        const device = devices[door.id]
+        if (device) {
+            var doc = {}
+            door.name = door.name.replace('Receiption', 'Reception')
+                .replace('Receition', 'Reception')
+                .replace('Recepton', 'Reception')
+                .replace('Turstile', 'Turnstile')
+            if (device.name !== door.name) doc.name = door.name
+            if (!device.labels || !device.labels.type) doc.labels = { type: 'door' }
+            if (Object.keys(doc).length > 0) {
+                try {
+                    await axios({
+                        method: 'put',
+                        url: config.davra.url + '/api/v1/devices/' + device.UUID,
+                        headers: {
+                            Authorization: 'Bearer ' + config.davra.token
+                        },
+                        data: doc
+                    })
+                    counts.changed++
+                    console.log('doorSync changed:', device.UUID, device.serialNumber, doc)
+                }
+                catch (err) {
+                    console.error('doorSync error:', err.response)
+                }
+            }
+        }
+        else {
             try {
                 await axios({
-                    method: 'put',
-                    url: config.davra.url + '/api/v1/devices/' + device.UUID,
+                    method: 'post',
+                    url: config.davra.url + '/api/v1/devices',
                     headers: {
                         Authorization: 'Bearer ' + config.davra.token
                     },
                     data: {
+                        serialNumber: door.id,
+                        name: door.name,
                         labels: { type: 'door' }
                     }
                 })
-                count++
-                console.log('doorUpdate:', device.UUID, device.serialNumber, device.name)
+                counts.added++
+                console.log('doorSync added:', door.id, door.name)
             }
             catch (err) {
-                console.error('doorUpdate error:', err.response)
+                console.error('doorSync error:', err.response)
             }
         }
     }
-    console.log('doorUpdate total:', count)
-    return count
+    console.log('doorSync totals:', counts)
+    return counts
 }
+// make sure all devices have labels.type=door - this is a one-time patch
+// but shows how to update devices
+// async function doorUpdate () {
+//     console.log('doorUpdate running...')
+//     var count = 0
+//     for (const device of await deviceList()) {
+//         if (!device.labels || !device.labels.type) {
+//             try {
+//                 await axios({
+//                     method: 'put',
+//                     url: config.davra.url + '/api/v1/devices/' + device.UUID,
+//                     headers: {
+//                         Authorization: 'Bearer ' + config.davra.token
+//                     },
+//                     data: {
+//                         labels: { type: 'door' }
+//                     }
+//                 })
+//                 count++
+//                 console.log('doorUpdate:', device.UUID, device.serialNumber, device.name)
+//             }
+//             catch (err) {
+//                 console.error('doorUpdate error:', err.response)
+//             }
+//         }
+//     }
+//     console.log('doorUpdate total:', count)
+//     return count
+// }
 async function doorUsageStart () {
     biostar.stop = false
     doorUsage()

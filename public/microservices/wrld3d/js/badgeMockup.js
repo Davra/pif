@@ -243,7 +243,8 @@ var initTable = function (extraColumns, data) {
     var dataTableConfig = {
         dom: 'Bfrtip',
         bDestroy: true,
-        pageLength: 100,
+        pageLength: 5,
+        pagingType: 'simple',
         info: true,
         paging: true,
         select: false,

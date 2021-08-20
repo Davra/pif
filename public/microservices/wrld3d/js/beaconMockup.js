@@ -1,5 +1,4 @@
-/* global d3, moment */
-// chartOccupancy
+/* global AmCharts, d3, moment */
 $(function () {
     function getPoiValue () {
         var key = 'poi'
@@ -17,6 +16,7 @@ $(function () {
     $('.meeting-room-photo .carousel .img2')[0].src = '/microservices/wrld3d/img/Beacon-2.png'
     $('.meeting-room-details .status span').text('ONLINE')
     $('.meeting-room-details .status span').addClass('online')
+    var deviceId = (poi && poi.user_data.twitter) || '' // twitter account is the deviceId
     if (type > '1') {
         $('.meeting-room-details .status span').text('OFFLINE')
         $('.meeting-room-details .status span').toggleClass('online offline')
@@ -24,23 +24,11 @@ $(function () {
         $('.meeting-room-details .battery-icon i').addClass('low')
         $('.meeting-room-details .battery span').text('2 months')
     }
-    // Create a set of sample data to plot
-    var dataset = []
-    for (var tmpDay = 1; tmpDay < 6; tmpDay++) {
-        for (var tmpHour = 1; tmpHour < 14; tmpHour++) {
-            var tmpDatapoint = {}
-            tmpDatapoint.day = tmpDay
-            tmpDatapoint.hour = tmpHour
-            // weighted to the morning, lunch and evening rush hours
-            if (tmpHour === 3 || tmpHour === 7 || tmpHour === 12) {
-                tmpDatapoint.value = 0 + parseInt(Math.random() * 10)
-            }
-            else {
-                tmpDatapoint.value = parseInt(Math.random() * 100)
-            }
-            dataset.push(tmpDatapoint)
-        }
-    }
+    doOccupancy(poi, deviceId)
+    doUptime(poi, deviceId)
+    doOutages(poi, deviceId)
+})
+function chartOccupancy (data) {
     var margin = { top: 40, right: 0, bottom: 100, left: 30 }
     var width = 600 - margin.left - margin.right
     var height = 270 - margin.top - margin.bottom
@@ -77,53 +65,151 @@ $(function () {
         .attr('transform', 'translate(' + gridSize / 2 + ', -6)')
         // .attr('class', function(d, i) { return ((i >= 7 && i <= 16) ? 'timeLabel mono axis axis-worktime' : 'timeLabel mono axis') })
         .attr('class', function (d, i) { return ((i >= 2 && i <= 11) ? 'timeLabel mono axis axis-worktime' : 'timeLabel mono axis') })
-    var chartOccupancy = function (data) {
-        var colorScale = d3.scale.quantile()
-            .domain([0, buckets - 1, d3.max(data, function (d) { return d.value })])
-            .range(colors)
-        var cards = svg.selectAll('.hour')
-            .data(data, function (d) { return d.day + ':' + d.hour })
-        cards.append('title')
-        cards.enter().append('rect')
-            .attr('x', function (d) { return (d.hour - 1) * gridSize })
-            .attr('y', function (d) { return (d.day - 1) * gridSize })
-            .attr('rx', 4)
-            .attr('ry', 4)
-            .attr('class', 'hour bordered')
-            .attr('width', gridSize)
-            .attr('height', gridSize)
-            .style('fill', colors[0])
-        cards.transition().duration(1000)
-            .style('fill', function (d) { return colorScale(d.value) })
-        cards.select('title').text(function (d) { return d.value })
-        cards.exit().remove()
-        var legend = svg.selectAll('.legend')
-            .data([0].concat(colorScale.quantiles()), function (d) { return d })
-        legend.enter().append('g')
-            .attr('class', 'legend')
-        legend.append('rect')
-            .attr('x', function (d, i) { return legendElementWidth * i })
-            .attr('y', height)
-            .attr('width', legendElementWidth)
-            .attr('height', gridSize / 2)
-            .style('fill', function (d, i) { return colors[i] })
-        legend.append('text')
-            .attr('class', 'mono')
-            .text(function (d, i) {
-                // console.log(d, i)
-                // return '= ' + Math.round(d)
-                return 100 - (i * 10) + '%'
-            })
-            .attr('x', function (d, i) { return legendElementWidth * i })
-            .attr('y', height + gridSize)
-        legend.exit().remove()
+    var colorScale = d3.scale.quantile()
+        .domain([0, buckets - 1, d3.max(data, function (d) { return d.value })])
+        .range(colors)
+    var cards = svg.selectAll('.hour')
+        .data(data, function (d) { return d.day + ':' + d.hour })
+    cards.append('title')
+    cards.enter().append('rect')
+        .attr('x', function (d) { return (d.hour - 1) * gridSize })
+        .attr('y', function (d) { return (d.day - 1) * gridSize })
+        .attr('rx', 4)
+        .attr('ry', 4)
+        .attr('class', 'hour bordered')
+        .attr('width', gridSize)
+        .attr('height', gridSize)
+        .style('fill', colors[0])
+    cards.transition().duration(1000)
+        .style('fill', function (d) { return colorScale(d.value) })
+    cards.select('title').text(function (d) { return d.value })
+    cards.exit().remove()
+    var legend = svg.selectAll('.legend')
+        .data([0].concat(colorScale.quantiles()), function (d) { return d })
+    legend.enter().append('g')
+        .attr('class', 'legend')
+    legend.append('rect')
+        .attr('x', function (d, i) { return legendElementWidth * i })
+        .attr('y', height)
+        .attr('width', legendElementWidth)
+        .attr('height', gridSize / 2)
+        .style('fill', function (d, i) { return colors[i] })
+    legend.append('text')
+        .attr('class', 'mono')
+        .text(function (d, i) {
+            // console.log(d, i)
+            // return '= ' + Math.round(d)
+            return 100 - (i * 10) + '%'
+        })
+        .attr('x', function (d, i) { return legendElementWidth * i })
+        .attr('y', height + gridSize)
+    legend.exit().remove()
+}
+function doOccupancy (poi, deviceId) {
+    var dataset = []
+    if (deviceId) { // get data
     }
-    chartOccupancy(dataset)
-})
-
-// chartUptime
-// eslint-disable-next-line no-unused-vars
-var connecthingChartConfig = {
+    else { // mockup data
+        for (var tmpDay = 1; tmpDay < 6; tmpDay++) {
+            for (var tmpHour = 1; tmpHour < 14; tmpHour++) {
+                var tmpDatapoint = {}
+                tmpDatapoint.day = tmpDay
+                tmpDatapoint.hour = tmpHour
+                // weighted to the morning, lunch and evening rush hours
+                if (tmpHour === 3 || tmpHour === 7 || tmpHour === 12) {
+                    tmpDatapoint.value = 0 + parseInt(Math.random() * 10)
+                }
+                else {
+                    tmpDatapoint.value = parseInt(Math.random() * 100)
+                }
+                dataset.push(tmpDatapoint)
+            }
+        }
+        chartOccupancy(dataset)
+    }
+}
+function doOutages (poi, deviceId) {
+    var data = []
+    var tableColumns = [
+        {
+            title: 'Time',
+            data: 'timestamp',
+            render: function (value, type, record) {
+                return '<span style="display: none">' + value + '</span>' + moment(value).format('YYYY-MM-DD HH:mm')
+            },
+            width: '50%'
+        },
+        {
+            title: 'Duration',
+            data: 'duration',
+            render: function (value, type, record) {
+                return '<span style="display: none">' + ('' + value).padStart(12, '0') + '</span>' + formatDuration(value)
+            },
+            width: '35%'
+        }
+    ]
+    if (deviceId) { // get data
+    }
+    else { // mockup data
+        data = [
+            { timestamp: 1624312564770, description: 'Contact lost', duration: 170440000, userId: 'ABC123' },
+            { timestamp: 1624208954770, description: 'Contact lost', duration: 11000, userId: 'D45678' },
+            { timestamp: 1624305344770, description: 'Contact lost', duration: 33000, userId: 'X566489' },
+            { timestamp: 1624101734770, description: 'Contact lost', duration: 22000, userId: 'AYS5412' }
+        ]
+        initTable('#table', tableColumns, data)
+    }
+}
+function doUptime (poi, deviceId) {
+    if (deviceId) { // get data
+    }
+    else { // mockup data
+        AmCharts.makeChart('chartUptime', chartUptimeConfig)
+    }
+    var width = $(window).width() * 0.98
+    var height = $(window).height() * 0.98
+    $('#chartUptime').width(width).height(height)
+}
+function formatDuration (num) {
+    var days = Math.floor(num / (24 * 60 * 60 * 1000))
+    num -= days * 24 * 60 * 60 * 1000
+    var hours = Math.floor(num / (60 * 60 * 1000))
+    num -= hours * 60 * 60 * 1000
+    var minutes = Math.floor(num / (60 * 1000))
+    num -= minutes * 60 * 1000
+    var seconds = Math.floor(num / 1000)
+    var daysText = days > 1 ? 'days ' : 'day '
+    var hoursText = hours > 1 ? 'hrs ' : 'hr '
+    var minutesText = minutes > 1 ? 'mins ' : 'min '
+    var secondsText = seconds > 1 ? 'secs ' : 'sec '
+    if (days) return days + daysText + (hours ? hours + hoursText : '')
+    if (hours) return hours + hoursText + (minutes ? minutes + minutesText : '')
+    if (minutes) return minutes + 'mins ' + (seconds ? seconds + secondsText : '')
+    return seconds + secondsText
+}
+function initTable (tableId, tableColumns, data) {
+    var dataTableConfig = {
+        dom: 'Bfrtip',
+        bDestroy: true,
+        pageLength: 5,
+        pagingType: 'simple',
+        info: true,
+        paging: true,
+        select: false,
+        columns: tableColumns,
+        autoWidth: false,
+        order: [[0, 'desc']],
+        language: {
+            paginate: { previous: '<', next: '>' }
+        }
+    }
+    $(tableId).DataTable(dataTableConfig)
+    if (data) {
+        $(tableId).dataTable().fnClearTable()
+        $(tableId).dataTable().fnAddData(data)
+    }
+}
+var chartUptimeConfig = {
     type: 'serial',
     theme: 'light',
     legend: {
@@ -186,83 +272,3 @@ var connecthingChartConfig = {
         enabled: true
     }
 }
-var config = {}
-var initTable = function (extraColumns, data) {
-    // Note the trick employed here for timestamps to get sorted correctly while inside DataTables is to put the
-    // timestamp in unix epoch milliseconds as the first part in a hidden span, then the date in human readable format.
-    // Otherwise the sorting would be awry as it sorts the dates alphabetically.
-    var tableColumns = [{
-        title: 'Time',
-        data: 'timestamp',
-        render: function (value, type, record) {
-            return '<span style="display: none">' + value + '</span>' + moment(value).format('YYYY-MM-DD HH:mm')
-        },
-        width: '50%'
-    }]
-
-    if (!extraColumns && !data) {
-        // $('.sample-data-msg').show();
-        // var sampleData  = widgetUtils.getSampleDataForEventTable4Columns()
-        // extraColumns = sampleData.columns;
-        extraColumns = [
-            // { title: 'Desc', data: 'description', sTitle: 'Desc', mData: 'description' },
-            { title: 'Duration', data: 'duration', sTitle: 'Duration', mData: 'duration', width: '35%' }
-            // { title: 'User', data: 'userId', sTitle: 'User', mData: 'userId', width: '25%' }
-        ]
-        // data = sampleData.data;
-        data = [
-            { timestamp: 1624312564770, description: 'Contact lost', duration: '24hr', userId: 'ABC123' },
-            { timestamp: 1624208954770, description: 'Contact lost', duration: '3hr', userId: 'D45678' },
-            { timestamp: 1624305344770, description: 'Contact lost', duration: '1hr', userId: 'X566489' },
-            { timestamp: 1624101734770, description: 'Contact lost', duration: '10hr', userId: 'AYS5412' }
-        ]
-    }
-    else {
-        // $('.sample-data-msg').hide();
-    }
-
-    // if (config.chartCfg && config.chartCfg.title && config.chartCfg.title.length > 0) {
-    // $('.widget-header').text(config.chartCfg.title);
-    // } else {
-    // $('.widget-header').remove();
-    // $('.widget-header-hr').remove();
-    // }
-
-    if (extraColumns) {
-        Array.prototype.push.apply(tableColumns, extraColumns)
-    }
-    // console.log('data: ' , data);
-    // var filename = config.widgetTitle + '-' + moment(new Date()).format('YYYYMMDD_HHmmss');
-
-    // If the user saved a widgetConfig for table settings, superimpose them into the config of the table
-    var dataTableConfig = {
-        dom: 'Bfrtip',
-        bDestroy: true,
-        pageLength: 100,
-        info: true,
-        paging: true,
-        select: false,
-        columns: tableColumns,
-        autoWidth: false,
-        order: [[0, 'desc']],
-        language: {
-            paginate: { previous: '<', next: '>' }
-        }
-    }
-    if (config.chartCfg && config.chartCfg.options) {
-        $.extend(dataTableConfig, config.chartCfg.options)
-    }
-
-    $('#table').DataTable(dataTableConfig)
-    if (data) {
-        $('#table').dataTable().fnClearTable()
-        $('#table').dataTable().fnAddData(data)
-    }
-}
-$().ready(function () {
-    // chart.events.on('datavalidated', function(ev) {
-    // var chart = ev.target
-    // chart.svgContainer.htmlElement.style.height = 350 + 'px'
-    // })
-    initTable(null, null)
-})

@@ -1,12 +1,33 @@
 /* global AmCharts, chart */
-var data = []
-var now = new Date()
-var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30)
-for (var i = 0, n = 30; i < n; i++) {
-    var aqi = 8 + ((Math.random() * 60) / 10)
-    // console.log(d.getDate() + '/' + (d.getMonth() + 1), aqi)
-    data.push({ date: d.getDate() + '/' + (d.getMonth() + 1), aqi: aqi })
-    d.setDate(d.getDate() + 1)
+$(function () {
+    function getPoiValue () {
+        var key = 'poi'
+        var value = decodeURIComponent(window.location.search.replace(new RegExp('^(?:.*[&\\?]' + key + '(?:\\=([^&]*))?)?.*$', 'i'), '$1'))
+        return value ? JSON.parse(value) : null
+    }
+    var poi = getPoiValue()
+    var deviceId = (poi && poi.user_data.twitter) || '' // twitter account is the deviceId
+    doAqi(poi, deviceId)
+})
+function doAqi (poi, deviceId) {
+    if (deviceId) { // get data
+    }
+    else { // mockup data
+        var data = []
+        var now = new Date()
+        var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30)
+        for (var i = 0, n = 30; i < n; i++) {
+            var aqi = 8 + ((Math.random() * 60) / 10)
+            // console.log(d.getDate() + '/' + (d.getMonth() + 1), aqi)
+            data.push({ date: d.getDate() + '/' + (d.getMonth() + 1), aqi: aqi })
+            d.setDate(d.getDate() + 1)
+        }
+        chartAqiConfig.dataProvider = data
+        AmCharts.makeChart('chartAqi', chartAqiConfig)
+    }
+    var width = $(window).width() * 0.98
+    var height = $(window).height() * 0.98
+    $('#chartAqi').width(width).height(height)
 }
 var balloonFunction = function (item, graph) {
     var result = ''
@@ -22,8 +43,7 @@ var balloonFunction = function (item, graph) {
     }
     return result + ' AQI'
 }
-// eslint-disable-next-line no-unused-vars
-var connecthingChartConfig = {
+var chartAqiConfig = {
     theme: 'connecthing',
     type: 'serial',
     categoryField: 'date',
@@ -76,5 +96,5 @@ var connecthingChartConfig = {
     export: {
         enabled: true
     },
-    dataProvider: data
+    dataProvider: []
 }

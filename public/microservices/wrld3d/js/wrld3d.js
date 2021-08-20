@@ -376,7 +376,7 @@ $(function () {
         if (markerOptions.iconKey === 'badge_reader') {
             markerOptions.poiView.imageUrl = ''
             markerOptions.poiView.customView = door
-            markerOptions.poiView.customViewHeight = 460
+            markerOptions.poiView.customViewHeight = 480
         }
         if (markerOptions.iconKey === 'fire_extinguisher') {
             markerOptions.poiView.imageUrl = ''

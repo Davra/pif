@@ -1,22 +1,16 @@
 /* global d3 */
-// chartOccupancy
 $(function () {
-    // Create a set of sample data to plot
-    var dataset = []
-    for (var tmpDay = 1; tmpDay < 6; tmpDay++) {
-        for (var tmpHour = 1; tmpHour < 14; tmpHour++) {
-            var tmpDatapoint = {}
-            tmpDatapoint.day = tmpDay
-            tmpDatapoint.hour = tmpHour
-            if ((tmpDay === 1 || tmpDay === 2) && tmpHour >= 3 && tmpHour <= 7) {
-                tmpDatapoint.value = 0 + parseInt(Math.random() * 10)
-            }
-            else {
-                tmpDatapoint.value = parseInt(Math.random() * 100)
-            }
-            dataset.push(tmpDatapoint)
-        }
+    function getPoiValue () {
+        var key = 'poi'
+        var value = decodeURIComponent(window.location.search.replace(new RegExp('^(?:.*[&\\?]' + key + '(?:\\=([^&]*))?)?.*$', 'i'), '$1'))
+        return value ? JSON.parse(value) : null
     }
+    var poi = getPoiValue()
+    var deviceId = (poi && poi.user_data.twitter) || '' // twitter account is the deviceId
+    doOccupancy(poi, deviceId)
+    doComfort(poi, deviceId)
+})
+function chartOccupancy (data) {
     var margin = { top: 20, right: 0, bottom: 100, left: 30 }
     var width = 600 - margin.left - margin.right
     var height = 260 - margin.top - margin.bottom
@@ -53,63 +47,47 @@ $(function () {
         .attr('transform', 'translate(' + gridSize / 2 + ', -6)')
         // .attr('class', function(d, i) { return ((i >= 7 && i <= 16) ? 'timeLabel mono axis axis-worktime' : 'timeLabel mono axis') })
         .attr('class', function (d, i) { return ((i >= 2 && i <= 11) ? 'timeLabel mono axis axis-worktime' : 'timeLabel mono axis') })
-    var chartOccupancy = function (data) {
-        var colorScale = d3.scale.quantile()
-            .domain([0, buckets - 1, d3.max(data, function (d) { return d.value })])
-            .range(colors)
-        var cards = svg.selectAll('.hour')
-            .data(data, function (d) { return d.day + ':' + d.hour })
-        cards.append('title')
-        cards.enter().append('rect')
-            .attr('x', function (d) { return (d.hour - 1) * gridSize })
-            .attr('y', function (d) { return (d.day - 1) * gridSize })
-            .attr('rx', 4)
-            .attr('ry', 4)
-            .attr('class', 'hour bordered')
-            .attr('width', gridSize)
-            .attr('height', gridSize)
-            .style('fill', colors[0])
-        cards.transition().duration(1000)
-            .style('fill', function (d) { return colorScale(d.value) })
-        cards.select('title').text(function (d) { return d.value })
-        cards.exit().remove()
-        var legend = svg.selectAll('.legend')
-            .data([0].concat(colorScale.quantiles()), function (d) { return d })
-        legend.enter().append('g')
-            .attr('class', 'legend')
-        legend.append('rect')
-            .attr('x', function (d, i) { return legendElementWidth * i })
-            .attr('y', height)
-            .attr('width', legendElementWidth)
-            .attr('height', gridSize / 2)
-            .style('fill', function (d, i) { return colors[i] })
-        legend.append('text')
-            .attr('class', 'mono')
-            .text(function (d, i) {
-                // console.log(d, i)
-                // return '= ' + Math.round(d)
-                return 100 - (i * 10) + '%'
-            })
-            .attr('x', function (d, i) { return legendElementWidth * i })
-            .attr('y', height + gridSize)
-        legend.exit().remove()
-    }
-    chartOccupancy(dataset)
-})
-
-// chartComfort
-$(function () {
-    // Create a set of sample data to plot
-    var dataset = []
-    for (var tmpDay = 1; tmpDay < 6; tmpDay++) {
-        for (var tmpHour = 1; tmpHour < 14; tmpHour++) {
-            var tmpDatapoint = {}
-            tmpDatapoint.day = tmpDay
-            tmpDatapoint.hour = tmpHour
-            tmpDatapoint.value = parseInt(Math.random() * 100)
-            dataset.push(tmpDatapoint)
-        }
-    }
+    var colorScale = d3.scale.quantile()
+        .domain([0, buckets - 1, d3.max(data, function (d) { return d.value })])
+        .range(colors)
+    var cards = svg.selectAll('.hour')
+        .data(data, function (d) { return d.day + ':' + d.hour })
+    cards.append('title')
+    cards.enter().append('rect')
+        .attr('x', function (d) { return (d.hour - 1) * gridSize })
+        .attr('y', function (d) { return (d.day - 1) * gridSize })
+        .attr('rx', 4)
+        .attr('ry', 4)
+        .attr('class', 'hour bordered')
+        .attr('width', gridSize)
+        .attr('height', gridSize)
+        .style('fill', colors[0])
+    cards.transition().duration(1000)
+        .style('fill', function (d) { return colorScale(d.value) })
+    cards.select('title').text(function (d) { return d.value })
+    cards.exit().remove()
+    var legend = svg.selectAll('.legend')
+        .data([0].concat(colorScale.quantiles()), function (d) { return d })
+    legend.enter().append('g')
+        .attr('class', 'legend')
+    legend.append('rect')
+        .attr('x', function (d, i) { return legendElementWidth * i })
+        .attr('y', height)
+        .attr('width', legendElementWidth)
+        .attr('height', gridSize / 2)
+        .style('fill', function (d, i) { return colors[i] })
+    legend.append('text')
+        .attr('class', 'mono')
+        .text(function (d, i) {
+            // console.log(d, i)
+            // return '= ' + Math.round(d)
+            return 100 - (i * 10) + '%'
+        })
+        .attr('x', function (d, i) { return legendElementWidth * i })
+        .attr('y', height + gridSize)
+    legend.exit().remove()
+}
+function chartComfort (data) {
     var margin = { top: 20, right: 0, bottom: 100, left: 30 }
     var width = 600 - margin.left - margin.right
     var height = 260 - margin.top - margin.bottom
@@ -146,46 +124,82 @@ $(function () {
         .attr('transform', 'translate(' + gridSize / 2 + ', -6)')
         // .attr('class', function(d, i) { return ((i >= 7 && i <= 16) ? 'timeLabel mono axis axis-worktime' : 'timeLabel mono axis') })
         .attr('class', function (d, i) { return ((i >= 2 && i <= 11) ? 'timeLabel mono axis axis-worktime' : 'timeLabel mono axis') })
-    var chartComfort = function (data) {
-        var colorScale = d3.scale.quantile()
-            .domain([0, buckets - 1, d3.max(data, function (d) { return d.value })])
-            .range(colors)
-        var cards = svg.selectAll('.hour')
-            .data(data, function (d) { return d.day + ':' + d.hour })
-        cards.append('title')
-        cards.enter().append('rect')
-            .attr('x', function (d) { return (d.hour - 1) * gridSize })
-            .attr('y', function (d) { return (d.day - 1) * gridSize })
-            .attr('rx', 4)
-            .attr('ry', 4)
-            .attr('class', 'hour bordered')
-            .attr('width', gridSize)
-            .attr('height', gridSize)
-            .style('fill', colors[0])
-        cards.transition().duration(1000)
-            .style('fill', function (d) { return colorScale(d.value) })
-        cards.select('title').text(function (d) { return d.value })
-        cards.exit().remove()
-        var legend = svg.selectAll('.legend')
-            .data([0].concat(colorScale.quantiles()), function (d) { return d })
-        legend.enter().append('g')
-            .attr('class', 'legend')
-        legend.append('rect')
-            .attr('x', function (d, i) { return legendElementWidth * i })
-            .attr('y', height)
-            .attr('width', legendElementWidth)
-            .attr('height', gridSize / 2)
-            .style('fill', function (d, i) { return colors[i] })
-        legend.append('text')
-            .attr('class', 'mono')
-            .text(function (d, i) {
-                // console.log(d, i)
-                // return '= ' + Math.round(d)
-                return '>=' + i
-            })
-            .attr('x', function (d, i) { return legendElementWidth * i })
-            .attr('y', height + gridSize)
-        legend.exit().remove()
+    var colorScale = d3.scale.quantile()
+        .domain([0, buckets - 1, d3.max(data, function (d) { return d.value })])
+        .range(colors)
+    var cards = svg.selectAll('.hour')
+        .data(data, function (d) { return d.day + ':' + d.hour })
+    cards.append('title')
+    cards.enter().append('rect')
+        .attr('x', function (d) { return (d.hour - 1) * gridSize })
+        .attr('y', function (d) { return (d.day - 1) * gridSize })
+        .attr('rx', 4)
+        .attr('ry', 4)
+        .attr('class', 'hour bordered')
+        .attr('width', gridSize)
+        .attr('height', gridSize)
+        .style('fill', colors[0])
+    cards.transition().duration(1000)
+        .style('fill', function (d) { return colorScale(d.value) })
+    cards.select('title').text(function (d) { return d.value })
+    cards.exit().remove()
+    var legend = svg.selectAll('.legend')
+        .data([0].concat(colorScale.quantiles()), function (d) { return d })
+    legend.enter().append('g')
+        .attr('class', 'legend')
+    legend.append('rect')
+        .attr('x', function (d, i) { return legendElementWidth * i })
+        .attr('y', height)
+        .attr('width', legendElementWidth)
+        .attr('height', gridSize / 2)
+        .style('fill', function (d, i) { return colors[i] })
+    legend.append('text')
+        .attr('class', 'mono')
+        .text(function (d, i) {
+            // console.log(d, i)
+            // return '= ' + Math.round(d)
+            return '>=' + i
+        })
+        .attr('x', function (d, i) { return legendElementWidth * i })
+        .attr('y', height + gridSize)
+    legend.exit().remove()
+}
+function doComfort (poi, deviceId) {
+    var dataset = []
+    if (deviceId) { // get data
     }
-    chartComfort(dataset)
-})
+    else { // mockup data
+        for (var tmpDay = 1; tmpDay < 6; tmpDay++) {
+            for (var tmpHour = 1; tmpHour < 14; tmpHour++) {
+                var tmpDatapoint = {}
+                tmpDatapoint.day = tmpDay
+                tmpDatapoint.hour = tmpHour
+                tmpDatapoint.value = parseInt(Math.random() * 100)
+                dataset.push(tmpDatapoint)
+            }
+        }
+        chartComfort(dataset)
+    }
+}
+function doOccupancy (poi, deviceId) {
+    var dataset = []
+    if (deviceId) { // get data
+    }
+    else { // mockup data
+        for (var tmpDay = 1; tmpDay < 6; tmpDay++) {
+            for (var tmpHour = 1; tmpHour < 14; tmpHour++) {
+                var tmpDatapoint = {}
+                tmpDatapoint.day = tmpDay
+                tmpDatapoint.hour = tmpHour
+                if ((tmpDay === 1 || tmpDay === 2) && tmpHour >= 3 && tmpHour <= 7) {
+                    tmpDatapoint.value = 0 + parseInt(Math.random() * 10)
+                }
+                else {
+                    tmpDatapoint.value = parseInt(Math.random() * 100)
+                }
+                dataset.push(tmpDatapoint)
+            }
+        }
+        chartOccupancy(dataset)
+    }
+}

@@ -1,4 +1,84 @@
 /* global AmCharts, chart, moment */
+$(function () {
+    function getPoiValue () {
+        var key = 'poi'
+        var value = decodeURIComponent(window.location.search.replace(new RegExp('^(?:.*[&\\?]' + key + '(?:\\=([^&]*))?)?.*$', 'i'), '$1'))
+        return value ? JSON.parse(value) : null
+    }
+    var poi = getPoiValue()
+    var deviceId = (poi && poi.user_data.twitter) || '' // twitter account is the deviceId
+    doUsage(poi, deviceId)
+    doFaults(poi, deviceId)
+})
+function doFaults (poi, deviceId) {
+    var alerts = parent.alerts || [{ date: 1624208954770, open: true }, { date: 1624305344770 }]
+    var id = (poi && poi.user_data.title.substr(poi.user_data.title.length - 3)) || '1'
+    var data = []
+    var tableColumns = [
+        {
+            title: 'Time',
+            data: 'timestamp',
+            render: function (value, type, record) {
+                return '<span style="display: none">' + value + '</span>' + moment(value).format('YYYY-MM-DD HH:mm')
+            },
+            width: '20%'
+        },
+        { title: 'Description', data: 'description', width: '60%' },
+        { title: 'Status', data: 'status', width: '20%' }
+    ]
+    if (deviceId) { // get data
+    }
+    else { // mockup data
+        if (id === '2.1') {
+            data.push({ timestamp: alerts[0].date, description: 'Overload trip alarm', status: alerts[0].open ? 'Open' : 'Acknowledged' })
+            if (alerts[0].open) {
+                var checkOpen = setInterval(function () {
+                    // console.log(alerts[0].open)
+                    if (!alerts[0].open) {
+                        clearInterval(checkOpen)
+                        data[0].status = 'Acknowledged'
+                        $('#table').dataTable().fnUpdate(data[0].status, [0], 2, false)
+                    }
+                }, 300)
+            }
+        }
+        data.push({ timestamp: 1624208954770, description: 'Voltage loss', status: 'Acknowledged' })
+        data.push({ timestamp: 1624101734770, description: 'Threshold (V) exceeded ', status: 'Closed' })
+        initTable('#table', tableColumns, data)
+    }
+}
+function doUsage (poi, deviceId) {
+    if (deviceId) { // get data
+    }
+    else { // mockup data
+        AmCharts.makeChart('chartUsage', chartUsageConfig)
+    }
+    var width = $(window).width() * 0.98
+    var height = $(window).height() * 0.98
+    $('#chartUsage').width(width).height(height)
+}
+var initTable = function (tableId, tableColumns, data) {
+    var dataTableConfig = {
+        dom: 'Bfrtip',
+        bDestroy: true,
+        pageLength: 5,
+        pagingType: 'simple',
+        info: true,
+        paging: true,
+        select: false,
+        columns: tableColumns,
+        autoWidth: false,
+        order: [[0, 'desc']],
+        language: {
+            paginate: { previous: '<', next: '>' }
+        }
+    }
+    $(tableId).DataTable(dataTableConfig)
+    if (data) {
+        $(tableId).dataTable().fnClearTable()
+        $(tableId).dataTable().fnAddData(data)
+    }
+}
 var balloonFunction = function (item, graph) {
     var result = ''
     var key = graph.balloonText
@@ -12,8 +92,7 @@ var balloonFunction = function (item, graph) {
     }
     return result + ' kWh'
 }
-// eslint-disable-next-line no-unused-vars
-var connecthingChartConfig = {
+var chartUsageConfig = {
     theme: 'connecthing',
     type: 'serial',
     categoryField: 'year',
@@ -90,64 +169,3 @@ var connecthingChartConfig = {
         { year: 2021, lighting: 1159, hvac: 277, sockets: 71 }
     ]
 }
-var initTable = function (tableId, tableColumns, data) {
-    var dataTableConfig = {
-        dom: 'Bfrtip',
-        bDestroy: true,
-        pageLength: 100,
-        info: true,
-        paging: true,
-        select: false,
-        columns: tableColumns,
-        autoWidth: false,
-        order: [[0, 'desc']],
-        language: {
-            paginate: { previous: '<', next: '>' }
-        }
-    }
-    $(tableId).DataTable(dataTableConfig)
-    if (data) {
-        $(tableId).dataTable().fnClearTable()
-        $(tableId).dataTable().fnAddData(data)
-    }
-}
-$().ready(function () {
-    var alerts = parent.alerts
-    // console.log(JSON.stringify(alerts))
-    function getPoiValue () {
-        var key = 'poi'
-        var value = decodeURIComponent(window.location.search.replace(new RegExp('^(?:.*[&\\?]' + key + '(?:\\=([^&]*))?)?.*$', 'i'), '$1'))
-        return value ? JSON.parse(value) : null
-    }
-    var poi = getPoiValue()
-    var id = (poi && poi.user_data.title.substr(poi.user_data.title.length - 3)) || '1'
-    // var title = (poi && poi.user_data.title) || '1'
-    var tableColumns = [
-        {
-            title: 'Time',
-            data: 'timestamp',
-            render: function (value, type, record) {
-                return '<span style="display: none">' + value + '</span>' + moment(value).format('YYYY-MM-DD HH:mm')
-            }
-        },
-        { title: 'Description', data: 'description', sTitle: 'Description', mData: 'description' },
-        { title: 'Status', data: 'status', sTitle: 'Status', mData: 'status' }
-    ]
-    var data = []
-    if (id === '2.1') {
-        data.push({ timestamp: alerts[0].date, description: 'Overload trip alarm', status: alerts[0].open ? 'Open' : 'Acknowledged' })
-        if (alerts[0].open) {
-            var checkOpen = setInterval(function () {
-                // console.log(alerts[0].open)
-                if (!alerts[0].open) {
-                    clearInterval(checkOpen)
-                    data[0].status = 'Acknowledged'
-                    $('#table').dataTable().fnUpdate(data[0].status, [0], 2, false)
-                }
-            }, 300)
-        }
-    }
-    data.push({ timestamp: 1624208954770, description: 'Voltage loss', status: 'Acknowledged' })
-    data.push({ timestamp: 1624101734770, description: 'Threshold (V) exceeded ', status: 'Closed' })
-    initTable('#table', tableColumns, data)
-})
