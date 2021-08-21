@@ -118,7 +118,7 @@ exports.init = async function (app) {
         console.log('Door usage stopping...')
         res.send({ success: true, message: 'Door usage stopping...' })
     })
-    doorUsageStart()
+    if (config.davra.env === 'live') doorUsageStart()
 }
 function getUserId (req, config) {
     var userId = req.headers['x-user-id'] || ''

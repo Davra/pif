@@ -6,7 +6,7 @@ $(function () {
         return value ? JSON.parse(value) : null
     }
     var poi = getPoiValue()
-    var deviceId = (poi && poi.user_data.twitter) || '' // twitter account is the deviceId
+    var deviceId = (window.location.hostname !== 'pif.davra.com' && poi && poi.user_data.twitter) || '' // twitter account is the deviceId
     doOccupancy(poi, deviceId)
     doComfort(poi, deviceId)
 })

@@ -23,7 +23,7 @@ $(function () {
     $('.address-icon.wifi i').addClass('fas fa-times')
     $('.address-icon.display i').addClass('fas fa-times')
     $('.address-icon.keypad i').addClass('fas fa-times')
-    var deviceId = (poi && poi.user_data.twitter) || '' // twitter account is the deviceId
+    var deviceId = (window.location.hostname !== 'pif.davra.com' && poi && poi.user_data.twitter) || '' // twitter account is the deviceId
     if (deviceId) {
         $.get(poi.davraMs + '/door/capability/' + encodeURIComponent(deviceId), function (result) {
             if (!result.success) {
@@ -247,7 +247,7 @@ function doOutages (poi, deviceId) {
             title: 'Duration',
             data: 'duration',
             render: function (value, type, record) {
-                return '<span style="display: none">' + ('' + value).padStart(12, '0') + '</span>' + formatDuration(value)
+                return '<span style="display: none">' + ('' + value).padStart(12, '0') + '</span>' + utils.formatDuration(value)
             },
             width: '35%'
         }
@@ -358,10 +358,10 @@ function doUptime (poi, deviceId) {
             var values2 = result.queries[1].results[0].values
             var values3 = result.queries[2].results[0].values
             var values4 = result.queries[3].results[0].values
-            var value1 = values1[values1.length - 1][1]
-            var value2 = values2[values2.length - 1][1]
-            var value3 = values3[values3.length - 1][1]
-            var value4 = values4[values4.length - 1][1]
+            var value1 = values1.length ? values1[values1.length - 1][1] : 0
+            var value2 = values2.length ? values2[values2.length - 1][1] : 0
+            var value3 = values3.length ? values3[values3.length - 1][1] : 0
+            var value4 = values4.length ? values4[values4.length - 1][1] : 0
             var perc1 = roundTo2((value1 * 100) / (1 * 24 * 60 * 60 * 1000))
             var perc2 = roundTo2((value2 * 100) / (7 * 24 * 60 * 60 * 1000))
             var perc3 = roundTo2((value3 * 100) / (30 * 24 * 60 * 60 * 1000))
@@ -383,23 +383,6 @@ function doUptime (poi, deviceId) {
     var width = $(window).width() * 0.98
     var height = $(window).height() * 0.98
     $('#chartUptime').width(width).height(height)
-}
-function formatDuration (num) {
-    var days = Math.floor(num / (24 * 60 * 60 * 1000))
-    num -= days * 24 * 60 * 60 * 1000
-    var hours = Math.floor(num / (60 * 60 * 1000))
-    num -= hours * 60 * 60 * 1000
-    var minutes = Math.floor(num / (60 * 1000))
-    num -= minutes * 60 * 1000
-    var seconds = Math.floor(num / 1000)
-    var daysText = days > 1 ? 'days ' : 'day '
-    var hoursText = hours > 1 ? 'hrs ' : 'hr '
-    var minutesText = minutes > 1 ? 'mins ' : 'min '
-    var secondsText = seconds > 1 ? 'secs ' : 'sec '
-    if (days) return days + daysText + (hours ? hours + hoursText : '')
-    if (hours) return hours + hoursText + (minutes ? minutes + minutesText : '')
-    if (minutes) return minutes + 'mins ' + (seconds ? seconds + secondsText : '')
-    return seconds + secondsText
 }
 function initTable (tableId, tableColumns, data) {
     var dataTableConfig = {

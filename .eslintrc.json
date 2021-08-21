@@ -15,6 +15,7 @@
         "no-var": "off" // no-var: warn is coming from somewhere mysterious
     },
     "globals": {
-        "$": "readonly"
+        "$": "readonly",
+        "utils": "readonly"
     }
 }

@@ -22,6 +22,7 @@ axios({
     for (const attr in runtimeConfig) { config[attr] = runtimeConfig[attr] }
     app.set('config', config)
     require('./routes/security.js').init(app) // initialise security first
+    require('./routes/desks.js').init(app)
     require('./routes/doors.js').init(app)
 }).catch(function (err) {
     console.error('Runtime config error:', err.response)

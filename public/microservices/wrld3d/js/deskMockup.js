@@ -7,7 +7,7 @@ $(function () {
     }
     var poi = getPoiValue()
     var type = (poi && poi.user_data.title.substr(poi.user_data.title.length - 1)) || '1'
-    var deviceId = (poi && poi.user_data.twitter) || '' // twitter account is the deviceId
+    var deviceId = (window.location.hostname !== 'pif.davra.com' && poi && poi.user_data.twitter) || '' // twitter account is the deviceId
     if (type === '1') $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/available.jpg'
     else if (type === '2') $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/checked-in.jpg'
     else $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/reserved.jpg'
@@ -130,7 +130,7 @@ function doOutages (poi, deviceId) {
             title: 'Duration',
             data: 'duration',
             render: function (value, type, record) {
-                return '<span style="display: none">' + ('' + value).padStart(12, '0') + '</span>' + formatDuration(value)
+                return '<span style="display: none">' + ('' + value).padStart(12, '0') + '</span>' + utils.formatDuration(value)
             },
             width: '35%'
         },
@@ -158,23 +158,6 @@ function doUptime (poi, deviceId) {
     var width = $(window).width() * 0.98
     var height = $(window).height() * 0.98
     $('#chartUptime').width(width).height(height)
-}
-function formatDuration (num) {
-    var days = Math.floor(num / (24 * 60 * 60 * 1000))
-    num -= days * 24 * 60 * 60 * 1000
-    var hours = Math.floor(num / (60 * 60 * 1000))
-    num -= hours * 60 * 60 * 1000
-    var minutes = Math.floor(num / (60 * 1000))
-    num -= minutes * 60 * 1000
-    var seconds = Math.floor(num / 1000)
-    var daysText = days > 1 ? 'days ' : 'day '
-    var hoursText = hours > 1 ? 'hrs ' : 'hr '
-    var minutesText = minutes > 1 ? 'mins ' : 'min '
-    var secondsText = seconds > 1 ? 'secs ' : 'sec '
-    if (days) return days + daysText + (hours ? hours + hoursText : '')
-    if (hours) return hours + hoursText + (minutes ? minutes + minutesText : '')
-    if (minutes) return minutes + 'mins ' + (seconds ? seconds + secondsText : '')
-    return seconds + secondsText
 }
 function initTable (tableId, tableColumns, data) {
     var dataTableConfig = {

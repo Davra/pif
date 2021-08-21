@@ -14,7 +14,7 @@ $(function () {
     $('.meeting-room-details .status span').addClass('online')
     $('.meeting-room-details .sync span').text('YES')
     $('.meeting-room-details .sync span').addClass('online')
-    var deviceId = (poi && poi.user_data.twitter) || '' // twitter account is the deviceId
+    var deviceId = (window.location.hostname !== 'pif.davra.com' && poi && poi.user_data.twitter) || '' // twitter account is the deviceId
     if (type > '1') {
         $('.meeting-room-photo .carousel .img1')[0].src = '/microservices/wrld3d/img/sign2.jpg'
         $('.meeting-room-photo .carousel .img2')[0].src = '/microservices/wrld3d/img/sign2-2.jpg'
@@ -27,9 +27,6 @@ $(function () {
     doUptime(poi, deviceId)
     doOutages(poi, deviceId)
 })
-function roundTo2 (num) {
-    return Math.round(num * 100) / 100
-}
 function doCards (poi, deviceId) {
     if (deviceId) { // get data
     }
@@ -38,10 +35,10 @@ function doCards (poi, deviceId) {
         var now = new Date()
         var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30)
         for (var i = 0, n = 30; i < n; i++) {
-            var fire = i === 23 ? roundTo2(10 + Math.random() * 10) : 0
+            var fire = i === 23 ? utils.roundTo2(10 + Math.random() * 10) : 0
             var birthdays = (i === 3 || i === 5 || i === 7 || i === 11 || i === 13 || i === 17 || i === 23 || i === 29) ? 12 : 0
-            var idle = roundTo2(Math.random() * 20)
-            var events = roundTo2(100 - (fire + birthdays + idle))
+            var idle = utils.roundTo2(Math.random() * 20)
+            var events = utils.roundTo2(100 - (fire + birthdays + idle))
             // console.log(d.getDate() + '/' + (d.getMonth() + 1), fire, idle, events, birthdays)
             data.push({ date: d.getDate() + '/' + (d.getMonth() + 1), fire: fire, idle: idle, events: events, birthdays: birthdays })
             d.setDate(d.getDate() + 1)
@@ -68,7 +65,7 @@ function doOutages (poi, deviceId) {
             title: 'Duration',
             data: 'duration',
             render: function (value, type, record) {
-                return '<span style="display: none">' + ('' + value).padStart(12, '0') + '</span>' + formatDuration(value)
+                return '<span style="display: none">' + ('' + value).padStart(12, '0') + '</span>' + utils.formatDuration(value)
             },
             width: '35%'
         }
@@ -94,23 +91,6 @@ function doUptime (poi, deviceId) {
     var width = $(window).width() * 0.98
     var height = $(window).height() * 0.98
     $('#chartUptime').width(width).height(height)
-}
-function formatDuration (num) {
-    var days = Math.floor(num / (24 * 60 * 60 * 1000))
-    num -= days * 24 * 60 * 60 * 1000
-    var hours = Math.floor(num / (60 * 60 * 1000))
-    num -= hours * 60 * 60 * 1000
-    var minutes = Math.floor(num / (60 * 1000))
-    num -= minutes * 60 * 1000
-    var seconds = Math.floor(num / 1000)
-    var daysText = days > 1 ? 'days ' : 'day '
-    var hoursText = hours > 1 ? 'hrs ' : 'hr '
-    var minutesText = minutes > 1 ? 'mins ' : 'min '
-    var secondsText = seconds > 1 ? 'secs ' : 'sec '
-    if (days) return days + daysText + (hours ? hours + hoursText : '')
-    if (hours) return hours + hoursText + (minutes ? minutes + minutesText : '')
-    if (minutes) return minutes + 'mins ' + (seconds ? seconds + secondsText : '')
-    return seconds + secondsText
 }
 function initTable (tableId, tableColumns, data) {
     var dataTableConfig = {

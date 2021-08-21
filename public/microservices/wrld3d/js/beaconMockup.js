@@ -16,7 +16,7 @@ $(function () {
     $('.meeting-room-photo .carousel .img2')[0].src = '/microservices/wrld3d/img/Beacon-2.png'
     $('.meeting-room-details .status span').text('ONLINE')
     $('.meeting-room-details .status span').addClass('online')
-    var deviceId = (poi && poi.user_data.twitter) || '' // twitter account is the deviceId
+    var deviceId = (window.location.hostname !== 'pif.davra.com' && poi && poi.user_data.twitter) || '' // twitter account is the deviceId
     if (type > '1') {
         $('.meeting-room-details .status span').text('OFFLINE')
         $('.meeting-room-details .status span').toggleClass('online offline')
@@ -143,7 +143,7 @@ function doOutages (poi, deviceId) {
             title: 'Duration',
             data: 'duration',
             render: function (value, type, record) {
-                return '<span style="display: none">' + ('' + value).padStart(12, '0') + '</span>' + formatDuration(value)
+                return '<span style="display: none">' + ('' + value).padStart(12, '0') + '</span>' + utils.formatDuration(value)
             },
             width: '35%'
         }
@@ -170,23 +170,7 @@ function doUptime (poi, deviceId) {
     var height = $(window).height() * 0.98
     $('#chartUptime').width(width).height(height)
 }
-function formatDuration (num) {
-    var days = Math.floor(num / (24 * 60 * 60 * 1000))
-    num -= days * 24 * 60 * 60 * 1000
-    var hours = Math.floor(num / (60 * 60 * 1000))
-    num -= hours * 60 * 60 * 1000
-    var minutes = Math.floor(num / (60 * 1000))
-    num -= minutes * 60 * 1000
-    var seconds = Math.floor(num / 1000)
-    var daysText = days > 1 ? 'days ' : 'day '
-    var hoursText = hours > 1 ? 'hrs ' : 'hr '
-    var minutesText = minutes > 1 ? 'mins ' : 'min '
-    var secondsText = seconds > 1 ? 'secs ' : 'sec '
-    if (days) return days + daysText + (hours ? hours + hoursText : '')
-    if (hours) return hours + hoursText + (minutes ? minutes + minutesText : '')
-    if (minutes) return minutes + 'mins ' + (seconds ? seconds + secondsText : '')
-    return seconds + secondsText
-}
+
 function initTable (tableId, tableColumns, data) {
     var dataTableConfig = {
         dom: 'Bfrtip',
