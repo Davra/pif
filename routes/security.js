@@ -1,30 +1,30 @@
 const axios = require('axios')
 var config
-const session = {}
-const expiryInterval = 60 * 60 * 1000
+const biostar = { expiryInterval: 60 * 60 * 1000 }
+const embrava = { expiryInterval: 60 * 60 * 1000 }
 exports.init = function (app) {
     config = app.get('config')
 }
 // no need for this now that we have scheduled jobs
 // async function renewSession () {
-//     session.renewCount++
-//     console.log('Renewing sessionId ', session.sessionId, session.renewCount)
+//     biostar.renewCount++
+//     console.log('Renewing sessionId ', biostar.sessionId, biostar.renewCount)
 //     // use dummy device ID just to extend the session
-//     await getCapability('*renewSession', session.sessionId)
+//     await getCapability('*renewSession', biostar.sessionId)
 //     var currentTimeMillis = new Date().getTime()
-//     session.expiryTime = currentTimeMillis + expiryInterval
-//     session.timeout = setTimeout(renewSession, expiryInterval - 10 * 1000) // allow 10 seconds grace
+//     biostar.expiryTime = currentTimeMillis + biostar.expiryInterval
+//     biostar.timeout = setTimeout(renewSession, biostar.expiryInterval - 10 * 1000) // allow 10 seconds grace
 // }
-async function getBioStarSessionId () {
-    // if (session.timeout !== undefined) clearTimeout(session.timeout)
-    // session.timeout = setTimeout(renewSession, expiryInterval - 10 * 1000) // allow 10 seconds grace
+exports.getBioStarSessionId = async function () {
+    // if (biostar.timeout !== undefined) clearTimeout(biostar.timeout)
+    // biostar.timeout = setTimeout(renewSession, biostar.expiryInterval - 10 * 1000) // allow 10 seconds grace
     var currentTimeMillis = new Date().getTime()
-    if (session.sessionId) {
-        // if (currentTimeMillis < (session.expiryTime - (10 * 1000))) {
-        if (currentTimeMillis < session.expiryTime) {
-            console.log('Reusing BioStar sessionId: ' + session.sessionId)
-            session.expiryTime = currentTimeMillis + expiryInterval
-            return session.sessionId
+    if (biostar.sessionId) {
+        // if (currentTimeMillis < (biostar.expiryTime - (10 * 1000))) {
+        if (currentTimeMillis < biostar.expiryTime) {
+            console.log('Reusing BioStar sessionId: ' + biostar.sessionId)
+            biostar.expiryTime = currentTimeMillis + biostar.expiryInterval
+            return biostar.sessionId
         }
     }
     try {
@@ -38,19 +38,51 @@ async function getBioStarSessionId () {
                 }
             }
         })
-        if (response.status !== 200) {
-            console.error('getBioStarSessionId error: ', response.status, JSON.stringify(response.data))
-            return null
-        }
-        session.sessionId = response.headers['bs-session-id']
-        session.expiryTime = currentTimeMillis + expiryInterval
-        session.renewCount = 0
-        console.log('BioStar new sessionId: ' + session.sessionId)
-        return session.sessionId
+        biostar.sessionId = response.headers['bs-session-id']
+        biostar.expiryTime = currentTimeMillis + biostar.expiryInterval
+        // biostar.renewCount = 0
+        console.log('BioStar new sessionId: ' + biostar.sessionId)
+        return biostar.sessionId
     }
     catch (err) {
-        console.error('getBioStarSessionId error: ' + err)
+        console.error('getBioStarSessionId error:', err.response)
         return null
     }
 }
-exports.getBioStarSessionId = getBioStarSessionId
+exports.getEmbravaToken = async function () {
+    // if (embrava.timeout !== undefined) clearTimeout(embrava.timeout)
+    // embrava.timeout = setTimeout(renewSession, embrava.expiryInterval - 10 * 1000) // allow 10 seconds grace
+    var currentTimeMillis = new Date().getTime()
+    if (embrava.token) {
+        // if (currentTimeMillis < (embrava.expiryTime - (10 * 1000))) {
+        if (currentTimeMillis < embrava.expiryTime) {
+            console.log('Reusing Embrava token: ' + embrava.token)
+            embrava.expiryTime = currentTimeMillis + embrava.expiryInterval
+            return embrava.token
+        }
+    }
+    try {
+        const response = await axios({
+            method: 'post',
+            url: config.embrava.url + '/api/account/authenticate',
+            data: {
+                Email: config.embrava.userId,
+                Password: config.embrava.password,
+                RememberMe: false
+            }
+        })
+        if (!response.data.status) {
+            console.error('getEmbravaToken error: ' + response.data.message)
+            return null
+        }
+        embrava.token = response.data.result.token
+        embrava.expiryTime = currentTimeMillis + embrava.expiryInterval
+        // embrava.renewCount = 0
+        console.log('Embrava new token: ' + embrava.token)
+        return embrava.token
+    }
+    catch (err) {
+        console.error('getEmbravaToken error:', err.response)
+        return null
+    }
+}

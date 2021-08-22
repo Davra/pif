@@ -147,7 +147,7 @@ async function deviceList (type) {
     }
 }
 async function deskCapability (id) {
-    console.log('Door ID:', id)
+    console.log('Desk ID:', id)
     try {
         const response = await axios({
             method: 'post',
@@ -161,7 +161,7 @@ async function deskCapability (id) {
         return response.data.DeviceTypeCollection.rows[0]
     }
     catch (err) {
-        console.error('Door capabilities error:', err.response)
+        console.error('Desk capabilities error:', err.response)
         return null
     }
 }
@@ -209,20 +209,21 @@ async function deskCapability (id) {
 // }
 async function deskList () {
     console.log('deskList running...')
+    const token = await security.getEmbravaToken()
     try {
         const response = await axios({
             method: 'get',
-            url: config.embrava.url + '/api/devices?monitoring_permission=false',
+            url: config.embrava.url + '/api/device/devices?page=1&perPage=200&embravaId=&state=&area=&firmware=&orderByDeviceName=&orderByDeviceId=',
             headers: {
-                'bs-session-id': await security.getBioStarSessionId()
+                Authorization: 'Bearer ' + token
             }
         })
-        if (!response.data || !response.data.DeviceCollection || !response.data.DeviceCollection.rows) {
+        if (!response.data || !response.data.status) {
             console.error('No desks returned')
             return []
         }
-        console.log('Desks:', response.data.DeviceCollection.rows.length)
-        return response.data.DeviceCollection.rows
+        console.log('Desks:', response.data.result.devices.length)
+        return response.data.result.devices
     }
     catch (err) {
         console.error('Desk list error:', err.response)
@@ -238,19 +239,18 @@ async function deskSync () {
     console.log('deskSync running...')
     var counts = { added: 0, changed: 0 }
     const devices = {}
-    for (const device of await deviceList()) {
+    for (const device of await deviceList('desk')) {
         devices[device.serialNumber] = device
     }
-    for (const door of await deskList()) {
-        const device = devices[door.id]
+    for (const desk of await deskList()) {
+        const deskId = 'h' + desk.embravaId
+        const deskName = desk.neighborhood + ' ' + desk.embravaId
+        const device = devices[deskId]
         if (device) {
             var doc = {}
-            door.name = door.name.replace('Receiption', 'Reception')
-                .replace('Receition', 'Reception')
-                .replace('Recepton', 'Reception')
-                .replace('Turstile', 'Turnstile')
-            if (device.name !== door.name) doc.name = door.name
-            if (!device.labels || !device.labels.type) doc.labels = { type: 'door' }
+            if (device.name !== deskName) doc.name = deskName
+            if (device.serialNumber !== deskId) doc.serialNumber = deskId
+            if (!device.labels || !device.labels.type) doc.labels = { type: 'desk' }
             if (Object.keys(doc).length > 0) {
                 try {
                     await axios({
@@ -262,10 +262,10 @@ async function deskSync () {
                         data: doc
                     })
                     counts.changed++
-                    console.log('doorSync changed:', device.UUID, device.serialNumber, doc)
+                    console.log('deskSync changed:', device.UUID, device.serialNumber, doc)
                 }
                 catch (err) {
-                    console.error('doorSync error:', err.response)
+                    console.error('deskSync error:', err.response)
                 }
             }
         }
@@ -278,20 +278,20 @@ async function deskSync () {
                         Authorization: 'Bearer ' + config.davra.token
                     },
                     data: {
-                        serialNumber: door.id,
-                        name: door.name,
-                        labels: { type: 'door' }
+                        serialNumber: deskId,
+                        name: deskName,
+                        labels: { type: 'desk' }
                     }
                 })
                 counts.added++
-                console.log('doorSync added:', door.id, door.name)
+                console.log('deskSync added:', deskId, deskName)
             }
             catch (err) {
-                console.error('doorSync error:', err.response)
+                console.error('deskSync error:', err.response)
             }
         }
     }
-    console.log('doorSync totals:', counts)
+    console.log('deskSync totals:', counts)
     return counts
 }
 // async function doorUsageStart () {

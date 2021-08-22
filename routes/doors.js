@@ -233,7 +233,7 @@ async function doorSync () {
     console.log('doorSync running...')
     var counts = { added: 0, changed: 0 }
     const devices = {}
-    for (const device of await deviceList()) {
+    for (const device of await deviceList('door')) {
         devices[device.serialNumber] = device
     }
     for (const door of await doorList()) {
