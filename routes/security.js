@@ -1,5 +1,7 @@
 const axios = require('axios')
+const mysql = require('mysql2/promise')
 var config
+const appspace = { expiryInterval: 1 * 10 * 1000 }
 const biostar = { expiryInterval: 60 * 60 * 1000 }
 const embrava = { expiryInterval: 60 * 60 * 1000 }
 exports.init = function (app) {
@@ -15,6 +17,27 @@ exports.init = function (app) {
 //     biostar.expiryTime = currentTimeMillis + biostar.expiryInterval
 //     biostar.timeout = setTimeout(renewSession, biostar.expiryInterval - 10 * 1000) // allow 10 seconds grace
 // }
+exports.getAppspaceConnection = async function () {
+    var currentTimeMillis = new Date().getTime()
+    if (appspace.connection) {
+        // if (currentTimeMillis < (embrava.expiryTime - (10 * 1000))) {
+        if (currentTimeMillis < appspace.expiryTime) {
+            console.log('Reusing Appspace connection')
+            appspace.expiryTime = currentTimeMillis + appspace.expiryInterval
+            return appspace.connection
+        }
+    }
+    const connection = await mysql.createConnection({
+        host: config.appspace.url,
+        user: config.appspace.userId,
+        password: config.appspace.password,
+        database: 'webman'
+    })
+    console.log('getAppspaceConnection connected as id ' + connection.threadId)
+    appspace.connection = connection
+    appspace.expiryTime = currentTimeMillis + appspace.expiryInterval
+    return appspace.connection
+}
 exports.getBioStarSessionId = async function () {
     // if (biostar.timeout !== undefined) clearTimeout(biostar.timeout)
     // biostar.timeout = setTimeout(renewSession, biostar.expiryInterval - 10 * 1000) // allow 10 seconds grace
@@ -50,8 +73,6 @@ exports.getBioStarSessionId = async function () {
     }
 }
 exports.getEmbravaToken = async function () {
-    // if (embrava.timeout !== undefined) clearTimeout(embrava.timeout)
-    // embrava.timeout = setTimeout(renewSession, embrava.expiryInterval - 10 * 1000) // allow 10 seconds grace
     var currentTimeMillis = new Date().getTime()
     if (embrava.token) {
         // if (currentTimeMillis < (embrava.expiryTime - (10 * 1000))) {

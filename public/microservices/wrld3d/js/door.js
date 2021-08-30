@@ -11,7 +11,6 @@ $(function () {
     if (window.location.hostname === 'localhost') {
         var davraToken = localStorage.getItem('davraToken')
         $.ajaxSetup({ headers: { Authorization: 'Bearer ' + davraToken } })
-        // $.ajaxSetup({ headers: { Authorization: 'Bearer ' + poi.user_data.token } })
         poi.davraUrl = 'https://pif.davra.com'
     }
     else {
@@ -23,7 +22,9 @@ $(function () {
     $('.address-icon.wifi i').addClass('fas fa-times')
     $('.address-icon.display i').addClass('fas fa-times')
     $('.address-icon.keypad i').addClass('fas fa-times')
-    var deviceId = (window.location.hostname !== 'pif.davra.com' && poi && poi.user_data.twitter) || '' // twitter account is the deviceId
+    var deviceId = ''
+    // twitter account is the deviceId
+    if (window.location.hostname !== 'pif.davra.com' && poi && poi.user_data.twitter) deviceId = poi.user_data.twitter
     if (deviceId) {
         $.get(poi.davraMs + '/door/capability/' + encodeURIComponent(deviceId), function (result) {
             if (!result.success) {
@@ -51,8 +52,9 @@ $(function () {
             }
         })
         // facebook account is the device type
-        if (poi.user_data.facebook === '1') $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/FaceStationF2.jpg'
-        else if (poi.user_data.facebook === '2') $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/FaceLite.png'
+        type = poi.user_data.facebook
+        if (type === '1') $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/FaceStationF2.jpg'
+        else if (type === '2') $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/FaceLite.png'
         else $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/FaceStationF2.jpg'
     }
     else if (type === '1') {
@@ -362,14 +364,14 @@ function doUptime (poi, deviceId) {
             var value2 = values2.length ? values2[values2.length - 1][1] : 0
             var value3 = values3.length ? values3[values3.length - 1][1] : 0
             var value4 = values4.length ? values4[values4.length - 1][1] : 0
-            var perc1 = roundTo2((value1 * 100) / (1 * 24 * 60 * 60 * 1000))
-            var perc2 = roundTo2((value2 * 100) / (7 * 24 * 60 * 60 * 1000))
-            var perc3 = roundTo2((value3 * 100) / (30 * 24 * 60 * 60 * 1000))
-            var perc4 = roundTo2((value4 * 100) / (365 * 24 * 60 * 60 * 1000))
-            chartUptimeConfig.dataProvider[0].uptime = roundTo2(100 - perc1)
-            chartUptimeConfig.dataProvider[1].uptime = roundTo2(100 - perc2)
-            chartUptimeConfig.dataProvider[2].uptime = roundTo2(100 - perc3)
-            chartUptimeConfig.dataProvider[3].uptime = roundTo2(100 - perc4)
+            var perc1 = utils.roundTo2((value1 * 100) / (1 * 24 * 60 * 60 * 1000))
+            var perc2 = utils.roundTo2((value2 * 100) / (7 * 24 * 60 * 60 * 1000))
+            var perc3 = utils.roundTo2((value3 * 100) / (30 * 24 * 60 * 60 * 1000))
+            var perc4 = utils.roundTo2((value4 * 100) / (365 * 24 * 60 * 60 * 1000))
+            chartUptimeConfig.dataProvider[0].uptime = utils.roundTo2(100 - perc1)
+            chartUptimeConfig.dataProvider[1].uptime = utils.roundTo2(100 - perc2)
+            chartUptimeConfig.dataProvider[2].uptime = utils.roundTo2(100 - perc3)
+            chartUptimeConfig.dataProvider[3].uptime = utils.roundTo2(100 - perc4)
             chartUptimeConfig.dataProvider[0].downtime = perc1
             chartUptimeConfig.dataProvider[1].downtime = perc2
             chartUptimeConfig.dataProvider[2].downtime = perc3
@@ -405,9 +407,6 @@ function initTable (tableId, tableColumns, data) {
         $(tableId).dataTable().fnClearTable()
         $(tableId).dataTable().fnAddData(data)
     }
-}
-function roundTo2 (num) {
-    return Math.round(num * 100) / 100
 }
 var chartUptimeConfig = {
     type: 'serial',

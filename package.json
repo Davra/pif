@@ -13,7 +13,8 @@
     "@connecthing.io/connecthing-api": "~1.0.2",
     "axios": "^0.21.1",
     "express": "^4.15.4",
-    "http-proxy": "^1.18.1"
+    "http-proxy": "^1.18.1",
+    "mysql2": "^2.3.0"
   },
   "devDependencies": {
     "eslint": "^7.29.0",

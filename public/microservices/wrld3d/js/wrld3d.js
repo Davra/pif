@@ -355,7 +355,7 @@ $(function () {
         // var roomMockup = 'https://cdn-webgl.wrld3d.com/html-poi-views/WRLD%20Meeting%20Room/meeting-room-available.html?poi=%7B%22id%22%3A387292%2C%22title%22%3A%22Meeting%20Room%22%2C%22subtitle%22%3Anull%2C%22tags%22%3A%22meeting_room%20general%20smart_workplace%22%2C%22lat%22%3A56.4600605%2C%22lon%22%3A-2.9782382%2C%22height_offset%22%3A0%2C%22indoor%22%3Atrue%2C%22indoor_id%22%3A%22westport_house%22%2C%22floor_id%22%3A2%2C%22user_data%22%3A%7B%22custom_view%22%3A%22https%3A%2F%2Fcdn-webgl.wrld3d.com%2Fhtml-poi-views%2FWRLD%2520Meeting%2520Room%2Fmeeting-room-available.html%22%2C%22custom_view_height%22%3A500%2C%22highlight%22%3A%22Meeting%20Room%20Large%22%2C%22highlight_color%22%3A%5B0%2C255%2C0%2C128%5D%7D%2C%22styleCustomProperties%22%3A%7B%22--primary-text-color%22%3A%22%20%20%20%23404040%22%2C%22--secondary-text-color%22%3A%22%20%20%20%23606060%22%2C%22--background-color%22%3A%22%20%20%20%23fff%22%2C%22--ui-element-color%22%3A%22%20%20%20%231756a9%22%2C%22--ui-element-alt-color%22%3A%22%20%20%20navy%22%2C%22--button-text-color%22%3A%22%20%20%20%23fff%22%2C%22--minor-ui-element-color%22%3A%22%20%20%20%23aaa%22%2C%22--box-shadow-color%22%3A%22%20%20rgba(0%2C0%2C0%2C0.3)%22%2C%22--traffic-light-go-color%22%3A%22%20%20%230b9b3c%22%2C%22--traffic-light-changing-color%22%3A%22%20%20%23d96f00%22%2C%22--traffic-light-stop-color%22%3A%22%20%20%23d1021a%22%7D%7D'
         var roomMockup = '/microservices/wrld3d/roomMockup.html'
         var powerMockup = '/microservices/wrld3d/powerMockup.html'
-        var signMockup = '/microservices/wrld3d/signMockup.html'
+        var sign = '/microservices/wrld3d/sign.html'
         $('.leaflet-pane.leaflet-popup-pane').removeClass('wide')
         if (markerOptions.iconKey === 'air_quality_good') {
             markerOptions.poiView.imageUrl = ''
@@ -398,7 +398,7 @@ $(function () {
         }
         if (markerOptions.iconKey === 'message') {
             markerOptions.poiView.imageUrl = ''
-            markerOptions.poiView.customView = signMockup
+            markerOptions.poiView.customView = sign
             markerOptions.poiView.customViewHeight = 460
         }
         markerController.addMarker(markerId, [result.lat, result.lon], markerOptions)

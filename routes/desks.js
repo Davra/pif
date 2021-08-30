@@ -114,16 +114,16 @@ exports.init = async function (app) {
     //     const count = await deskUpdate()
     //     return res.send({ success: true, data: count })
     // })
-    // app.get('/door/usage/start', async (req, res) => {
-    //     doorUsageStart()
-    //     res.send({ success: true, message: 'Door usage started' })
+    // app.get('/desk/usage/start', async (req, res) => {
+    //     deskUsageStart()
+    //     res.send({ success: true, message: 'Desk usage started' })
     // })
-    // app.get('/door/usage/stop', async (req, res) => {
-    //     doorUsageStop()
-    //     console.log('Door usage stopping...')
-    //     res.send({ success: true, message: 'Door usage stopping...' })
+    // app.get('/desk/usage/stop', async (req, res) => {
+    //     deskUsageStop()
+    //     console.log('Desk usage stopping...')
+    //     res.send({ success: true, message: 'Desk usage stopping...' })
     // })
-    // doorUsageStart()
+    // deskUsageStart()
 }
 // function getUserId (req, config) {
 //     var userId = req.headers['x-user-id'] || ''
@@ -294,12 +294,12 @@ async function deskSync () {
     console.log('deskSync totals:', counts)
     return counts
 }
-// async function doorUsageStart () {
+// async function deskUsageStart () {
 //     embrava.stop = false
-//     doorUsage()
+//     deskUsage()
 //     return true
 // }
-// async function doorUsageStop () {
+// async function deskUsageStop () {
 //     embrava.stop = true
 //     return true
 // }
