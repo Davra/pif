@@ -120,7 +120,8 @@ exports.init = async function (app) {
         console.log('Sign usage stopping...')
         res.send({ success: true, message: 'Sign usage stopping...' })
     })
-    // signUsageStart()
+    await signRefresh()
+    if (config.davra.env === 'live') signUsageStart()
 }
 // function getUserId (req, config) {
 //     var userId = req.headers['x-user-id'] || ''
@@ -145,6 +146,7 @@ async function deviceList (type) {
 }
 async function signCapability (id) {
     console.log('Sign ID:', id)
+    if (id.startsWith('s')) id = id.substr(1)
     const connection = await security.getAppspaceConnection()
     const result = await connection.execute('SELECT * FROM node N LEFT OUTER JOIN nodeprop NP ON N._id = NP._nodeId WHERE N._id = ?', [id])
     // console.log(result)
@@ -199,9 +201,16 @@ async function signList () {
     // console.log(result)
     return (result[0] || [])
 }
+async function signRefresh () {
+    appspace.signs = {}
+    for (const sign of await signList()) {
+        appspace.signs[sign._id] = sign
+    }
+}
 async function signStatus (id) {
     console.log('Sign ID:', id)
-    const sign = appspace.signs ? appspace.signs[id] : null
+    if (id.startsWith('s')) id = id.substr(1)
+    const sign = appspace.signs[id]
     const data = sign ? { status: sign.Status, sync: sign.SyncStatus } : null
     return data
 }
@@ -277,12 +286,6 @@ async function signUsage () {
     console.log('signUsage running...')
     var count = 0
     // if (!appspace.hooks) await hookList()
-    if (!appspace.signs) {
-        appspace.signs = {}
-        for (const sign of await signList()) {
-            appspace.signs[sign.id] = sign
-        }
-    }
     // if (!appspace.eventTypes) {
     //     appspace.eventTypes = {}
     //     for (const eventType of await eventTypeList()) {

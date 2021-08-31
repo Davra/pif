@@ -28,14 +28,6 @@ $(function () {
     // twitter account is the deviceId
     if (window.location.hostname !== 'pif.davra.com' && poi && poi.user_data.twitter) deviceId = 's' + poi.user_data.twitter
     if (deviceId) {
-        $.get(poi.davraMs + '/sign/capability/' + encodeURIComponent(deviceId), function (result) {
-            if (result.success) {
-                console.log('Sign capability', result.data)
-            }
-            else {
-                console.error('Sign capability failed: ' + result.message)
-            }
-        })
         $.get(poi.davraMs + '/sign/status/' + encodeURIComponent(deviceId), function (result) {
             if (result.success) {
                 console.log('Sign status data', result.data)
@@ -75,10 +67,37 @@ $(function () {
         $('.meeting-room-details .sync span').text('NO')
         $('.meeting-room-details .sync span').toggleClass('online offline')
     }
+    doProps(poi, deviceId)
     doCards(poi, deviceId)
     doUptime(poi, deviceId)
     doOutages(poi, deviceId)
 })
+function doProps (poi, deviceId) {
+    var data = []
+    var tableColumns = [
+        { title: 'Key', data: 'Property', width: '50%' },
+        { title: 'Value', data: 'value', width: '50%' }
+    ]
+    if (deviceId) { // get data
+        $.get(poi.davraMs + '/sign/capability/' + encodeURIComponent(deviceId), function (result) {
+            if (result.success) {
+                data = result.data
+                console.log('Sign capability', result.data)
+            }
+            else {
+                console.error('Sign capability failed: ' + result.message)
+            }
+            initTable('#propsTable', tableColumns, data)
+        })
+    }
+    else { // mockup data
+        data = [
+            { Property: 'Player.Model.Name', value: 'CRESTRON' },
+            { Property: 'Player.Software.Version', value: '2.27.0' }
+        ]
+        initTable('#propsTable', tableColumns, data)
+    }
+}
 // #tabCards is non-display pending redesign
 function doCards (poi, deviceId) {
     if (deviceId) { // get data

@@ -118,6 +118,7 @@ exports.init = async function (app) {
         console.log('Door usage stopping...')
         res.send({ success: true, message: 'Door usage stopping...' })
     })
+    await doorRefresh()
     if (config.davra.env === 'live') doorUsageStart()
 }
 function getUserId (req, config) {
@@ -221,6 +222,12 @@ async function doorList () {
     }
     catch (err) {
         console.error('Door list error:', err.response)
+    }
+}
+async function doorRefresh () {
+    biostar.doors = {}
+    for (const door of await doorList()) {
+        biostar.doors[door.id] = door
     }
 }
 async function doorStatus (id) {
@@ -331,12 +338,6 @@ async function doorUsage () {
     console.log('doorUsage running...')
     var count = 0
     if (!biostar.hooks) await hookList()
-    if (!biostar.doors) {
-        biostar.doors = {}
-        for (const door of await doorList()) {
-            biostar.doors[door.id] = door
-        }
-    }
     if (!biostar.eventTypes) {
         biostar.eventTypes = {}
         for (const eventType of await eventTypeList()) {

@@ -123,7 +123,8 @@ exports.init = async function (app) {
     //     console.log('Desk usage stopping...')
     //     res.send({ success: true, message: 'Desk usage stopping...' })
     // })
-    // deskUsageStart()
+    await deskRefresh()
+    // if (config.davra.env === 'live') deskUsageStart()
 }
 // function getUserId (req, config) {
 //     var userId = req.headers['x-user-id'] || ''
@@ -229,6 +230,12 @@ async function deskList () {
         console.error('Desk list error:', err.response)
     }
 }
+async function deskRefresh () {
+    embrava.doors = {}
+    for (const door of await deskList()) {
+        embrava.doors[door.id] = door
+    }
+}
 async function deskStatus (id) {
     console.log('Desk ID:', id)
     const door = embrava.desks ? embrava.desks[id] : null
@@ -307,12 +314,6 @@ async function deskSync () {
 //     console.log('deskUsage running...')
 //     var count = 0
 //     if (!embrava.hooks) await hookList()
-//     if (!embrava.doors) {
-//         embrava.doors = {}
-//         for (const door of await doorList()) {
-//             embrava.doors[door.id] = door
-//         }
-//     }
 //     if (!embrava.eventTypes) {
 //         embrava.eventTypes = {}
 //         for (const eventType of await eventTypeList()) {

@@ -58,10 +58,13 @@
 		<hr>	
 		<div class="recordHeading">
 			<ul class="tabbedMenu nav nav-tabs" role="tablist">
+				<li class="active" role="presentation">
+					<a class="tabProps" href="#tabPropsPanel" role="tab" data-toggle="tab"><span>Properties</span></a>
+				</li>
 				<li role="presentation" style="display: none;">
 					<a class="tabCards" href="#tabCardsPanel" role="tab" data-toggle="tab"><span>Cards</span></a>
 				</li>
-				<li class="active" role="presentation">
+				<li role="presentation">
 					<a class="tabUptime" href="#tabUptimePanel" role="tab" data-toggle="tab"><span>Uptime</span></a>
 				</li>
 				<li role="presentation">
@@ -70,7 +73,12 @@
 			</ul>
 		</div>
 		<div class="tab-content">
-			<div role="tabpanel" class="tab-pane fade in active" id="tabCardsPanel">
+			<div role="tabpanel" class="tab-pane fade in active" id="tabPropsPanel">
+				<div class="table-container">
+					<table id="propsTable" width="100%" class="table dataTable dt-bootstrap dt-responsive"></table>
+				</div>
+			</div>
+			<div role="tabpanel" class="tab-pane fade" id="tabCardsPanel">
 				<div id="chartCards" style="width: 1px; height: 1px; max-height: 320px;"></div>
 			</div>
 			<div role="tabpanel" class="tab-pane fade" id="tabUptimePanel">
