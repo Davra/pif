@@ -1,6 +1,7 @@
 const axios = require('axios')
 const express = require('express')
 const security = require('./security.js')
+const utils = require('./utils.js')
 const uuidv4 = require('uuid/v4')
 var config
 const biostar = {}
@@ -126,22 +127,6 @@ function getUserId (req, config) {
     if (!userId && config.davra.env === 'dev') userId = 'admin' // default to admin for testing
     return userId
 }
-async function deviceList (type) {
-    try {
-        const response = await axios({
-            method: 'get',
-            url: config.davra.url + '/api/v1/devices' + (type ? '?labels.type=' + type : ''),
-            headers: {
-                Authorization: 'Bearer ' + config.davra.token
-            }
-        })
-        return response.data.records
-    }
-    catch (err) {
-        console.error('deviceList error:', err.response)
-        return null
-    }
-}
 async function doorCapability (id) {
     console.log('Door ID:', id)
     try {
@@ -176,9 +161,9 @@ async function doorConnect (door, event, eventType) {
         var duration = endDate - startDate
         if (duration === 0) return
         console.log('Door outage:', door.disconnectTime, event.device_id.id, startDate, endDate, duration)
-        door.disconnectTime = ''
+        door.disconnectTime = 0
         door.status = '1'
-        if (!await sendIotData(event.device_id.id, 'door.outage', startDate, duration, {
+        if (!await utils.sendIotData(config, event.device_id.id, 'door.outage', startDate, duration, {
             eventTypeId: event.event_type_id.code,
             eventTypeName: eventType.name
         })) {
@@ -192,7 +177,7 @@ async function doorConnect (door, event, eventType) {
             const timeslice = initialSlice || (duration > bucket ? bucket : duration)
             initialSlice = 0
             console.log('Door outage timeslice:', event.device_id.id, bucketDate, timeslice)
-            if (!await sendIotData(event.device_id.id, 'door.outage.timeslice', bucketDate, timeslice, {
+            if (!await utils.sendIotData(config, event.device_id.id, 'door.outage.timeslice', bucketDate, timeslice, {
                 eventTypeId: event.event_type_id.code,
                 eventTypeName: eventType.name
             })) {
@@ -240,7 +225,7 @@ async function doorSync () {
     console.log('doorSync running...')
     var counts = { added: 0, changed: 0 }
     const devices = {}
-    for (const device of await deviceList('door')) {
+    for (const device of await utils.deviceList(config, 'door')) {
         devices[device.serialNumber] = device
     }
     for (const door of await doorList()) {
@@ -335,6 +320,7 @@ async function doorUsageStop () {
     return true
 }
 async function doorUsage () {
+    if (biostar.stop) return
     console.log('doorUsage running...')
     var count = 0
     if (!biostar.hooks) await hookList()
@@ -348,7 +334,6 @@ async function doorUsage () {
         config.biostar.startTime = '2021-01-01T00:00:00.000Z'
     }
     for (const event of await eventList()) {
-        if (biostar.stop) break
         if (event.datetime > config.biostar.startTime) config.biostar.startTime = event.datetime
         const door = biostar.doors[event.device_id.id]
         if (!door) continue
@@ -361,7 +346,7 @@ async function doorUsage () {
             await doorConnect(door, event, eventType)
             continue
         }
-        if (!await sendIotData(event.device_id.id, 'door.access', Date.parse(event.datetime), 1, {
+        if (!await utils.sendIotData(config, event.device_id.id, 'door.access', Date.parse(event.datetime), 1, {
             eventTypeId: event.event_type_id.code,
             eventTypeName: eventType.name
         })) {
@@ -475,30 +460,6 @@ function runWebhooks (name, event) {
             console.error('Run webhook error:', err, hook.id, hook.url)
         })
     }
-}
-async function sendIotData (deviceId, metricName, timestamp, value, tags) {
-    try {
-        await axios({
-            method: 'put',
-            url: config.davra.url + '/api/v1/iotdata',
-            headers: {
-                Authorization: 'Bearer ' + config.davra.token
-            },
-            data: [{
-                UUID: deviceId,
-                timestamp: timestamp,
-                name: metricName,
-                value: value,
-                msg_type: 'datum',
-                tags: tags
-            }]
-        })
-    }
-    catch (err) {
-        console.error('sendIotData error:', err.response)
-        return false
-    }
-    return true
 }
 async function updateConfig (key, value) {
     const data = {}

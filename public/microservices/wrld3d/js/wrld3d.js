@@ -348,7 +348,7 @@ $(function () {
         var airMockup = '/microservices/wrld3d/airMockup.html'
         // var badgeMockup = '/microservices/wrld3d/badgeMockup.html'
         var beaconMockup = '/microservices/wrld3d/beaconMockup.html'
-        var deskMockup = '/microservices/wrld3d/deskMockup.html'
+        var desk = '/microservices/wrld3d/desk.html'
         var door = '/microservices/wrld3d/door.html'
         var fireMockup = '/microservices/wrld3d/fireMockup.html'
         // var tempMockup = 'https://wrld-data-service.s3-us-west-2.amazonaws.com/staging/mock-pois/yanzi-Single-POI/index.html?intervalHours=24&cardType=Temperature&primaryMaxLimit=29&primaryMinLimit=21&poi=%7B%22id%22%3A2999625%2C%22title%22%3A%22Meeting%20Room%20Temprature%22%2C%22subtitle%22%3A%22Big%20Meeting%20Room%20Comfort%20Sensor%200B7F%22%2C%22tags%22%3A%22temperature_sensor%20temperature%22%2C%22lat%22%3A56.4600614%2C%22lon%22%3A-2.9782264%2C%22height_offset%22%3A0%2C%22indoor%22%3Atrue%2C%22indoor_id%22%3A%22westport_house%22%2C%22floor_id%22%3A2%2C%22user_data%22%3A%7B%22custom_view%22%3A%22https%3A%2F%2Fwrld-data-service.s3-us-west-2.amazonaws.com%2Fstaging%2Fmock-pois%2Fyanzi-Single-POI%2Findex.html%3FintervalHours%3D24%26cardType%3DTemperature%26primaryMaxLimit%3D29%26primaryMinLimit%3D21%22%2C%22custom_view_height%22%3A230%2C%22highlight%22%3A%22Meeting%20Room%20Large%22%2C%22highlight_color%22%3A%5B121%2C244%2C47%2C191%5D%7D%2C%22styleCustomProperties%22%3A%7B%22--primary-text-color%22%3A%22%20%20%20%23404040%22%2C%22--secondary-text-color%22%3A%22%20%20%20%23606060%22%2C%22--background-color%22%3A%22%20%20%20%23fff%22%2C%22--ui-element-color%22%3A%22%20%20%20%231756a9%22%2C%22--ui-element-alt-color%22%3A%22%20%20%20navy%22%2C%22--button-text-color%22%3A%22%20%20%20%23fff%22%2C%22--minor-ui-element-color%22%3A%22%20%20%20%23aaa%22%2C%22--box-shadow-color%22%3A%22%20%20rgba(0%2C0%2C0%2C0.3)%22%2C%22--traffic-light-go-color%22%3A%22%20%20%230b9b3c%22%2C%22--traffic-light-changing-color%22%3A%22%20%20%23d96f00%22%2C%22--traffic-light-stop-color%22%3A%22%20%20%23d1021a%22%7D%7D'
@@ -370,7 +370,7 @@ $(function () {
         }
         if (markerOptions.iconKey === 'desk_available') {
             markerOptions.poiView.imageUrl = ''
-            markerOptions.poiView.customView = deskMockup
+            markerOptions.poiView.customView = desk
             markerOptions.poiView.customViewHeight = 460
         }
         if (markerOptions.iconKey === 'badge_reader') {

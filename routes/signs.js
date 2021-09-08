@@ -1,6 +1,7 @@
 const axios = require('axios')
 const express = require('express')
 const security = require('./security.js')
+const utils = require('./utils.js')
 // const uuidv4 = require('uuid/v4')
 var config
 const appspace = {}
@@ -128,22 +129,6 @@ exports.init = async function (app) {
 //     if (!userId && config.davra.env === 'dev') userId = 'admin' // default to admin for testing
 //     return userId
 // }
-async function deviceList (type) {
-    try {
-        const response = await axios({
-            method: 'get',
-            url: config.davra.url + '/api/v1/devices' + (type ? '?labels.type=' + type : ''),
-            headers: {
-                Authorization: 'Bearer ' + config.davra.token
-            }
-        })
-        return response.data.records
-    }
-    catch (err) {
-        console.error('deviceList error:', err.response)
-        return null
-    }
-}
 async function signCapability (id) {
     console.log('Sign ID:', id)
     if (id.startsWith('s')) id = id.substr(1)
@@ -161,15 +146,15 @@ async function signConnect (sign, event, timestamp) {
         return
     }
     if (event.status === 0) { // status OK
+        sign.status = event.status
         if (!sign.disconnectTime) return // ignore connect without a previous disconnect
         const startDate = sign.disconnectTime
         const endDate = timestamp
         var duration = endDate - startDate
+        sign.disconnectTime = 0
         if (duration === 0) return
         console.log('Sign outage:', sign.disconnectTime, event._id, startDate, endDate, duration)
-        sign.disconnectTime = 0
-        sign.status = event.status
-        if (!await sendIotData('s' + event._id, 'sign.outage', startDate, duration, {
+        if (!await utils.sendIotData(config, 's' + event._id, 'sign.outage', startDate, duration, {
             // eventTypeId: event.event_type_id.code,
             // eventTypeName: eventType.name
         })) {
@@ -183,7 +168,7 @@ async function signConnect (sign, event, timestamp) {
             const timeslice = initialSlice || (duration > bucket ? bucket : duration)
             initialSlice = 0
             console.log('Sign outage timeslice:', event._id, bucketDate, timeslice)
-            if (!await sendIotData('s' + event._id, 'sign.outage.timeslice', bucketDate, timeslice, {
+            if (!await utils.sendIotData(config, 's' + event._id, 'sign.outage.timeslice', bucketDate, timeslice, {
                 // eventTypeId: event.event_type_id.code,
                 // eventTypeName: eventType.name
             })) {
@@ -211,6 +196,8 @@ async function signStatus (id) {
     console.log('Sign ID:', id)
     if (id.startsWith('s')) id = id.substr(1)
     const sign = appspace.signs[id]
+    // maybe SyncStatus is not needed as it seems to be included in the Status field
+    // 0 as status is Sync-Online, 1 is Offline, 2 Online - Out of Sync, 3 is Communication lost
     const data = sign ? { status: sign.Status, sync: sign.SyncStatus } : null
     return data
 }
@@ -218,7 +205,7 @@ async function signSync () {
     console.log('signSync running...')
     var counts = { added: 0, changed: 0 }
     const devices = {}
-    for (const device of await deviceList('sign')) {
+    for (const device of await utils.deviceList(config, 'sign')) {
         devices[device.serialNumber] = device
     }
     for (const sign of await signList()) {
@@ -283,6 +270,7 @@ async function signUsageStop () {
     return true
 }
 async function signUsage () {
+    if (appspace.stop) return
     console.log('signUsage running...')
     var count = 0
     // if (!appspace.hooks) await hookList()
@@ -297,7 +285,6 @@ async function signUsage () {
     // }
     const timestamp = new Date().getTime()
     for (const event of await eventList()) {
-        if (appspace.stop) break
         // if (event.datetime > config.appspace.startTime) config.appspace.startTime = event.datetime
         const sign = appspace.signs[event._id]
         if (!sign) continue
@@ -310,7 +297,7 @@ async function signUsage () {
         //     await signConnect(sign, event, eventType)
         //     continue
         // }
-        // if (!await sendIotData('s' + event._id, 'sign.access', Date.parse(event.datetime), 1, {
+        // if (!await utils.sendIotData(config, 's' + event._id, 'sign.access', Date.parse(event.datetime), 1, {
         //     eventTypeId: event.event_type_id.code,
         //     eventTypeName: eventType.name
         // })) {
@@ -376,30 +363,6 @@ async function eventList () {
 //         })
 //     }
 // }
-async function sendIotData (deviceId, metricName, timestamp, value, tags) {
-    try {
-        await axios({
-            method: 'put',
-            url: config.davra.url + '/api/v1/iotdata',
-            headers: {
-                Authorization: 'Bearer ' + config.davra.token
-            },
-            data: [{
-                UUID: deviceId,
-                timestamp: timestamp,
-                name: metricName,
-                value: value,
-                msg_type: 'datum',
-                tags: tags
-            }]
-        })
-    }
-    catch (err) {
-        console.error('sendIotData error:', err.response)
-        return false
-    }
-    return true
-}
 // async function updateConfig (key, value) {
 //     const data = {}
 //     data[key] = value
