@@ -4,7 +4,7 @@ const security = require('./security.js')
 const utils = require('./utils.js')
 const uuidv4 = require('uuid/v4')
 var config
-const biostar = {}
+const biostar = { prefix: '' }
 exports.init = async function (app) {
     config = app.get('config')
     app.get('/api/biostar/hooks', (req, res) => {
@@ -142,7 +142,7 @@ async function doorCapability (id) {
         return response.data.DeviceTypeCollection.rows[0]
     }
     catch (err) {
-        console.error('Door capabilities error:', err.response)
+        console.error('Door capabilities error:', err)
         return null
     }
 }
@@ -163,7 +163,7 @@ async function doorConnect (door, event, eventType) {
         console.log('Door outage:', door.disconnectTime, event.device_id.id, startDate, endDate, duration)
         door.disconnectTime = 0
         door.status = '1'
-        if (!await utils.sendIotData(config, event.device_id.id, 'door.outage', startDate, duration, {
+        if (!await utils.sendIotData(config, biostar.prefix + event.device_id.id, 'door.outage', startDate, duration, {
             eventTypeId: event.event_type_id.code,
             eventTypeName: eventType.name
         })) {
@@ -177,7 +177,7 @@ async function doorConnect (door, event, eventType) {
             const timeslice = initialSlice || (duration > bucket ? bucket : duration)
             initialSlice = 0
             console.log('Door outage timeslice:', event.device_id.id, bucketDate, timeslice)
-            if (!await utils.sendIotData(config, event.device_id.id, 'door.outage.timeslice', bucketDate, timeslice, {
+            if (!await utils.sendIotData(config, biostar.prefix + event.device_id.id, 'door.outage.timeslice', bucketDate, timeslice, {
                 eventTypeId: event.event_type_id.code,
                 eventTypeName: eventType.name
             })) {
@@ -206,7 +206,7 @@ async function doorList () {
         return response.data.DeviceCollection.rows
     }
     catch (err) {
-        console.error('Door list error:', err.response)
+        console.error('Door list error:', err)
     }
 }
 async function doorRefresh () {
@@ -252,7 +252,7 @@ async function doorSync () {
                     console.log('doorSync changed:', device.UUID, device.serialNumber, doc)
                 }
                 catch (err) {
-                    console.error('doorSync error:', err.response)
+                    console.error('doorSync error:', err)
                 }
             }
         }
@@ -274,7 +274,7 @@ async function doorSync () {
                 console.log('doorSync added:', door.id, door.name)
             }
             catch (err) {
-                console.error('doorSync error:', err.response)
+                console.error('doorSync error:', err)
             }
         }
     }
@@ -303,7 +303,7 @@ async function doorSync () {
 //                 console.log('doorUpdate:', device.UUID, device.serialNumber, device.name)
 //             }
 //             catch (err) {
-//                 console.error('doorUpdate error:', err.response)
+//                 console.error('doorUpdate error:', err)
 //             }
 //         }
 //     }
@@ -346,7 +346,7 @@ async function doorUsage () {
             await doorConnect(door, event, eventType)
             continue
         }
-        if (!await utils.sendIotData(config, event.device_id.id, 'door.access', Date.parse(event.datetime), 1, {
+        if (!await utils.sendIotData(config, biostar.prefix + event.device_id.id, 'door.access', Date.parse(event.datetime), 1, {
             eventTypeId: event.event_type_id.code,
             eventTypeName: eventType.name
         })) {
@@ -381,7 +381,7 @@ async function eventTypeList () {
         return response.data.EventTypeCollection.rows
     }
     catch (err) {
-        console.error('EventType list error:', err.response)
+        console.error('EventType list error:', err)
     }
 }
 async function eventList () {
@@ -418,7 +418,7 @@ async function eventList () {
         return response.data.EventCollection.rows
     }
     catch (err) {
-        console.error('Event list error:', err.response)
+        console.error('Event list error:', err)
     }
 }
 async function hookList () {
@@ -438,7 +438,7 @@ async function hookList () {
         updateHooksLookup()
     }
     catch (err) {
-        console.error('hookList error:', err.response)
+        console.error('hookList error:', err)
         process.exit(1)
     }
 }
@@ -476,7 +476,7 @@ async function updateConfig (key, value) {
         console.log('updateConfig:', config.uuid, key, value)
     }
     catch (err) {
-        console.error('updateConfig error:', err.response)
+        console.error('updateConfig error:', err)
     }
 }
 async function updateHooksLookup () {
@@ -505,6 +505,6 @@ async function updateHooks (userId, hooks) {
         updateHooksLookup()
     }
     catch (err) {
-        console.error('updateHooks error:', err.response)
+        console.error('updateHooks error:', err)
     }
 }

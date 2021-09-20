@@ -68,7 +68,7 @@ exports.getBioStarSessionId = async function () {
         return biostar.sessionId
     }
     catch (err) {
-        console.error('getBioStarSessionId error:', err.response)
+        console.error('getBioStarSessionId error:', err)
         return null
     }
 }
@@ -103,7 +103,7 @@ exports.getEmbravaToken = async function () {
         return embrava.token
     }
     catch (err) {
-        console.error('getEmbravaToken error:', err.response)
+        console.error('getEmbravaToken error:', err)
         return null
     }
 }

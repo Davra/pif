@@ -4,7 +4,7 @@ const security = require('./security.js')
 const utils = require('./utils.js')
 // const uuidv4 = require('uuid/v4')
 var config
-const appspace = {}
+const appspace = { prefix: 's' }
 exports.init = async function (app) {
     config = app.get('config')
     // app.get('/api/appspace/hooks', (req, res) => {
@@ -131,7 +131,7 @@ exports.init = async function (app) {
 // }
 async function signCapability (id) {
     console.log('Sign ID:', id)
-    if (id.startsWith('s')) id = id.substr(1)
+    if (id.startsWith(appspace.prefix)) id = id.substr(1)
     const connection = await security.getAppspaceConnection()
     const result = await connection.execute('SELECT * FROM node N LEFT OUTER JOIN nodeprop NP ON N._id = NP._nodeId WHERE N._id = ?', [id])
     // console.log(result)
@@ -154,7 +154,7 @@ async function signConnect (sign, event, timestamp) {
         sign.disconnectTime = 0
         if (duration === 0) return
         console.log('Sign outage:', sign.disconnectTime, event._id, startDate, endDate, duration)
-        if (!await utils.sendIotData(config, 's' + event._id, 'sign.outage', startDate, duration, {
+        if (!await utils.sendIotData(config, appspace.prefix + event._id, 'sign.outage', startDate, duration, {
             // eventTypeId: event.event_type_id.code,
             // eventTypeName: eventType.name
         })) {
@@ -168,7 +168,7 @@ async function signConnect (sign, event, timestamp) {
             const timeslice = initialSlice || (duration > bucket ? bucket : duration)
             initialSlice = 0
             console.log('Sign outage timeslice:', event._id, bucketDate, timeslice)
-            if (!await utils.sendIotData(config, 's' + event._id, 'sign.outage.timeslice', bucketDate, timeslice, {
+            if (!await utils.sendIotData(config, appspace.prefix + event._id, 'sign.outage.timeslice', bucketDate, timeslice, {
                 // eventTypeId: event.event_type_id.code,
                 // eventTypeName: eventType.name
             })) {
@@ -194,7 +194,7 @@ async function signRefresh () {
 }
 async function signStatus (id) {
     console.log('Sign ID:', id)
-    if (id.startsWith('s')) id = id.substr(1)
+    if (id.startsWith(appspace.prefix)) id = id.substr(1)
     const sign = appspace.signs[id]
     // maybe SyncStatus is not needed as it seems to be included in the Status field
     // 0 as status is Sync-Online, 1 is Offline, 2 Online - Out of Sync, 3 is Communication lost
@@ -209,7 +209,7 @@ async function signSync () {
         devices[device.serialNumber] = device
     }
     for (const sign of await signList()) {
-        const signId = 's' + sign._id
+        const signId = appspace.prefix + sign._id
         const signName = sign.Name + ' ' + sign._id
         const device = devices[signId]
         if (device) {
@@ -231,7 +231,7 @@ async function signSync () {
                     console.log('signSync changed:', device.UUID, device.serialNumber, doc)
                 }
                 catch (err) {
-                    console.error('signSync error:', err.response)
+                    console.error('signSync error:', err)
                 }
             }
         }
@@ -253,7 +253,7 @@ async function signSync () {
                 console.log('signSync added:', signId, signName)
             }
             catch (err) {
-                console.error('signSync error:', err.response)
+                console.error('signSync error:', err)
             }
         }
     }
@@ -297,7 +297,7 @@ async function signUsage () {
         //     await signConnect(sign, event, eventType)
         //     continue
         // }
-        // if (!await utils.sendIotData(config, 's' + event._id, 'sign.access', Date.parse(event.datetime), 1, {
+        // if (!await utils.sendIotData(config, appspace.prefix + event._id, 'sign.access', Date.parse(event.datetime), 1, {
         //     eventTypeId: event.event_type_id.code,
         //     eventTypeName: eventType.name
         // })) {
@@ -340,7 +340,7 @@ async function eventList () {
 //         updateHooksLookup()
 //     }
 //     catch (err) {
-//         console.error('hookList error:', err.response)
+//         console.error('hookList error:', err)
 //         process.exit(1)
 //     }
 // }
@@ -378,7 +378,7 @@ async function eventList () {
 //         console.log('updateConfig:', config.uuid, key, value)
 //     }
 //     catch (err) {
-//         console.error('updateConfig error:', err.response)
+//         console.error('updateConfig error:', err)
 //     }
 // }
 // async function updateHooksLookup () {
@@ -407,6 +407,6 @@ async function eventList () {
 //         updateHooksLookup()
 //     }
 //     catch (err) {
-//         console.error('updateHooks error:', err.response)
+//         console.error('updateHooks error:', err)
 //     }
 // }

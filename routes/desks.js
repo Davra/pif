@@ -4,7 +4,7 @@ const security = require('./security.js')
 const utils = require('./utils.js')
 // const uuidv4 = require('uuid/v4')
 var config
-const embrava = {}
+const embrava = { prefix: 'h' }
 exports.init = async function (app) {
     config = app.get('config')
     // app.get('/api/embrava/hooks', (req, res) => {
@@ -130,7 +130,7 @@ exports.init = async function (app) {
 // }
 async function deskCapability (id) {
     console.log('Desk ID:', id)
-    if (id.startsWith('h')) id = id.substr(1)
+    if (id.startsWith(embrava.prefix)) id = id.substr(1)
     try {
         const response = await axios({
             method: 'post',
@@ -144,7 +144,7 @@ async function deskCapability (id) {
         return response.data
     }
     catch (err) {
-        console.error('Desk capabilities error:', err.response)
+        console.error('Desk capabilities error:', err)
         return null
     }
 }
@@ -165,7 +165,7 @@ async function deskConnect (desk, event, timestamp) {
     desk.disconnectTime = 0
     if (duration === 0) return
     console.log('Desk outage:', desk.disconnectTime, event.embravaId, startDate, endDate, duration)
-    if (!await utils.sendIotData(config, event.embravaId, 'desk.outage', startDate, duration, {
+    if (!await utils.sendIotData(config, embrava.prefix + event.embravaId, 'desk.outage', startDate, duration, {
         // eventTypeId: event.event_type_id.code,
         // eventTypeName: eventType.name
     })) {
@@ -179,7 +179,7 @@ async function deskConnect (desk, event, timestamp) {
         const timeslice = initialSlice || (duration > bucket ? bucket : duration)
         initialSlice = 0
         console.log('Desk outage timeslice:', event.embravaId, bucketDate, timeslice)
-        if (!await utils.sendIotData(config, event.embravaId, 'desk.outage.timeslice', bucketDate, timeslice, {
+        if (!await utils.sendIotData(config, embrava.prefix + event.embravaId, 'desk.outage.timeslice', bucketDate, timeslice, {
             // eventTypeId: event.event_type_id.code,
             // eventTypeName: eventType.name
         })) {
@@ -206,7 +206,7 @@ async function deskCheckin (desk, event, timestamp) {
     desk.checkinTime = 0
     if (duration === 0) return
     console.log('Desk usage:', desk.checkinTime, event.embravaId, startDate, endDate, duration)
-    if (!await utils.sendIotData(config, event.embravaId, 'desk.usage', startDate, duration, {
+    if (!await utils.sendIotData(config, embrava.prefix + event.embravaId, 'desk.usage', startDate, duration, {
         // eventTypeId: event.event_type_id.code,
         // eventTypeName: eventType.name
     })) {
@@ -220,7 +220,7 @@ async function deskCheckin (desk, event, timestamp) {
         const timeslice = initialSlice || (duration > bucket ? bucket : duration)
         initialSlice = 0
         console.log('Desk usage timeslice:', event.embravaId, bucketDate, timeslice)
-        if (!await utils.sendIotData(config, event.embravaId, 'desk.usage.timeslice', bucketDate, timeslice, {
+        if (!await utils.sendIotData(config, embrava.prefix + event.embravaId, 'desk.usage.timeslice', bucketDate, timeslice, {
             // eventTypeId: event.event_type_id.code,
             // eventTypeName: eventType.name
         })) {
@@ -249,18 +249,18 @@ async function deskList () {
         return response.data.result.devices
     }
     catch (err) {
-        console.error('Desk list error:', err.response)
+        console.error('Desk list error:', err)
     }
 }
 async function deskRefresh () {
-    embrava.doors = {}
-    for (const door of await deskList()) {
-        embrava.doors[door.id] = door
+    embrava.desks = {}
+    for (const desk of await deskList()) {
+        embrava.desks[desk.embravaId] = desk
     }
 }
 async function deskStatus (id) {
     console.log('Desk ID:', id)
-    if (id.startsWith('s')) id = id.substr(1)
+    if (id.startsWith(embrava.prefix)) id = id.substr(1)
     const desk = embrava.desks ? embrava.desks[id] : null
     const status = desk ? desk.state : 'Offline'
     return status
@@ -273,7 +273,7 @@ async function deskSync () {
         devices[device.serialNumber] = device
     }
     for (const desk of await deskList()) {
-        const deskId = 'h' + desk.embravaId
+        const deskId = embrava.prefix + desk.embravaId
         const deskName = desk.neighborhood + ' ' + desk.embravaId
         const device = devices[deskId]
         if (device) {
@@ -295,7 +295,7 @@ async function deskSync () {
                     console.log('deskSync changed:', device.UUID, device.serialNumber, doc)
                 }
                 catch (err) {
-                    console.error('deskSync error:', err.response)
+                    console.error('deskSync error:', err)
                 }
             }
         }
@@ -317,7 +317,7 @@ async function deskSync () {
                 console.log('deskSync added:', deskId, deskName)
             }
             catch (err) {
-                console.error('deskSync error:', err.response)
+                console.error('deskSync error:', err)
             }
         }
     }
@@ -389,7 +389,7 @@ async function eventList () {
 //         updateHooksLookup()
 //     }
 //     catch (err) {
-//         console.error('hookList error:', err.response)
+//         console.error('hookList error:', err)
 //         process.exit(1)
 //     }
 // }
@@ -427,7 +427,7 @@ async function eventList () {
 //         console.log('updateConfig:', config.uuid, key, value)
 //     }
 //     catch (err) {
-//         console.error('updateConfig error:', err.response)
+//         console.error('updateConfig error:', err)
 //     }
 // }
 // async function updateHooksLookup () {
@@ -456,6 +456,6 @@ async function eventList () {
 //         updateHooksLookup()
 //     }
 //     catch (err) {
-//         console.error('updateHooks error:', err.response)
+//         console.error('updateHooks error:', err)
 //     }
 // }
