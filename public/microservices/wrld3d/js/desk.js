@@ -23,11 +23,11 @@ $(function () {
     if (deviceId) {
         $.get(poi.davraMs + '/desk/status/' + encodeURIComponent(deviceId), function (result) {
             if (result.success) {
-                console.log('Sign status data', result.data)
-                if (result.data.state === 'Available') {
+                console.log('Desk status', result.status)
+                if (result.status === 'Available') {
                     $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/available.jpg'
                 }
-                else if (result.data.state === 'Checked In') {
+                else if (result.status === 'Checked In') {
                     $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/checked-in.jpg'
                 }
                 else {
@@ -35,7 +35,7 @@ $(function () {
                 }
             }
             else {
-                console.error('Sign status not found')
+                console.error('Desk status not found')
             }
         })
     }
@@ -126,7 +126,10 @@ function chartOccupancy (data) {
 function doOccupancy (poi, deviceId) {
     var dataset = []
     if (deviceId) { // get data
-        var endDate = new Date().getTime()
+        var oneYearAgo = new Date(); oneYearAgo.setDate(oneYearAgo.getDate() - (52 * 7)); oneYearAgo = oneYearAgo.getTime()
+        var installDate = new Date(2021, 8, 17).getTime()
+        if (installDate > oneYearAgo) oneYearAgo = installDate
+        var numberOfWeeks = Math.floor((new Date().getTime() - oneYearAgo) / (7 * 24 * 60 * 60 * 1000)) || 1
         var data = {
             metrics: [
                 {
@@ -134,31 +137,44 @@ function doOccupancy (poi, deviceId) {
                     limit: 100000,
                     tags: {
                         serialNumber: deviceId
-                    },
-                    aggregators: [{
-                        name: 'avg',
-                        sampling: {
-                            value: '1',
-                            unit: 'hours'
-                        }
-                    }]
+                    }
+                    // aggregators: [{
+                    //     name: 'avg',
+                    //     sampling: {
+                    //         value: '1',
+                    //         unit: 'hours'
+                    //     }
+                    // }]
                 }
             ],
-            start_absolute: endDate - (365 * 24 * 60 * 60 * 1000),
-            end_absolute: endDate
+            start_absolute: oneYearAgo
         }
         $.post(poi.davraUrl + '/api/v2/timeseriesData', JSON.stringify(data), function (result) {
             console.log(result)
             var values = result.queries[0].results[0].values
+            var day, hour, datapoint
+            var datapoints = {}
             for (var i = 0, n = values.length; i < n; i++) {
-                var value = values[i]
-                var date = new Date(value[0])
-                var day = date.getDay()
-                var hour = date.getHours()
-                if (day > 5) continue // Sunday to Thursday only
-                if (hour < 6 || hour > 18) continue // 06:00 to 18:59:59 only
-                var datapoint = { day: day + 1, hour: hour - 5, value: value[1] }
-                dataset.push(datapoint)
+                var date = new Date(values[i][0])
+                var value = values[i][1]
+                day = date.getDay()
+                hour = date.getHours()
+                datapoint = datapoints[day + '.' + hour]
+                if (datapoint) {
+                    datapoint.value += value
+                }
+                else {
+                    datapoint = { day: day, hour: hour, value: value }
+                    datapoints[datapoint.day + '.' + datapoint.hour] = datapoint
+                }
+            }
+            for (day = 0; day < 5; day++) {
+                for (hour = 6; hour < 19; hour++) {
+                    datapoint = datapoints[day + '.' + hour]
+                    if (!datapoint) datapoint = { day: day, hour: hour, value: 0 }
+                    var perc = utils.roundTo2((datapoint.value * 100) / (numberOfWeeks * 60 * 60 * 1000))
+                    dataset.push({ day: day + 1, hour: hour - 5, value: utils.roundTo2(100 - perc) })
+                }
             }
             chartOccupancy(dataset)
         })
@@ -223,7 +239,7 @@ function doOutages (poi, deviceId) {
             var i, n
             for (i = 0, n = values.length; i < n; i++) {
                 var value = values[i]
-                data.push({ timestamp: value[0], description: 'Contact lost', duration: value[1] })
+                data.push({ timestamp: value[0], description: 'Contact lost', duration: value[1], userId: '' })
             }
             initTable('#table', tableColumns, data)
         })
@@ -241,7 +257,11 @@ function doOutages (poi, deviceId) {
 function doUptime (poi, deviceId) {
     if (deviceId) {
         // get data
-        var endDate = new Date().getTime()
+        var now = new Date().getTime()
+        var oneDayAgo = new Date(); oneDayAgo.setDate(oneDayAgo.getDate() - 1); oneDayAgo = oneDayAgo.getTime()
+        var oneWeekAgo = new Date(); oneWeekAgo.setDate(oneWeekAgo.getDate() - 7); oneWeekAgo = oneWeekAgo.getTime()
+        var oneMonthAgo = new Date(); oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1); oneMonthAgo = oneMonthAgo.getTime()
+        var oneYearAgo = new Date(); oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1); oneYearAgo = oneYearAgo.getTime()
         var data = {
             metrics: [
                 {
@@ -253,71 +273,33 @@ function doUptime (poi, deviceId) {
                     aggregators: [{
                         name: 'sum',
                         sampling: {
-                            value: '1',
+                            value: 1,
                             unit: 'days'
-                        }
-                    }]
-                },
-                {
-                    name: 'desk.outage.timeslice',
-                    limit: 100000,
-                    tags: {
-                        serialNumber: deviceId
-                    },
-                    aggregators: [{
-                        name: 'sum',
-                        sampling: {
-                            value: '7',
-                            unit: 'days'
-                        }
-                    }]
-                },
-                {
-                    name: 'desk.outage.timeslice',
-                    limit: 100000,
-                    tags: {
-                        serialNumber: deviceId
-                    },
-                    aggregators: [{
-                        name: 'sum',
-                        sampling: {
-                            value: '1',
-                            unit: 'months'
-                        }
-                    }]
-                },
-                {
-                    name: 'desk.outage.timeslice',
-                    limit: 100000,
-                    tags: {
-                        serialNumber: deviceId
-                    },
-                    aggregators: [{
-                        name: 'sum',
-                        sampling: {
-                            value: '1',
-                            unit: 'years'
                         }
                     }]
                 }
             ],
-            start_absolute: endDate - (365 * 24 * 60 * 60 * 1000),
-            end_absolute: endDate
+            start_absolute: oneYearAgo
         }
         $.post(poi.davraUrl + '/api/v2/timeseriesData', JSON.stringify(data), function (result) {
             console.log(result)
-            var values1 = result.queries[0].results[0].values
-            var values2 = result.queries[1].results[0].values
-            var values3 = result.queries[2].results[0].values
-            var values4 = result.queries[3].results[0].values
-            var value1 = values1.length ? values1[values1.length - 1][1] : 0
-            var value2 = values2.length ? values2[values2.length - 1][1] : 0
-            var value3 = values3.length ? values3[values3.length - 1][1] : 0
-            var value4 = values4.length ? values4[values4.length - 1][1] : 0
-            var perc1 = utils.roundTo2((value1 * 100) / (1 * 24 * 60 * 60 * 1000))
-            var perc2 = utils.roundTo2((value2 * 100) / (7 * 24 * 60 * 60 * 1000))
-            var perc3 = utils.roundTo2((value3 * 100) / (30 * 24 * 60 * 60 * 1000))
-            var perc4 = utils.roundTo2((value4 * 100) / (365 * 24 * 60 * 60 * 1000))
+            var values = result.queries[0].results[0].values || []
+            var value1 = 0
+            var value2 = 0
+            var value3 = 0
+            var value4 = 0
+            for (var i = values.length - 1; i >= 0; i--) {
+                var date = values[i][0]
+                var value = values[i][1]
+                if (date >= oneDayAgo) value1 += value
+                if (date >= oneWeekAgo) value2 += value
+                if (date >= oneMonthAgo) value3 += value
+                if (date >= oneYearAgo) value4 += value
+            }
+            var perc1 = utils.roundTo2((value1 * 100) / (now - oneDayAgo))
+            var perc2 = utils.roundTo2((value2 * 100) / (now - oneWeekAgo))
+            var perc3 = utils.roundTo2((value3 * 100) / (now - oneMonthAgo))
+            var perc4 = utils.roundTo2((value4 * 100) / (now - oneYearAgo))
             chartUptimeConfig.dataProvider[0].uptime = utils.roundTo2(100 - perc1)
             chartUptimeConfig.dataProvider[1].uptime = utils.roundTo2(100 - perc2)
             chartUptimeConfig.dataProvider[2].uptime = utils.roundTo2(100 - perc3)

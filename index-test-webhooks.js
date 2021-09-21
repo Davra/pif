@@ -1,3 +1,8 @@
+// run using: screen -dm bash -c "./script.sh"
+// #!/bin/bash
+// cd /home/ger/davra
+// node index.js &>> output.log
+// everything will be logged to nohup.out
 const express = require('express')
 const app = express()
 const port = 3456
@@ -9,27 +14,24 @@ app.get('/', (req, res) => {
     res.send('davra says hello')
 })
 app.get('/davra', (req, res) => {
-    // if (count++ % 100 === 0) console.log(`count: ${count}`)
-    console.log(`count: ${++count}`)
-    res.send('davra ok')
+    console.log('davra ok: ' + count)
+    res.send('davra ok: ' + count)
 })
-var timeout = null
+app.get('/davra/end', (req, res) => {
+    console.log('davra ended ok: ' + count)
+    res.send('davra ended ok: ' + count)
+    process.exit(0)
+})
 app.post('/davra', (req, res) => {
     count++
-    if (count % 100 === 0) console.log(`count: ${count} data: ${JSON.stringify(req.body)}`)
-    // console.log(`count: ${count} data: ${JSON.stringify(req.body)}`)
-    res.send('davra ok')
-    if (timeout) clearTimeout(timeout)
-    timeout = setTimeout(printTotal, 3000)
+    // const date = new Date().toISOString()
+    console.log(`{ "count": ${count}, "date": "${new Date().toISOString()}", "data": ${JSON.stringify(req.body)} }`)
+    res.send('davra ok: ' + count)
 })
 app.post('/biostar', (req, res) => {
     console.log('biostar webhook callback:')
     console.log(`data: ${JSON.stringify(req.body)}`)
     res.send({ success: true })
 })
-function printTotal () {
-    console.log('Total received: ' + count)
-    count = 0
-}
 
 app.listen(port, () => console.log(`listening on port ${port}`))
