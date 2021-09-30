@@ -5,6 +5,13 @@ const utils = require('./utils.js')
 const uuidv4 = require('uuid/v4')
 var config
 const biostar = { prefix: '' }
+const webhookQueue = []
+const webhookFailedQueue = []
+var webhookTimeout = 0
+var webhookFailedTimeout = 0
+var webhookRunning = false
+var webhookFailedRunning = false
+
 exports.init = async function (app) {
     config = app.get('config')
     app.get('/api/biostar/hooks', (req, res) => {
@@ -31,8 +38,8 @@ exports.init = async function (app) {
         if (!userId) return res.send({ success: false, message: 'Not logged in' })
         const userHooks = biostar.hooks[userId] || []
         if (userHooks.length === 0) return res.send({ success: false, message: 'No hooks defined' })
-        var i = 0
-        for (const hook of userHooks) {
+        for (var i = 0; i < userHooks.length;) {
+            const hook = userHooks[i]
             if (hook.id === id) {
                 userHooks.splice(i, 1)
                 await updateHooks(userId, userHooks)
@@ -88,7 +95,9 @@ exports.init = async function (app) {
     app.post('/api/biostar/hooksTest', express.json(), async (req, res) => {
         const userId = getUserId(req, config)
         if (!userId) return res.send({ success: false, message: 'Not logged in' })
-        runWebhooks(req.body.name, req.body.event)
+        queueWebhooks(req.body.name, req.body.event)
+        clearTimeout(webhookTimeout)
+        setTimeout(processWebhooks, 0)
         return res.send({ success: true, message: 'Running webhooks' })
     })
     app.get('/door/capability/:id', async (req, res) => {
@@ -210,6 +219,7 @@ async function doorList () {
     }
 }
 async function doorRefresh () {
+    await hookList()
     biostar.doors = {}
     for (const door of await doorList()) {
         biostar.doors[door.id] = door
@@ -323,7 +333,6 @@ async function doorUsage () {
     if (biostar.stop) return
     console.log('doorUsage running...')
     var count = 0
-    if (!biostar.hooks) await hookList()
     if (!biostar.eventTypes) {
         biostar.eventTypes = {}
         for (const eventType of await eventTypeList()) {
@@ -339,7 +348,7 @@ async function doorUsage () {
         if (!door) continue
         const eventType = biostar.eventTypes[event.event_type_id.code]
         if (!eventType) continue
-        runWebhooks(eventType.name, event)
+        queueWebhooks(eventType.name, event)
         if (['DELETE_SUCCESS', 'ENROLL_SUCCESS', 'UPDATE_SUCCESS'].indexOf(eventType.name) >= 0) continue
         if (eventType.name.indexOf('CONNECT') >= 0) { // could be connect or disconnect
             // metricName = 'door.connect'
@@ -354,6 +363,10 @@ async function doorUsage () {
         }
         count++
         console.log('doorUsage:', event.datetime, event.id, event.event_type_id.code, eventType.name)
+    }
+    if (webhookQueue.length > 0 && !webhookRunning) {
+        clearTimeout(webhookTimeout)
+        setTimeout(processWebhooks, 0)
     }
     console.log('doorUsage total:', count)
     // console.log(path.join(__dirname, '/../config/config.json'))
@@ -442,7 +455,7 @@ async function hookList () {
         process.exit(1)
     }
 }
-function runWebhooks (name, event) {
+function queueWebhooks (name, event) {
     var type = ''
     if (name.indexOf('_DISCONNECT') >= 0) type = 'disconnect' // DEVICE_, LINK_, RS485_, TCP_
     else if (name === 'ENROLL_SUCCESS' || name === 'UPDATE_SUCCESS') type = 'enroll'
@@ -451,15 +464,52 @@ function runWebhooks (name, event) {
     const hooks = biostar.hooksLookup[type]
     if (!hooks) return
     for (const hook of hooks) {
-        const doc = { method: 'post', url: hook.url, data: event }
-        if (hook.secret) doc.headers = { Authorization: 'Bearer ' + hook.secret }
-        console.log('Running webhook:', hook.id, hook.url)
-        axios(doc).then(response => {
-            console.log('Response from webhook', hook.url, response.status, JSON.stringify(response.data))
-        }).catch(function (err) {
-            console.error('Run webhook error:', err, hook.id, hook.url)
-        })
+        const entry = { id: hook.id, url: hook.url, secret: hook.secret, data: event, count: 0 }
+        webhookQueue.push(entry)
     }
+}
+async function postWebhook (entry, timeout) {
+    const doc = { method: 'post', timeout: timeout || 5000, url: entry.url, data: entry.data }
+    if (entry.secret) doc.headers = { Authorization: 'Bearer ' + entry.secret }
+    entry.count++
+    console.log('Running webhook:', entry.id, entry.url)
+    try {
+        const response = await axios(doc)
+        console.log('Response from webhook', entry.url, response.status, JSON.stringify(response.data))
+        return true
+    }
+    catch (err) {
+        console.error('Run webhook error:', entry.id, entry.url, err.response && err.response.status)
+        return false
+    }
+}
+async function processWebhooks () {
+    webhookRunning = true
+    while (webhookQueue.length > 0) {
+        const entry = webhookQueue.shift()
+        const result = await postWebhook(entry, 5 * 1000)
+        if (!result) webhookFailedQueue.push(entry)
+    }
+    webhookTimeout = setTimeout(processWebhooks, 60 * 1000)
+    webhookRunning = false
+    if (webhookFailedQueue.length > 0 && !webhookFailedRunning && !webhookFailedTimeout) {
+        webhookFailedTimeout = setTimeout(processFailedWebhooks, 10 * 60 * 1000)
+    }
+}
+async function processFailedWebhooks () {
+    webhookFailedRunning = true
+    for (var i = 0; i < webhookFailedQueue.length;) {
+        const entry = webhookFailedQueue[i]
+        const result = await postWebhook(entry, 10 * 1000)
+        if (result) webhookFailedQueue.splice(i, 1)
+        else if (entry.count > 60) {
+            console.error('Failed webhook:', entry.count, entry.id, entry.url)
+            webhookFailedQueue.splice(i, 1)
+        }
+        else i++
+    }
+    webhookFailedTimeout = setTimeout(processFailedWebhooks, 10 * 60 * 1000)
+    webhookFailedRunning = false
 }
 async function updateConfig (key, value) {
     const data = {}

@@ -2,7 +2,7 @@
 // #!/bin/bash
 // cd /home/ger/davra
 // node index.js &>> output.log
-// everything will be logged to nohup.out
+
 const express = require('express')
 const app = express()
 const port = 3456

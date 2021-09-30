@@ -281,10 +281,10 @@ function doOutages (poi, deviceId) {
     }
     else { // mockup data
         data = [
-            { timestamp: 1624312564770, description: 'Contact lost', duration: '24hr', userId: 'ABC123' },
-            { timestamp: 1624208954770, description: 'Contact lost', duration: '3hr', userId: 'D45678' },
-            { timestamp: 1624305344770, description: 'Contact lost', duration: '1hr', userId: 'X566489' },
-            { timestamp: 1624101734770, description: 'Contact lost', duration: '10hr', userId: 'AYS5412' }
+            { timestamp: 1624312564770, description: 'Contact lost', duration: 170440000, userId: 'ABC123' },
+            { timestamp: 1624208954770, description: 'Contact lost', duration: 11000, userId: 'D45678' },
+            { timestamp: 1624305344770, description: 'Contact lost', duration: 33000, userId: 'X566489' },
+            { timestamp: 1624101734770, description: 'Contact lost', duration: 22000, userId: 'AYS5412' }
         ]
         initTable('#table', tableColumns, data)
     }

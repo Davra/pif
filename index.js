@@ -26,7 +26,7 @@ axios({
     require('./routes/doors.js').init(app)
     require('./routes/signs.js').init(app)
 }).catch(function (err) {
-    console.error('Runtime config error:', err.response)
+    console.error('Runtime config error:', err)
     process.exit(1)
 })
 process.on('unhandledRejection', (err, promise) => {
