@@ -4,8 +4,6 @@ const axios = require('axios')
 const express = require('express')
 const fs = require('fs')
 const path = require('path')
-// const doors = require('./routes/doors')
-// const security = require('./utils/security')
 const app = express()
 const port = 8080
 
@@ -24,6 +22,7 @@ axios({
     require('./routes/security.js').init(app) // initialise security first
     require('./routes/desks.js').init(app)
     require('./routes/doors.js').init(app)
+    require('./routes/hayyaks.js').init(app)
     require('./routes/signs.js').init(app)
 }).catch(function (err) {
     console.error('Runtime config error:', err)

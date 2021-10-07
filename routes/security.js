@@ -4,6 +4,7 @@ var config
 const appspace = { expiryInterval: 1 * 10 * 1000 }
 const biostar = { expiryInterval: 60 * 60 * 1000 }
 const embrava = { expiryInterval: 60 * 60 * 1000 }
+const hayyak = { expiryInterval: 150 * 60 * 1000 }
 exports.init = function (app) {
     config = app.get('config')
 }
@@ -104,6 +105,44 @@ exports.getEmbravaToken = async function () {
     }
     catch (err) {
         console.error('getEmbravaToken error:', err)
+        return null
+    }
+}
+exports.getHayyakToken = async function () {
+    var currentTimeMillis = new Date().getTime()
+    if (hayyak.token) {
+        // if (currentTimeMillis < (hayyak.expiryTime - (10 * 1000))) {
+        if (currentTimeMillis < hayyak.expiryTime) {
+            console.log('Reusing Hayyak token: ' + hayyak.token)
+            hayyak.expiryTime = currentTimeMillis + hayyak.expiryInterval
+            return hayyak // return token and customerId
+        }
+    }
+    try {
+        var response = await axios({
+            method: 'post',
+            url: config.hayyak.url + '/api/auth/login',
+            data: {
+                username: config.hayyak.userId,
+                password: config.hayyak.password
+            }
+        })
+        hayyak.token = response.data.token
+        hayyak.expiryTime = currentTimeMillis + hayyak.expiryInterval
+        // hayyak.renewCount = 0
+        console.log('Hayyak new token: ' + hayyak.token)
+        response = await axios({
+            method: 'get',
+            url: config.hayyak.url + '/api/auth/user',
+            headers: {
+                'X-Authorization': 'Bearer ' + hayyak.token
+            }
+        })
+        hayyak.customerId = response.data.customerId.id
+        return hayyak // return token and customerId
+    }
+    catch (err) {
+        console.error('getHayyakToken error:', err)
         return null
     }
 }
