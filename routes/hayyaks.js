@@ -68,8 +68,6 @@ async function deviceList () {
         const devices = []
         for (const e of response.data.data) {
             const device = { id: e.id.id, name: e.name }
-            await setInfo(device)
-            await setTelemetry(device)
             devices.push(device)
         }
         return devices
@@ -105,6 +103,30 @@ async function setInfo (obj) {
         console.error('hayyakInfo error:', err)
     }
 }
+async function setLocation (obj) {
+    console.log('hayyakLocation running for:', obj.id)
+    const token = await security.getHayyakToken()
+    try {
+        const response = await axios({
+            method: 'get',
+            url: config.hayyak.url + '/api/plugins/telemetry/DEVICE/' + obj.id + '/values/attributes/SHARED_SCOPE',
+            headers: {
+                'X-Authorization': 'Bearer ' + token.token
+            }
+        })
+        console.log('hayyakLocation:', response.data.length)
+        obj.location = { floor: '', room: '', roomType: '' }
+        for (const e of response.data) {
+            if (e.key === 'Floor') obj.location.floor = e.value || ''
+            else if (e.key === 'Room') obj.location.room = e.value || ''
+            else if (e.key === 'Room type') obj.location.roomType = e.value || ''
+        }
+        return response.data
+    }
+    catch (err) {
+        console.error('hayyakLocation error:', err)
+    }
+}
 async function setTelemetry (obj) {
     console.log('hayyakTelemetry running for:', obj.id)
     const token = await security.getHayyakToken()
@@ -129,6 +151,9 @@ async function deviceRefresh () {
     hayyak.devices = {}
     for (const e of await deviceList()) {
         hayyak.devices[e.id] = e
+        await setInfo(e)
+        await setLocation(e)
+        // await setTelemetry(device)
     }
 }
 async function deviceStatus (id) {
@@ -136,7 +161,8 @@ async function deviceStatus (id) {
     if (id.startsWith(hayyak.prefix)) id = id.substr(1)
     const device = hayyak.devices ? hayyak.devices[id] : null
     const status = device ? device.status : 'Offline'
-    return status
+    const location = device ? device.location : {}
+    return { status: status, location: location }
 }
 async function deviceSync () {
     console.log('hayyakSync running...')
@@ -226,5 +252,10 @@ async function eventList () {
     // this is currently the same as deviceList - we're using this pattern to allow for a real event log in future
     console.log('Hayyak event list running...')
     var list = await deviceList()
+    for (const e of list) {
+        await setInfo(e)
+        // await setLocation(e)
+        await setTelemetry(e)
+    }
     return list
 }

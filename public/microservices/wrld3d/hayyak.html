@@ -1,0 +1,85 @@
+
+<html>
+	<head>
+		<link href="/ui/vendors/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+		<link href="/ui/vendors/bootstrap-daterangepicker/daterangepicker.css" rel="stylesheet">
+		<link href="/ui/vendors/bootstrap-colorpicker/css/bootstrap-colorpicker.min.css" rel="stylesheet">
+        <!-- <link href="/ui/vendors/font-awesome-5/css/fontawesome-all.min.css" rel="stylesheet" type="text/css" media="all" /> -->
+        <link href="/microservices/wrld3d/css/fontawesome-all.min.css" rel="stylesheet" type="text/css" media="all" />
+		<link href="/ui/vendors/amcharts/amcharts/plugins/export/export.css" rel="stylesheet" type="text/css" media="all" />
+		<link href="/ui/assets/bootstrap-gentelella-theme-for-widgets.css" rel="stylesheet">
+        <link href="/ui/vendors/datatables.net-bs/css/dataTables.bootstrap.min.css" rel="stylesheet" />  
+        <link href="https://cdn.datatables.net/v/dt/jszip-3.1.3/pdfmake-0.1.27/dt-1.10.15/b-1.4.0/b-colvis-1.4.0/b-flash-1.4.0/b-html5-1.4.0/b-print-1.4.0/r-2.1.1/sc-1.4.2/datatables.min.css" rel="stylesheet" type="text/css" />
+        <link href="/ui/vendors/bootstrap/dist/css/less/pagination.less" rel="stylesheet" />
+        <link href="/ui/css/custom.min.css" rel="stylesheet" />
+        <link href="/ui/css/davra.css" rel="stylesheet" />
+		<link href="/microservices/wrld3d/css/hayyak.css" rel="stylesheet"/>
+	</head>
+	<body style="background: #FFFFFF">
+		<div class="meeting-room-overview">
+			<div class="meeting-room-photo"><img height="160px"></div>
+			<div class="meeting-room-details-wrapper">
+				<div class="meeting-room-details">
+					<div class="phone-icon"><i class="fas fa-phone"></i></div>
+					<div class="phone-number">+96 6920 209 467</div>
+				</div>
+				<div class="meeting-room-details">
+					<div class="address-icon"><i class="fas fa-home"></i></div>
+					<div class="address">Suite A, Second Floor<br>Building C, KAFD</div>		
+				</div>
+			</div>
+		</div>
+		<hr>	
+		<div class="recordHeading">
+			<ul class="tabbedMenu nav nav-tabs" role="tablist">
+				<li class="active" role="presentation">
+					<a class="tabMetrics" href="#tabMetricsPanel" role="tab" data-toggle="tab"><span>Metrics</span></a>
+				</li>
+				<li role="presentation">
+					<a class="tabOccupancy" href="#tabOccupancyPanel" role="tab" data-toggle="tab"><span>Usage</span></a>
+				</li>
+				<li role="presentation">
+					<a class="tabUptime" href="#tabUptimePanel" role="tab" data-toggle="tab"><span>Uptime</span></a>
+				</li>
+				<li role="presentation">
+					<a class="tabEvents" href="#tabEventsPanel" role="tab" data-toggle="tab"><span>Outages</span></a>
+				</li>
+			</ul>
+		</div>
+		<div class="tab-content">
+			<div role="tabpanel" class="tab-pane fade in active" id="tabMetricsPanel">
+				<div id="chartMetrics" style="max-height: 250px;"></div>
+			</div>
+			<div role="tabpanel" class="tab-pane fade" id="tabOccupancyPanel">
+				<div id="chartOccupancy"></div>
+			</div>
+			<div role="tabpanel" class="tab-pane fade" id="tabUptimePanel">
+				<div id="chartUptime" style="width: 1px; height: 1px; max-height: 240px;"></div>
+			</div>
+			<div role="tabpanel" class="tab-pane fade" id="tabEventsPanel">
+				<div class="table-container">
+					<table id="table" width="100%" class="table dataTable dt-bootstrap dt-responsive"></table>
+				</div>
+				<div class="modal" id="loading-mask">Loading ... </div>
+			</div>
+		</div>
+        <script src="/ui/vendors/amcharts/amcharts/amcharts.js"></script>  
+        <script src="/ui/vendors/amcharts/amcharts/serial.js"></script>
+        <script src="/ui/vendors/amcharts/amcharts/plugins/export/export.min.js"></script>
+		<script src="/ui/vendors/underscore/underscore-min.js"></script>
+		<script src="/ui/vendors/jquery/3.5.1/jquery.min.js"></script>
+		<script src="/ui/vendors/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+		<script src="/ui/vendors/d3/d3.v3.js"></script>
+		<script src="/ui/vendors/moment/min/moment.min.js"></script>
+		<script src="/ui/vendors/bootstrap-daterangepicker/daterangepicker.js"></script>
+		<script src="/ui/assets/bootstrap-gentelella-theme-for-widgets.js"></script>
+		<script src="/ui/assets/widget-utilities.js"></script>
+        <script src="/ui/assets/templates/amcharts-connecthing-theme.js"></script>
+        <script src="/ui/assets/templates/amcharts-connecthing-widgets.js"></script>  
+        <script src="https://cdn.datatables.net/v/dt/dt-1.10.15/datatables.min.js"></script>
+        <script src="https://cdn.datatables.net/v/dt/jszip-3.1.3/pdfmake-0.1.27/dt-1.10.15/b-1.4.0/b-colvis-1.4.0/b-flash-1.4.0/b-html5-1.4.0/b-print-1.4.0/r-2.1.1/sc-1.4.2/datatables.min.js"></script>
+        <script src="/ui/vendors/datatables.net-buttons-bs/js/buttons.bootstrap.min.js"></script>
+		<script src="/microservices/wrld3d/js/utils.js"></script>
+		<script src="/microservices/wrld3d/js/hayyak.js"></script>
+	</body>
+</html>

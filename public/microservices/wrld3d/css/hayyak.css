@@ -1,0 +1,65 @@
+.meeting-room-photo {
+    display: inline-block;
+    vertical-align: top;
+    width: 120px;
+    height: 160px;
+    margin-right: 16px;
+    /* background-image: url(/microservices/wrld3d/img/available.jpg); */
+}
+.meeting-room-details-wrapper {
+    display: inline-block;
+    vertical-align: top;
+    margin-top: 12px;
+}
+.meeting-room-details {
+    margin-top: 8px;
+}
+.phone-icon, .address-icon {
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 0px;
+    width: 20px;
+    height: 20px;
+}
+.phone-number, .address {
+    display: inline-block;
+    vertical-align: top;
+}
+rect.bordered {
+    stroke: #E6E6E6;
+    stroke-width:2px;   
+}
+text.mono {
+    font-size: 9pt;
+    font-family: Consolas, courier;
+    fill: #aaa;
+}
+text.axis-workweek {
+    fill: #000;
+}
+text.axis-worktime {
+    fill: #000;
+}
+.sample-data-msg {
+    display: none;
+}
+.dt-buttons.btn-group, .dataTables_info {
+    float: left !important;
+}
+.dataTables_wrapper .dataTables_filter {
+    float: right !important;
+}
+.dataTable, .dataTables_info, .dataTables_paginate {
+    color: #000000;
+    font-family: "Poppins",Arial,"Droid Sans",sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.471;
+}
+.dataTables_wrapper .dt-buttons.btn-group, .dataTables_wrapper .dataTables_filter {
+    display: none;
+}
+hr {
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
