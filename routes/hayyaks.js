@@ -7,8 +7,8 @@ exports.init = async function (app) {
     config = app.get('config')
     app.get('/hayyak/status/:id', async (req, res) => {
         const id = decodeURIComponent(req.params.id)
-        const status = await deviceStatus(id)
-        res.send({ success: true, status: status })
+        const data = await deviceStatus(id)
+        res.send({ success: true, data: data })
     })
     app.get('/hayyak/sync', async (req, res) => {
         const count = await deviceSync()

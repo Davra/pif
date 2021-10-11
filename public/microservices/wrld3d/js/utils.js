@@ -1,4 +1,31 @@
 var utils = {}
+utils.formatDate = function (date, format) {
+    var d, ds, d0, M, M0, y, yy
+    if (!date) return ''
+    y = date.getFullYear()
+    yy = y.toString().substr(-2)
+    M = '' + (date.getMonth() + 1)
+    d = '' + date.getDate()
+    M0 = M.length === 1 ? '0' + M : M
+    d0 = d.length === 1 ? '0' + d : d
+    ds = (format && format.dateSeparator) || '-'
+    switch ((format && format.dateFormat) || 'iso8601') {
+    case 'mdyyyy':
+        return (M + ds + d + ds + y)
+    case 'mmddyyyy':
+        return (M0 + ds + d0 + ds + y)
+    case 'ddmmyyyy':
+        return (d0 + ds + M0 + ds + y)
+    case 'mmyy':
+        return (M0 + ' ' + yy)
+    case 'dm':
+        return (d + ds + M)
+    case 'iso8601':
+        return (y + ds + M0 + ds + d0)
+    default: // 'dmyyyy'
+        return (d + ds + M + ds + y)
+    }
+}
 utils.formatDuration = function (num) {
     if (num === undefined || isNaN(num)) return ''
     var days = Math.floor(num / (24 * 60 * 60 * 1000))

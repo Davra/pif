@@ -16,22 +16,25 @@ $(function () {
     else {
         poi.davraMs = '/microservices/wrld3d'
     }
-    var type = (poi && poi.user_data.title.substr(poi.user_data.title.length - 1)) || '1'
+    // var type = (poi && poi.user_data.title.substr(poi.user_data.title.length - 1)) || '1'
     var deviceId = ''
     // twitter account is the deviceId
-    if (window.location.hostname !== 'pif.davra.com' && poi && poi.user_data.twitter) deviceId = 'h' + poi.user_data.twitter
+    if (window.location.hostname !== 'pif.davra.com' && poi && poi.user_data.twitter) deviceId = 'y' + poi.user_data.twitter
     if (deviceId) {
         $.get(poi.davraMs + '/hayyak/status/' + encodeURIComponent(deviceId), function (result) {
             if (result.success) {
-                console.log('Desk status', result.status)
-                if (result.status === 'Available') {
-                    $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/available.jpg'
-                }
-                else if (result.status === 'Checked In') {
-                    $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/checked-in.jpg'
+                console.log('Desk status', result.data.status)
+                if (result.data.status === 'Offline') {
+                    $('.meeting-room-details .status span').removeClass('online').addClass('offline')
+                    $('.meeting-room-details .status span').text('OFFLINE')
                 }
                 else {
-                    $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/reserved.jpg'
+                    $('.meeting-room-details .status span').removeClass('offline').addClass('online')
+                    $('.meeting-room-details .status span').text('ONLINE')
+                }
+                var location = result.data.location
+                if (location.room) {
+                    $('.meeting-room-details .address').html(location.room + '<br>' + location.floor)
                 }
             }
             else {
@@ -39,9 +42,7 @@ $(function () {
             }
         })
     }
-    else if (type === '1') $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/available.jpg'
-    else if (type === '2') $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/checked-in.jpg'
-    else $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/reserved.jpg'
+    $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/reserved.jpg'
     doMetrics(poi, deviceId)
     doOccupancy(poi, deviceId)
     doUptime(poi, deviceId)
@@ -126,9 +127,7 @@ function chartOccupancy (data) {
 }
 function doMetrics (poi, deviceId) {
     if (deviceId) { // get data
-        var oneYearAgo = new Date(); oneYearAgo.setDate(oneYearAgo.getDate() - (52 * 7)); oneYearAgo = oneYearAgo.getTime()
-        var installDate = new Date(2021, 8, 17).getTime()
-        if (installDate > oneYearAgo) oneYearAgo = installDate
+        var endDate = new Date().getTime()
         var data = {
             metrics: [
                 {
@@ -141,23 +140,40 @@ function doMetrics (poi, deviceId) {
                         name: 'avg',
                         sampling: {
                             value: '1',
-                            unit: 'hours'
+                            unit: 'days'
+                        }
+                    }]
+                },
+                {
+                    name: 'hayyak.temp',
+                    limit: 100000,
+                    tags: {
+                        serialNumber: deviceId
+                    },
+                    aggregators: [{
+                        name: 'avg',
+                        sampling: {
+                            value: '1',
+                            unit: 'days'
                         }
                     }]
                 }
             ],
-            start_absolute: oneYearAgo
+            start_absolute: endDate - (30 * 24 * 60 * 60 * 1000),
+            end_absolute: endDate
         }
         $.post(poi.davraUrl + '/api/v2/timeseriesData', JSON.stringify(data), function (result) {
             console.log(result)
-            var values = result.queries[0].results[0].values
+            var values1 = result.queries[0].results[0].values
+            var values2 = result.queries[1].results[0].values
             var dataset = []
-            for (var i = 0, n = values.length; i < n; i++) {
-                var date = new Date(values[i][0])
-                var value = values[i][1]
-                dataset.push({ date: date, cpu: value, temp: 82 })
+            for (var i = 0, n = values1.length; i < n; i++) {
+                var date = new Date(values1[i][0])
+                var cpu = values1[i][1]
+                var temp = values2[i] ? values2[i][1] || 0 : 0
+                dataset.push({ date: utils.formatDate(date, { dateFormat: 'dm', dateSeparator: '/' }), cpu: cpu, temp: temp })
             }
-            chartUptimeConfig.dataProvider = dataset
+            chartMetricsConfig.dataProvider = dataset
             AmCharts.makeChart('chartMetrics', chartMetricsConfig)
         })
     }
@@ -249,7 +265,7 @@ function doOutages (poi, deviceId) {
             render: function (value, type, record) {
                 return '<span style="display: none">' + value + '</span>' + moment(value).format('YYYY-MM-DD HH:mm')
             },
-            width: '40%'
+            width: '50%'
         },
         {
             title: 'Duration',
@@ -258,8 +274,7 @@ function doOutages (poi, deviceId) {
                 return '<span style="display: none">' + ('' + value).padStart(12, '0') + '</span>' + utils.formatDuration(value)
             },
             width: '35%'
-        },
-        { title: 'User', data: 'userId', width: '25%' }
+        }
     ]
     if (deviceId) { // get data
         var endDate = new Date().getTime()
@@ -382,10 +397,25 @@ function initTable (tableId, tableColumns, data) {
         $(tableId).dataTable().fnAddData(data)
     }
 }
+var balloonFunction = function (item, graph) {
+    var result = ''
+    var key = graph.balloonText
+    if (Object.prototype.hasOwnProperty.call(item.dataContext, key) && !isNaN(item.dataContext[key])) {
+        // console.log(item.dataContext[key] + ', ' + chartMetricsConfig.precision + ', ' + key)
+        var formatted = AmCharts.formatNumber(item.dataContext[key], {
+            precision: chartMetricsConfig.precision
+            // decimalSeparator: chartMetricsConfig.decimalSeparator,
+            // thousandsSeparator: chartMetricsConfig.thousandsSeparator
+        }, 0)
+        result = formatted
+    }
+    return result + (key === 'cpu' ? '%' : '\u00B0' + 'C')
+}
 var chartMetricsConfig = {
     theme: 'connecthing',
     type: 'serial',
     categoryField: 'date',
+    precision: 1,
     categoryAxis: {
         parseDates: false,
         dashLength: 1,
@@ -396,17 +426,17 @@ var chartMetricsConfig = {
         valueField: 'cpu',
         type: 'line',
         bullet: 'round',
-        title: 'CPU'
-        // balloonText: 'lighting',
-        // balloonFunction: balloonFunction
+        title: 'CPU%',
+        balloonText: 'cpu',
+        balloonFunction: balloonFunction
     },
     {
         valueField: 'temp',
         type: 'line',
         bullet: 'round',
-        title: 'Temp'
-        // balloonText: 'hvac',
-        // balloonFunction: balloonFunction
+        title: 'Temp' + '\u00B0' + 'C',
+        balloonText: 'temp',
+        balloonFunction: balloonFunction
     }],
     chartScrollbar: {
         autoGridCount: true,
@@ -420,7 +450,7 @@ var chartMetricsConfig = {
     },
     valueAxes: [
         {
-            title: ''
+            // title: ''
         }
     ],
     legend: {
@@ -431,7 +461,7 @@ var chartMetricsConfig = {
     },
     dataProvider: [
         { date: 2003, cpu: 87, temp: 65 },
-        { date: 2004, cpu: 67, temp: 68 },
+        { date: 2004, cpu: 67, temp: 68.3 },
         { date: 2005, cpu: 77, temp: 69 },
         { date: 2006, cpu: 30, temp: 64 },
         { date: 2007, cpu: 60, temp: 69 },
