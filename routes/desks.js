@@ -66,6 +66,10 @@ async function deskCapability (id) {
 }
 async function deskConnect (desk, event, timestamp) {
     if (event.state === 'Offline') {
+        await utils.sendIotData(config, embrava.prefix + event.embravaId, 'desk.outage.count', timestamp, 1, {})
+    }
+    if (desk.state === event.state) return
+    if (event.state === 'Offline') {
         if (!desk.disconnectTime) {
             desk.disconnectTime = timestamp
             desk.state = event.state
@@ -106,6 +110,7 @@ async function deskConnect (desk, event, timestamp) {
     }
 }
 async function deskCheckin (desk, event, timestamp) {
+    if (desk.state === event.state) return
     if (event.state === 'Checked In') {
         if (!desk.checkinTime) {
             desk.checkinTime = timestamp
@@ -269,7 +274,6 @@ async function deskUsage () {
         const desk = embrava.desks[event.embravaId]
         if (!desk) continue
         // runWebhooks(eventType.name, event)
-        if (desk.state === event.state) continue
         await deskConnect(desk, event, timestamp)
         await deskCheckin(desk, event, timestamp)
         count++

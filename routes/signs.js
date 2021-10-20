@@ -54,15 +54,18 @@ async function signCapability (id) {
     return (result[0] || [])
 }
 async function signConnect (sign, event, timestamp) {
+    if (event.status > 0) {
+        await utils.sendIotData(config, appspace.prefix + event._id, 'sign.outage.count', timestamp, 1, {})
+    }
+    if (sign.status === event.status) return
+    sign.status = event.status
     if (event.status > 0) { // status not OK
         if (!sign.disconnectTime) {
             sign.disconnectTime = timestamp
-            sign.status = event.status
         }
         return
     }
     if (event.status === 0) { // status OK
-        sign.status = event.status
         if (!sign.disconnectTime) return // ignore connect without a previous disconnect
         const startDate = sign.disconnectTime
         const endDate = timestamp

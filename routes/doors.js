@@ -100,6 +100,10 @@ exports.init = async function (app) {
         setTimeout(processWebhooks, 0)
         return res.send({ success: true, message: 'Running webhooks' })
     })
+    app.get('/device/locate', async (req, res) => {
+        deviceLocate()
+        return res.send({ success: true, message: 'Locating devices started' })
+    })
     app.get('/door/capability/:id', async (req, res) => {
         const id = decodeURIComponent(req.params.id)
         const data = await doorCapability(id)
@@ -131,6 +135,35 @@ exports.init = async function (app) {
     await doorRefresh()
     if (config.davra.env === 'live') doorUsageStart()
 }
+async function deviceLocate () {
+    const now = new Date().getTime()
+    for (const device of await utils.deviceList(config)) {
+        console.log('Locating device:', device.serialNumber, device.UUID)
+        try {
+            await axios({
+                method: 'put',
+                url: config.davra.url + '/api/v1/iotdata',
+                headers: {
+                    Authorization: 'Bearer ' + config.davra.token
+                },
+                data: [{
+                    UUID: device.UUID,
+                    timestamp: now,
+                    latitude: 24.763289081785917,
+                    longitude: 46.63878573585767,
+                    name: 'location',
+                    value: 1,
+                    msg_type: 'datum',
+                    tags: {}
+                }]
+            })
+        }
+        catch (err) {
+            console.error('sendIotData error:', err.response)
+            return false
+        }
+    }
+}
 function getUserId (req, config) {
     var userId = req.headers['x-user-id'] || ''
     if (!userId && config.davra.env === 'dev') userId = 'admin' // default to admin for testing
@@ -159,7 +192,8 @@ async function doorConnect (door, event, eventType) {
     if (eventType.name.indexOf('_DISCONNECT') >= 0) { // DEVICE_, LINK_, RS485_, TCP_
         if (!door.disconnectTime) {
             door.disconnectTime = event.datetime
-            door.status = '0'
+            door.status = false
+            await utils.sendIotData(config, biostar.prefix + event.device_id.id, 'door.outage.count', event.datetime, 1, {})
         }
         return
     }
@@ -171,7 +205,7 @@ async function doorConnect (door, event, eventType) {
         if (duration === 0) return
         console.log('Door outage:', door.disconnectTime, event.device_id.id, startDate, endDate, duration)
         door.disconnectTime = 0
-        door.status = '1'
+        door.status = true
         if (!await utils.sendIotData(config, biostar.prefix + event.device_id.id, 'door.outage', startDate, duration, {
             eventTypeId: event.event_type_id.code,
             eventTypeName: eventType.name
@@ -228,7 +262,7 @@ async function doorRefresh () {
 async function doorStatus (id) {
     console.log('Door ID:', id)
     const door = biostar.doors ? biostar.doors[id] : null
-    const status = door ? door.status : '0'
+    const status = door ? door.status : false
     return status
 }
 async function doorSync () {
@@ -363,6 +397,12 @@ async function doorUsage () {
         }
         count++
         console.log('doorUsage:', event.datetime, event.id, event.event_type_id.code, eventType.name)
+    }
+    const now = new Date().getTime()
+    for (const id in biostar.doors) {
+        if (!biostar.doors[id].status) {
+            await utils.sendIotData(config, biostar.prefix + id, 'door.outage.count', now, 1, {})
+        }
     }
     if (webhookQueue.length > 0 && !webhookRunning) {
         clearTimeout(webhookTimeout)

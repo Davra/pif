@@ -41,7 +41,7 @@ $(function () {
         $.get(poi.davraMs + '/door/status/' + encodeURIComponent(deviceId), function (result) {
             if (result.success) {
                 console.log('Door status', result.status)
-                if (result.status === '1') {
+                if (result.status) {
                     $('.meeting-room-details .status span').removeClass('offline').addClass('online')
                     $('.meeting-room-details .status span').text('ONLINE')
                 }

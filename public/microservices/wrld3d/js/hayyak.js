@@ -409,7 +409,7 @@ var balloonFunction = function (item, graph) {
         }, 0)
         result = formatted
     }
-    return result + (key === 'cpu' ? '%' : '\u00B0' + 'C')
+    return result + (key === 'cpu' ? '%' : '\u00B0' + 'F')
 }
 var chartMetricsConfig = {
     theme: 'connecthing',
@@ -434,7 +434,7 @@ var chartMetricsConfig = {
         valueField: 'temp',
         type: 'line',
         bullet: 'round',
-        title: 'Temp' + '\u00B0' + 'C',
+        title: 'Temp' + '\u00B0' + 'F',
         balloonText: 'temp',
         balloonFunction: balloonFunction
     }],

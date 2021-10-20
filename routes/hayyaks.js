@@ -30,8 +30,12 @@ async function deviceEvent (device, event, timestamp) {
     await utils.sendIotData(config, hayyak.prefix + event.id, 'hayyak.cpu', timestamp, event.cpu, {})
     await utils.sendIotData(config, hayyak.prefix + event.id, 'hayyak.temp', timestamp, event.temp, {})
     // if it's active now assume it's been active for the entire usage interval
+    // TODO check if the lastActivityTime can be used instead, as relying on the current active flag could miss some activity
     if (event.active) await utils.sendIotData(config, hayyak.prefix + event.id, 'hayyak.usage', timestamp, config.hayyak.usageInterval, {})
-    if (event.status === 'Offline' || device.status === event.status) return
+    if (event.status === 'Offline') {
+        await utils.sendIotData(config, hayyak.prefix + event.id, 'hayyak.outage.count', timestamp, 1, {})
+    }
+    if (device.status === event.status) return
     device.status = event.status
     const startDate = event.lastDisconnectTime
     const endDate = event.lastConnectTime
