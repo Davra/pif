@@ -104,6 +104,10 @@ exports.init = async function (app) {
         deviceLocate()
         return res.send({ success: true, message: 'Locating devices started' })
     })
+    app.get('/digitalSignature/sync', async (req, res) => {
+        digitalSignatureSync()
+        return res.send({ success: true, message: 'Digital signature sync started' })
+    })
     app.get('/door/capability/:id', async (req, res) => {
         const id = decodeURIComponent(req.params.id)
         const data = await doorCapability(id)
@@ -162,6 +166,60 @@ async function deviceLocate () {
             console.error('sendIotData error:', err.response)
             return false
         }
+    }
+}
+async function digitalSignatureUpdate (digitalSignature, assets) {
+    console.log('Digital signature name:', digitalSignature.name)
+    assets = assets.map(function (e) { return e.UUID })
+    try {
+        const response = await axios({
+            method: 'put',
+            url: config.davra.url + '/api/v1/digital-signatures/' + digitalSignature.UUID + '?run=1',
+            headers: {
+                Authorization: 'Bearer ' + config.davra.token
+            },
+            data: { assets: [{ assetType: 'device', UUIDs: assets }] }
+        })
+        if (!response.data || !response.data.DeviceTypeCollection || !response.data.DeviceTypeCollection.rows.length) return null
+        return response.data.DeviceTypeCollection.rows[0]
+    }
+    catch (err) {
+        console.error('Door capabilities error:', err)
+        return null
+    }
+}
+async function digitalSignatureSync () {
+    try {
+        const response = await axios({
+            method: 'get',
+            url: config.davra.url + '/api/v1/digital-signatures',
+            headers: {
+                Authorization: 'Bearer ' + config.davra.token
+            }
+        })
+        console.log(response.data)
+        const digitalSignatures = response.data
+        const devices = await utils.deviceList(config)
+        for (const digitalSignature of digitalSignatures) {
+            var assets = null
+            if (digitalSignature.name === 'Door') {
+                assets = devices.filter(function (e) { return e.labels && e.labels.type === 'door' })
+            }
+            else if (digitalSignature.name === 'Hayyak') {
+                assets = devices.filter(function (e) { return e.labels && e.labels.type === 'hayyak' })
+            }
+            else if (digitalSignature.name === 'Desk') {
+                assets = devices.filter(function (e) { return e.labels && e.labels.type === 'desk' })
+            }
+            else if (digitalSignature.name === 'Sign') {
+                assets = devices.filter(function (e) { return e.labels && e.labels.type === 'sign' })
+            }
+            if (assets) await digitalSignatureUpdate(digitalSignature, assets)
+        }
+    }
+    catch (err) {
+        console.error('digitalSignatureUpdate error:', err.response)
+        return false
     }
 }
 function getUserId (req, config) {
@@ -325,35 +383,6 @@ async function doorSync () {
     console.log('doorSync totals:', counts)
     return counts
 }
-// make sure all devices have labels.type=door - this is a one-time patch
-// but shows how to update devices
-// async function doorUpdate () {
-//     console.log('doorUpdate running...')
-//     var count = 0
-//     for (const device of await deviceList()) {
-//         if (!device.labels || !device.labels.type) {
-//             try {
-//                 await axios({
-//                     method: 'put',
-//                     url: config.davra.url + '/api/v1/devices/' + device.UUID,
-//                     headers: {
-//                         Authorization: 'Bearer ' + config.davra.token
-//                     },
-//                     data: {
-//                         labels: { type: 'door' }
-//                     }
-//                 })
-//                 count++
-//                 console.log('doorUpdate:', device.UUID, device.serialNumber, device.name)
-//             }
-//             catch (err) {
-//                 console.error('doorUpdate error:', err)
-//             }
-//         }
-//     }
-//     console.log('doorUpdate total:', count)
-//     return count
-// }
 async function doorUsageStart () {
     biostar.stop = false
     doorUsage()

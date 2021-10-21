@@ -29,9 +29,7 @@ exports.init = async function (app) {
 async function deviceEvent (device, event, timestamp) {
     await utils.sendIotData(config, hayyak.prefix + event.id, 'hayyak.cpu', timestamp, event.cpu, {})
     await utils.sendIotData(config, hayyak.prefix + event.id, 'hayyak.temp', timestamp, event.temp, {})
-    // if it's active now assume it's been active for the entire usage interval
-    // TODO check if the lastActivityTime can be used instead, as relying on the current active flag could miss some activity
-    if (event.active) await utils.sendIotData(config, hayyak.prefix + event.id, 'hayyak.usage', timestamp, config.hayyak.usageInterval, {})
+    await utils.sendIotData(config, hayyak.prefix + event.id, 'hayyak.usage', timestamp, event.wakeword, {})
     if (event.status === 'Offline') {
         await utils.sendIotData(config, hayyak.prefix + event.id, 'hayyak.outage.count', timestamp, 1, {})
     }
@@ -134,17 +132,20 @@ async function setLocation (obj) {
 async function setTelemetry (obj) {
     console.log('hayyakTelemetry running for:', obj.id)
     const token = await security.getHayyakToken()
+    const end = new Date().getTime()
+    const start = end - config.hayyak.usageInterval
     try {
         const response = await axios({
             method: 'get',
-            url: config.hayyak.url + '/api/plugins/telemetry/DEVICE/' + obj.id + '/values/timeseries?keys=cpu_usage,temperature',
+            url: config.hayyak.url + '/api/plugins/telemetry/DEVICE/' + obj.id + '/values/timeseries?keys=cpu_usage,temperature,wakeword&startTs=' + start + '&endTs=' + end,
             headers: {
                 'X-Authorization': 'Bearer ' + token.token
             }
         })
-        obj.cpu = parseFloat(response.data.cpu_usage[0].value)
-        obj.temp = parseFloat(response.data.temperature[0].value)
-        console.log('hayyakTelemetry:', response.data)
+        obj.cpu = response.data.cpu_usage.length ? parseFloat(response.data.cpu_usage[0].value) : 0
+        obj.temp = response.data.temperature.length ? parseFloat(response.data.temperature[0].value) : 0
+        obj.wakeword = parseFloat(response.data.wakeword.length)
+        console.log('hayyakTelemetry:', obj)
         return response.data
     }
     catch (err) {
