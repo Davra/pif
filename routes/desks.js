@@ -110,6 +110,9 @@ async function deskConnect (desk, event, timestamp) {
     }
 }
 async function deskCheckin (desk, event, timestamp) {
+    if (event.state === 'Checked In') {
+        await utils.sendIotData(config, embrava.prefix + event.embravaId, 'desk.usage.count', timestamp, 1, {})
+    }
     if (desk.state === event.state) return
     if (event.state === 'Checked In') {
         if (!desk.checkinTime) {

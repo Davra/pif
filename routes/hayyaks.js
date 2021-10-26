@@ -27,11 +27,13 @@ exports.init = async function (app) {
     if (config.davra.env === 'live') deviceUsageStart()
 }
 async function deviceEvent (device, event, timestamp) {
-    await utils.sendIotData(config, hayyak.prefix + event.id, 'hayyak.cpu', timestamp, event.cpu, {})
-    await utils.sendIotData(config, hayyak.prefix + event.id, 'hayyak.temp', timestamp, event.temp, {})
-    await utils.sendIotData(config, hayyak.prefix + event.id, 'hayyak.usage', timestamp, event.wakeword, {})
     if (event.status === 'Offline') {
         await utils.sendIotData(config, hayyak.prefix + event.id, 'hayyak.outage.count', timestamp, 1, {})
+    }
+    else {
+        await utils.sendIotData(config, hayyak.prefix + event.id, 'hayyak.cpu', timestamp, event.cpu, {})
+        await utils.sendIotData(config, hayyak.prefix + event.id, 'hayyak.temp', timestamp, event.temp, {})
+        await utils.sendIotData(config, hayyak.prefix + event.id, 'hayyak.usage', timestamp, event.wakeword, {})
     }
     if (device.status === event.status) return
     device.status = event.status
@@ -142,9 +144,9 @@ async function setTelemetry (obj) {
                 'X-Authorization': 'Bearer ' + token.token
             }
         })
-        obj.cpu = response.data.cpu_usage.length ? parseFloat(response.data.cpu_usage[0].value) : 0
-        obj.temp = response.data.temperature.length ? parseFloat(response.data.temperature[0].value) : 0
-        obj.wakeword = parseFloat(response.data.wakeword.length)
+        obj.cpu = (response.data.cpu_usage && response.data.cpu_usage.length) ? parseFloat(response.data.cpu_usage[0].value) : 0
+        obj.temp = (response.data.temperature && response.data.temperature.length) ? parseFloat(response.data.temperature[0].value) : 0
+        obj.wakeword = response.data.wakeword ? parseFloat(response.data.wakeword.length) : 0
         console.log('hayyakTelemetry:', obj)
         return response.data
     }
@@ -260,7 +262,7 @@ async function eventList () {
     for (const e of list) {
         await setInfo(e)
         // await setLocation(e)
-        await setTelemetry(e)
+        if (e.status === 'Online') await setTelemetry(e)
     }
     return list
 }

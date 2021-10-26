@@ -75,7 +75,7 @@ $(function () {
     }
     doOccupancy(poi, deviceId)
     doUptime(poi, deviceId)
-    doOutages(poi, deviceId)
+    doIncidents(poi, deviceId)
 })
 function chartOccupancy (data) {
     var margin = { top: 40, right: 0, bottom: 100, left: 30 }
@@ -234,7 +234,7 @@ function doOccupancy (poi, deviceId) {
         chartOccupancy(dataset)
     }
 }
-function doOutages (poi, deviceId) {
+function doIncidents (poi, deviceId) {
     var data = []
     var tableColumns = [
         {
@@ -243,15 +243,20 @@ function doOutages (poi, deviceId) {
             render: function (value, type, record) {
                 return '<span style="display: none">' + value + '</span>' + moment(value).format('YYYY-MM-DD HH:mm')
             },
-            width: '50%'
+            width: '35%'
+        },
+        {
+            title: 'Type',
+            data: 'description',
+            width: '35%'
         },
         {
             title: 'Duration',
             data: 'duration',
             render: function (value, type, record) {
-                return '<span style="display: none">' + ('' + value).padStart(12, '0') + '</span>' + utils.formatDuration(value)
+                return value ? ('<span style="display: none">' + ('' + value).padStart(12, '0') + '</span>' + utils.formatDuration(value)) : ''
             },
-            width: '35%'
+            width: '30%'
         }
     ]
     if (deviceId) {
@@ -263,28 +268,40 @@ function doOutages (poi, deviceId) {
                 tags: {
                     serialNumber: deviceId
                 }
+            },
+            {
+                name: 'davra.digitalSignatures.Door',
+                limit: 100000,
+                tags: {
+                    serialNumber: deviceId
+                }
             }],
             start_absolute: endDate - (30 * 24 * 60 * 60 * 1000),
             end_absolute: endDate
         }
         $.post(poi.davraUrl + '/api/v2/timeseriesData', JSON.stringify(query), function (result) {
             console.log(result)
-            var values = result.queries[0].results[0].values
+            var values1 = result.queries[0].results[0].values
+            var values2 = result.queries[1].results[0].values
             data = []
-            var i, n
-            for (i = 0, n = values.length; i < n; i++) {
-                var value = values[i]
-                data.push({ timestamp: value[0], description: 'Contact lost', duration: value[1] })
+            var i, n, value
+            for (i = 0, n = values1.length; i < n; i++) {
+                value = values1[i]
+                data.push({ timestamp: value[0], description: 'Outage', duration: value[1] })
+            }
+            for (i = 0, n = values2.length; i < n; i++) {
+                value = values2[i]
+                data.push({ timestamp: value[0], description: 'Anomaly', duration: 0, userId: '' })
             }
             initTable('#table', tableColumns, data)
         })
     }
     else { // mockup data
         data = [
-            { timestamp: 1624312564770, description: 'Contact lost', duration: 170440000, userId: 'ABC123' },
-            { timestamp: 1624208954770, description: 'Contact lost', duration: 11000, userId: 'D45678' },
-            { timestamp: 1624305344770, description: 'Contact lost', duration: 33000, userId: 'X566489' },
-            { timestamp: 1624101734770, description: 'Contact lost', duration: 22000, userId: 'AYS5412' }
+            { timestamp: 1624312564770, description: 'Outage', duration: 170440000, userId: 'ABC123' },
+            { timestamp: 1624208954770, description: 'Outage', duration: 11000, userId: 'D45678' },
+            { timestamp: 1624305344770, description: 'Outage', duration: 33000, userId: 'X566489' },
+            { timestamp: 1624101734770, description: 'Anomaly', duration: 0, userId: 'AYS5412' }
         ]
         initTable('#table', tableColumns, data)
     }
@@ -403,10 +420,8 @@ function initTable (tableId, tableColumns, data) {
         }
     }
     $(tableId).DataTable(dataTableConfig)
-    if (data) {
-        $(tableId).dataTable().fnClearTable()
-        $(tableId).dataTable().fnAddData(data)
-    }
+    $(tableId).dataTable().fnClearTable()
+    if (data.length) $(tableId).dataTable().fnAddData(data)
 }
 var chartUptimeConfig = {
     type: 'serial',

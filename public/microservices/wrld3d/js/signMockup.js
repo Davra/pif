@@ -109,10 +109,8 @@ function initTable (tableId, tableColumns, data) {
         }
     }
     $(tableId).DataTable(dataTableConfig)
-    if (data) {
-        $(tableId).dataTable().fnClearTable()
-        $(tableId).dataTable().fnAddData(data)
-    }
+    $(tableId).dataTable().fnClearTable()
+    if (data.length) $(tableId).dataTable().fnAddData(data)
 }
 var chartCardsConfig = {
     type: 'serial',
