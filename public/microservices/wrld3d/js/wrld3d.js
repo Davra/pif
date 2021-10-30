@@ -372,12 +372,13 @@ $(function () {
         if (markerOptions.iconKey === 'desk_available') {
             markerOptions.poiView.imageUrl = ''
             markerOptions.poiView.customView = desk
-            markerOptions.poiView.customViewHeight = 460
+            markerOptions.poiView.customViewHeight = 600
         }
         if (markerOptions.iconKey === 'badge_reader') {
             markerOptions.poiView.imageUrl = ''
             markerOptions.poiView.customView = door
             markerOptions.poiView.customViewHeight = 600
+            $('.leaflet-pane.leaflet-popup-pane').addClass('wide100')
         }
         if (markerOptions.iconKey === 'fire_extinguisher') {
             markerOptions.poiView.imageUrl = ''
@@ -387,7 +388,8 @@ $(function () {
         if (markerOptions.iconKey === 'smart_post') {
             markerOptions.poiView.imageUrl = ''
             markerOptions.poiView.customView = hayyak
-            markerOptions.poiView.customViewHeight = 500
+            markerOptions.poiView.customViewHeight = 600
+            $('.leaflet-pane.leaflet-popup-pane').addClass('wide100')
         }
         if (markerOptions.iconKey === 'meeting_room') {
             markerOptions.poiView.imageUrl = ''
@@ -398,12 +400,13 @@ $(function () {
             markerOptions.poiView.imageUrl = ''
             markerOptions.poiView.customView = powerMockup
             markerOptions.poiView.customViewHeight = 700
-            $('.leaflet-pane.leaflet-popup-pane').addClass('wide')
+            $('.leaflet-pane.leaflet-popup-pane').addClass('wide300')
         }
         if (markerOptions.iconKey === 'message') {
             markerOptions.poiView.imageUrl = ''
             markerOptions.poiView.customView = sign
-            markerOptions.poiView.customViewHeight = 460
+            markerOptions.poiView.customViewHeight = 600
+            $('.leaflet-pane.leaflet-popup-pane').addClass('wide100')
         }
         markerController.addMarker(markerId, [result.lat, result.lon], markerOptions)
         if (!map.indoors.isIndoors()) {
