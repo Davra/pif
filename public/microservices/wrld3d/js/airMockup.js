@@ -1,15 +1,11 @@
 /* global AmCharts, chart */
+var poi
 $(function () {
-    function getPoiValue () {
-        var key = 'poi'
-        var value = decodeURIComponent(window.location.search.replace(new RegExp('^(?:.*[&\\?]' + key + '(?:\\=([^&]*))?)?.*$', 'i'), '$1'))
-        return value ? JSON.parse(value) : null
-    }
-    var poi = getPoiValue()
+    poi = utils.getPoiValue()
     var deviceId = (window.location.hostname !== 'pif.davra.com' && poi && poi.user_data.twitter) || '' // twitter account is the deviceId
-    doAqi(poi, deviceId)
+    doAqi(deviceId)
 })
-function doAqi (poi, deviceId) {
+function doAqi (deviceId) {
     if (deviceId) { // get data
     }
     else { // mockup data

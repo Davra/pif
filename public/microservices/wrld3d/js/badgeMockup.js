@@ -1,12 +1,7 @@
 /* global d3, moment */
-// chartOccupancy
+var poi
 $(function () {
-    function getPoiValue () {
-        var key = 'poi'
-        var value = decodeURIComponent(window.location.search.replace(new RegExp('^(?:.*[&\\?]' + key + '(?:\\=([^&]*))?)?.*$', 'i'), '$1'))
-        return value ? JSON.parse(value) : null
-    }
-    var poi = getPoiValue()
+    poi = utils.getPoiValue()
     var type = (poi && poi.user_data.title.substr(poi.user_data.title.length - 1)) || '1'
     $('.address-icon.finger i').addClass('fas fa-times')
     $('.address-icon.face i').addClass('fas fa-times')

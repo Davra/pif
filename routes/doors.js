@@ -251,7 +251,7 @@ async function doorConnect (door, event, eventType) {
         if (!door.disconnectTime) {
             door.disconnectTime = event.datetime
             door.status = false
-            await utils.sendIotData(config, biostar.prefix + event.device_id.id, 'door.outage.count', event.datetime, 1, {})
+            await utils.sendIotData(config, biostar.prefix + event.device_id.id, 'door.outage.count', Date.parse(event.datetime), 1, {})
         }
         return
     }

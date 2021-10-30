@@ -1,11 +1,7 @@
-/* global AmCharts, d3, moment */
+/* global AmCharts, moment */
+var poi
 $(function () {
-    function getPoiValue () {
-        var key = 'poi'
-        var value = decodeURIComponent(window.location.search.replace(new RegExp('^(?:.*[&\\?]' + key + '(?:\\=([^&]*))?)?.*$', 'i'), '$1'))
-        return value ? JSON.parse(value) : null
-    }
-    var poi = getPoiValue()
+    poi = utils.getPoiValue()
     poi.davraUrl = ''
     poi.davraMs = ''
     if (window.location.hostname === 'localhost') {
@@ -73,89 +69,12 @@ $(function () {
     else {
         $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/SpeedBlade.png'
     }
-    doOccupancy(poi, deviceId)
-    doUptime(poi, deviceId)
-    doIncidents(poi, deviceId)
+    doOccupancy(deviceId)
+    doUptime(deviceId)
+    doIncidents(deviceId)
+    digsig.doAnomaly(deviceId)
 })
-function chartOccupancy (data) {
-    var margin = { top: 40, right: 0, bottom: 100, left: 30 }
-    var width = 600 - margin.left - margin.right
-    var height = 270 - margin.top - margin.bottom
-    var gridSize = Math.floor(width / 24)
-    // var legendElementWidth = gridSize * 2,
-    var legendElementWidth = gridSize * 1.33
-    var buckets = 10
-    // var colors = ['#ffffd9','#edf8b1','#c7e9b4','#7fcdbb','#41b6c4','#1d91c0','#225ea8','#253494','#081d58'] // alternatively colorbrewer.YlGnBu[9].
-    // var colors = ['#0bff00', '#70ed00', '#99db00', '#b6c700', '#cdb200', '#df9b00', '#ee8200', '#f86600', '#fe4400', '#ff0000'] // See https://colordesigner.io/gradient-generator (green to red)
-    var colors = ['#ff0000', '#fe4400', '#f86600', '#ee8200', '#df9b00', '#cdb200', '#b6c700', '#99db00', '#70ed00', '#0bff00'] // See https://colordesigner.io/gradient-generator (green to red)
-    var days = ['Su', 'Mo', 'Tu', 'We', 'Th']
-    // var times = ['1a', '2a', '3a', '4a', '5a', '6a', '7a', '8a', '9a', '10a', '11a', '12a', '1p', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p', '11p', '12p']
-    var times = ['6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18']
-    var svg = d3.select('#chartOccupancy').append('svg')
-        .attr('width', width + margin.left + margin.right)
-        .attr('height', height + margin.top + margin.bottom)
-        .append('g')
-        .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
-    svg.selectAll('.dayLabel')
-        .data(days)
-        .enter().append('text')
-        .text(function (d) { return d })
-        .attr('x', 0)
-        .attr('y', function (d, i) { return i * gridSize })
-        .style('text-anchor', 'end')
-        .attr('transform', 'translate(-6,' + gridSize / 1.5 + ')')
-        .attr('class', function (d, i) { return ((i >= 0 && i <= 4) ? 'dayLabel mono axis axis-workweek' : 'dayLabel mono axis') })
-    svg.selectAll('.timeLabel')
-        .data(times)
-        .enter().append('text')
-        .text(function (d) { return d })
-        .attr('x', function (d, i) { return i * gridSize })
-        .attr('y', 0)
-        .style('text-anchor', 'middle')
-        .attr('transform', 'translate(' + gridSize / 2 + ', -6)')
-        // .attr('class', function(d, i) { return ((i >= 7 && i <= 16) ? 'timeLabel mono axis axis-worktime' : 'timeLabel mono axis') })
-        .attr('class', function (d, i) { return ((i >= 2 && i <= 11) ? 'timeLabel mono axis axis-worktime' : 'timeLabel mono axis') })
-    var colorScale = d3.scale.quantile()
-        .domain([0, buckets - 1, d3.max(data, function (d) { return d.value })])
-        .range(colors)
-    var cards = svg.selectAll('.hour')
-        .data(data, function (d) { return d.day + ':' + d.hour })
-    cards.append('title')
-    cards.enter().append('rect')
-        .attr('x', function (d) { return (d.hour - 1) * gridSize })
-        .attr('y', function (d) { return (d.day - 1) * gridSize })
-        .attr('rx', 4)
-        .attr('ry', 4)
-        .attr('class', 'hour bordered')
-        .attr('width', gridSize)
-        .attr('height', gridSize)
-        .style('fill', colors[0])
-    cards.transition().duration(1000)
-        .style('fill', function (d) { return colorScale(d.value) })
-    cards.select('title').text(function (d) { return d.value })
-    cards.exit().remove()
-    var legend = svg.selectAll('.legend')
-        .data([0].concat(colorScale.quantiles()), function (d) { return d })
-    legend.enter().append('g')
-        .attr('class', 'legend')
-    legend.append('rect')
-        .attr('x', function (d, i) { return legendElementWidth * i })
-        .attr('y', height)
-        .attr('width', legendElementWidth)
-        .attr('height', gridSize / 2)
-        .style('fill', function (d, i) { return colors[i] })
-    legend.append('text')
-        .attr('class', 'mono')
-        .text(function (d, i) {
-            // console.log(d, i)
-            // return '= ' + Math.round(d)
-            return 100 - (i * 10) + '%'
-        })
-        .attr('x', function (d, i) { return legendElementWidth * i })
-        .attr('y', height + gridSize)
-    legend.exit().remove()
-}
-function doOccupancy (poi, deviceId) {
+function doOccupancy (deviceId) {
     var dataset = []
     if (deviceId) {
         var endDate = new Date().getTime()
@@ -195,7 +114,7 @@ function doOccupancy (poi, deviceId) {
             for (i = 0, n = values.length; i < n; i++) {
                 var value = values[i]
                 var date = new Date(value[0])
-                var count = value[0]
+                var count = value[1]
                 var day = date.getUTCDay()
                 var hour = date.getUTCHours()
                 if (day === 5 || day === 6) continue // skip Friday/Saturday
@@ -212,7 +131,7 @@ function doOccupancy (poi, deviceId) {
                     datapoint.value = (datapoint.count - min) * 100 / spread
                 }
             }
-            chartOccupancy(dataset)
+            utils.chartOccupancy(dataset)
         })
     }
     else { // mockup data
@@ -231,10 +150,10 @@ function doOccupancy (poi, deviceId) {
                 dataset.push(tmpDatapoint)
             }
         }
-        chartOccupancy(dataset)
+        utils.chartOccupancy(dataset)
     }
 }
-function doIncidents (poi, deviceId) {
+function doIncidents (deviceId) {
     var data = []
     var tableColumns = [
         {
@@ -243,20 +162,20 @@ function doIncidents (poi, deviceId) {
             render: function (value, type, record) {
                 return '<span style="display: none">' + value + '</span>' + moment(value).format('YYYY-MM-DD HH:mm')
             },
-            width: '35%'
+            width: '50%'
         },
-        {
-            title: 'Type',
-            data: 'description',
-            width: '35%'
-        },
+        // {
+        //     title: 'Type',
+        //     data: 'description',
+        //     width: '30%'
+        // },
         {
             title: 'Duration',
             data: 'duration',
             render: function (value, type, record) {
                 return value ? ('<span style="display: none">' + ('' + value).padStart(12, '0') + '</span>' + utils.formatDuration(value)) : ''
             },
-            width: '30%'
+            width: '50%'
         }
     ]
     if (deviceId) {
@@ -268,13 +187,13 @@ function doIncidents (poi, deviceId) {
                 tags: {
                     serialNumber: deviceId
                 }
-            },
-            {
-                name: 'davra.digitalSignatures.Door',
-                limit: 100000,
-                tags: {
-                    serialNumber: deviceId
-                }
+            // },
+            // {
+            //     name: 'davra.digitalSignatures.Door',
+            //     limit: 100000,
+            //     tags: {
+            //         serialNumber: deviceId
+            //     }
             }],
             start_absolute: endDate - (30 * 24 * 60 * 60 * 1000),
             end_absolute: endDate
@@ -282,31 +201,26 @@ function doIncidents (poi, deviceId) {
         $.post(poi.davraUrl + '/api/v2/timeseriesData', JSON.stringify(query), function (result) {
             console.log(result)
             var values1 = result.queries[0].results[0].values
-            var values2 = result.queries[1].results[0].values
             data = []
             var i, n, value
             for (i = 0, n = values1.length; i < n; i++) {
                 value = values1[i]
-                data.push({ timestamp: value[0], description: 'Outage', duration: value[1] })
-            }
-            for (i = 0, n = values2.length; i < n; i++) {
-                value = values2[i]
-                data.push({ timestamp: value[0], description: 'Anomaly', duration: 0, userId: '' })
+                data.push({ timestamp: value[0], description: 'Contact lost', duration: value[1] })
             }
             initTable('#table', tableColumns, data)
         })
     }
     else { // mockup data
         data = [
-            { timestamp: 1624312564770, description: 'Outage', duration: 170440000, userId: 'ABC123' },
-            { timestamp: 1624208954770, description: 'Outage', duration: 11000, userId: 'D45678' },
-            { timestamp: 1624305344770, description: 'Outage', duration: 33000, userId: 'X566489' },
-            { timestamp: 1624101734770, description: 'Anomaly', duration: 0, userId: 'AYS5412' }
+            { timestamp: 1624312564770, description: 'Contact lost', duration: 170440000, userId: 'ABC123' },
+            { timestamp: 1624208954770, description: 'Contact lost', duration: 11000, userId: 'D45678' },
+            { timestamp: 1624305344770, description: 'Contact lost', duration: 33000, userId: 'X566489' },
+            { timestamp: 1624101734770, description: 'Contact lost', duration: 22000, userId: 'AYS5412' }
         ]
         initTable('#table', tableColumns, data)
     }
 }
-function doUptime (poi, deviceId) {
+function doUptime (deviceId) {
     if (deviceId) {
         var endDate = new Date().getTime()
         var data = {

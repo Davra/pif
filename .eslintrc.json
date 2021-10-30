@@ -16,6 +16,7 @@
     },
     "globals": {
         "$": "readonly",
+        "digsig": "readonly",
         "utils": "readonly"
     }
 }

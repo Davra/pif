@@ -1,12 +1,7 @@
 /* global AmCharts, moment */
-// chartOccupancy
+var poi
 $(function () {
-    function getPoiValue () {
-        var key = 'poi'
-        var value = decodeURIComponent(window.location.search.replace(new RegExp('^(?:.*[&\\?]' + key + '(?:\\=([^&]*))?)?.*$', 'i'), '$1'))
-        return value ? JSON.parse(value) : null
-    }
-    var poi = getPoiValue()
+    poi = utils.getPoiValue()
     poi.davraUrl = ''
     poi.davraMs = ''
     if (window.location.hostname === 'localhost') {
@@ -67,12 +62,13 @@ $(function () {
         $('.meeting-room-details .sync span').text('NO')
         $('.meeting-room-details .sync span').toggleClass('online offline')
     }
-    doProps(poi, deviceId)
-    doCards(poi, deviceId)
-    doUptime(poi, deviceId)
-    doIncidents(poi, deviceId)
+    doProps(deviceId)
+    doCards(deviceId)
+    doUptime(deviceId)
+    doIncidents(deviceId)
+    digsig.doAnomaly(deviceId)
 })
-function doProps (poi, deviceId) {
+function doProps (deviceId) {
     var data = []
     var tableColumns = [
         { title: 'Key', data: 'Property', width: '50%' },
@@ -99,7 +95,7 @@ function doProps (poi, deviceId) {
     }
 }
 // #tabCards is non-display pending redesign
-function doCards (poi, deviceId) {
+function doCards (deviceId) {
     if (deviceId) { // get data
     }
     else { // mockup data
@@ -122,7 +118,7 @@ function doCards (poi, deviceId) {
     var height = $(window).height() * 0.98
     $('#chartCards').width(width).height(height)
 }
-function doIncidents (poi, deviceId) {
+function doIncidents (deviceId) {
     var data = []
     var tableColumns = [
         {
@@ -131,20 +127,20 @@ function doIncidents (poi, deviceId) {
             render: function (value, type, record) {
                 return '<span style="display: none">' + value + '</span>' + moment(value).format('YYYY-MM-DD HH:mm')
             },
-            width: '35%'
+            width: '50%'
         },
-        {
-            title: 'Type',
-            data: 'description',
-            width: '35%'
-        },
+        // {
+        //     title: 'Type',
+        //     data: 'description',
+        //     width: '35%'
+        // },
         {
             title: 'Duration',
             data: 'duration',
             render: function (value, type, record) {
                 return value ? ('<span style="display: none">' + ('' + value).padStart(12, '0') + '</span>' + utils.formatDuration(value)) : ''
             },
-            width: '30%'
+            width: '50%'
         }
     ]
     if (deviceId) { // get data
@@ -156,13 +152,13 @@ function doIncidents (poi, deviceId) {
                 tags: {
                     serialNumber: deviceId
                 }
-            },
-            {
-                name: 'davra.digitalSignatures.Sign',
-                limit: 100000,
-                tags: {
-                    serialNumber: deviceId
-                }
+            // },
+            // {
+            //     name: 'davra.digitalSignatures.Sign',
+            //     limit: 100000,
+            //     tags: {
+            //         serialNumber: deviceId
+            //     }
             }],
             start_absolute: endDate - (30 * 24 * 60 * 60 * 1000),
             end_absolute: endDate
@@ -170,31 +166,26 @@ function doIncidents (poi, deviceId) {
         $.post(poi.davraUrl + '/api/v2/timeseriesData', JSON.stringify(query), function (result) {
             console.log(result)
             var values1 = result.queries[0].results[0].values
-            var values2 = result.queries[1].results[0].values
             data = []
             var i, n, value
             for (i = 0, n = values1.length; i < n; i++) {
                 value = values1[i]
                 data.push({ timestamp: value[0], description: 'Contact lost', duration: value[1] })
             }
-            for (i = 0, n = values2.length; i < n; i++) {
-                value = values2[i]
-                data.push({ timestamp: value[0], description: 'Anomaly', duration: 0, userId: '' })
-            }
             initTable('#table', tableColumns, data)
         })
     }
     else { // mockup data
         data = [
-            { timestamp: 1624312564770, description: 'Outage', duration: 170440000, userId: 'ABC123' },
-            { timestamp: 1624208954770, description: 'Outage', duration: 11000, userId: 'D45678' },
-            { timestamp: 1624305344770, description: 'Outage', duration: 33000, userId: 'X566489' },
-            { timestamp: 1624101734770, description: 'Anomaly', duration: 0, userId: 'AYS5412' }
+            { timestamp: 1624312564770, description: 'Contact lost', duration: 170440000, userId: 'ABC123' },
+            { timestamp: 1624208954770, description: 'Contact lost', duration: 11000, userId: 'D45678' },
+            { timestamp: 1624305344770, description: 'Contact lost', duration: 33000, userId: 'X566489' },
+            { timestamp: 1624101734770, description: 'Contact lost', duration: 22000, userId: 'AYS5412' }
         ]
         initTable('#table', tableColumns, data)
     }
 }
-function doUptime (poi, deviceId) {
+function doUptime (deviceId) {
     if (deviceId) { // get data
         var endDate = new Date().getTime()
         var data = {

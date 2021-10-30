@@ -377,7 +377,7 @@ $(function () {
         if (markerOptions.iconKey === 'badge_reader') {
             markerOptions.poiView.imageUrl = ''
             markerOptions.poiView.customView = door
-            markerOptions.poiView.customViewHeight = 480
+            markerOptions.poiView.customViewHeight = 600
         }
         if (markerOptions.iconKey === 'fire_extinguisher') {
             markerOptions.poiView.imageUrl = ''
@@ -398,8 +398,6 @@ $(function () {
             markerOptions.poiView.imageUrl = ''
             markerOptions.poiView.customView = powerMockup
             markerOptions.poiView.customViewHeight = 700
-            // $('.leaflet-popup-content-wrapper')[0].style.width = 566 // was 366px
-            // $('.leaflet-popup-content')[0].style.width = 501 // was 301px
             $('.leaflet-pane.leaflet-popup-pane').addClass('wide')
         }
         if (markerOptions.iconKey === 'message') {

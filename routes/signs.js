@@ -55,24 +55,24 @@ async function signCapability (id) {
 }
 async function signConnect (sign, event, timestamp) {
     // 0 as status is Sync-Online, 1 is Offline, 2 Online - Out of Sync, 3 is Communication lost
-    if (event.status > 0) {
+    if (event.Status > 0) {
         await utils.sendIotData(config, appspace.prefix + event._id, 'sign.outage.count', timestamp, 1, {})
     }
-    if (event.status === 0 || event.status === 2) {
+    if (event.Status === 0 || event.Status === 2) {
         await utils.sendIotData(config, appspace.prefix + event._id, 'sign.status.count', timestamp, 1, {})
     }
-    if (event.status === 0) {
+    if (event.Status === 0) {
         await utils.sendIotData(config, appspace.prefix + event._id, 'sign.sync.count', timestamp, 1, {})
     }
-    if (sign.status === event.status) return
-    sign.status = event.status
-    if (event.status > 0) { // status not OK
+    if (sign.Status === event.Status) return
+    sign.Status = event.Status
+    if (event.Status > 0) { // status not OK
         if (!sign.disconnectTime) {
             sign.disconnectTime = timestamp
         }
         return
     }
-    if (event.status === 0) { // status OK
+    if (event.Status === 0) { // status OK
         if (!sign.disconnectTime) return // ignore connect without a previous disconnect
         const startDate = sign.disconnectTime
         const endDate = timestamp

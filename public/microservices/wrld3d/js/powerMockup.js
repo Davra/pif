@@ -1,16 +1,12 @@
 /* global AmCharts, chart, moment */
+var poi
 $(function () {
-    function getPoiValue () {
-        var key = 'poi'
-        var value = decodeURIComponent(window.location.search.replace(new RegExp('^(?:.*[&\\?]' + key + '(?:\\=([^&]*))?)?.*$', 'i'), '$1'))
-        return value ? JSON.parse(value) : null
-    }
-    var poi = getPoiValue()
+    poi = utils.getPoiValue()
     var deviceId = (window.location.hostname !== 'pif.davra.com' && poi && poi.user_data.twitter) || '' // twitter account is the deviceId
-    doUsage(poi, deviceId)
-    doFaults(poi, deviceId)
+    doUsage(deviceId)
+    doFaults(deviceId)
 })
-function doFaults (poi, deviceId) {
+function doFaults (deviceId) {
     var alerts = parent.alerts || [{ date: 1624208954770, open: true }, { date: 1624305344770 }]
     var id = (poi && poi.user_data.title.substr(poi.user_data.title.length - 3)) || '1'
     var data = []
@@ -47,7 +43,7 @@ function doFaults (poi, deviceId) {
         initTable('#table', tableColumns, data)
     }
 }
-function doUsage (poi, deviceId) {
+function doUsage (deviceId) {
     if (deviceId) { // get data
     }
     else { // mockup data

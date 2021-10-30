@@ -1,11 +1,7 @@
 /* global moment */
+var poi
 $(function () {
-    function getPoiValue () {
-        var key = 'poi'
-        var value = decodeURIComponent(window.location.search.replace(new RegExp('^(?:.*[&\\?]' + key + '(?:\\=([^&]*))?)?.*$', 'i'), '$1'))
-        return value ? JSON.parse(value) : null
-    }
-    var poi = getPoiValue()
+    poi = utils.getPoiValue()
     var type = (poi && poi.user_data.title.substr(poi.user_data.title.length - 1)) || '1'
     var now = new Date()
     var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2)
@@ -29,10 +25,10 @@ $(function () {
         $('.meeting-room-details .disablement span').text('ON')
         // $('.meeting-room-details .disablement span').toggleClass('online offline')
     }
-    doFaults(poi, deviceId)
-    doOutages(poi, deviceId)
+    doFaults(deviceId)
+    doOutages(deviceId)
 })
-function doFaults (poi, deviceId) {
+function doFaults (deviceId) {
     var alerts = parent.alerts || [{ date: 1624208954770 }, { date: 1624305344770 }]
     var data = []
     var tableColumns = [
@@ -58,7 +54,7 @@ function doFaults (poi, deviceId) {
         initTable('#tabFaultsPanel table', tableColumns, data)
     }
 }
-function doOutages (poi, deviceId) {
+function doOutages (deviceId) {
     var data = []
     var tableColumns = [
         {

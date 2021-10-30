@@ -1,12 +1,7 @@
 /* global AmCharts, moment */
-// chartOccupancy
+var poi
 $(function () {
-    function getPoiValue () {
-        var key = 'poi'
-        var value = decodeURIComponent(window.location.search.replace(new RegExp('^(?:.*[&\\?]' + key + '(?:\\=([^&]*))?)?.*$', 'i'), '$1'))
-        return value ? JSON.parse(value) : null
-    }
-    var poi = getPoiValue()
+    poi = utils.getPoiValue()
     var type = (poi && poi.user_data.title.substr(poi.user_data.title.length - 1)) || '1'
     $('.meeting-room-photo .carousel .img1')[0].src = '/microservices/wrld3d/img/sign1.jpg'
     $('.meeting-room-photo .carousel .img2')[0].src = '/microservices/wrld3d/img/sign1-2.jpg'
@@ -23,11 +18,11 @@ $(function () {
         $('.meeting-room-details .sync span').text('NO')
         $('.meeting-room-details .sync span').toggleClass('online offline')
     }
-    doCards(poi, deviceId)
-    doUptime(poi, deviceId)
-    doOutages(poi, deviceId)
+    doCards(deviceId)
+    doUptime(deviceId)
+    doOutages(deviceId)
 })
-function doCards (poi, deviceId) {
+function doCards (deviceId) {
     if (deviceId) { // get data
     }
     else { // mockup data
@@ -50,7 +45,7 @@ function doCards (poi, deviceId) {
     var height = $(window).height() * 0.98
     $('#chartCards').width(width).height(height)
 }
-function doOutages (poi, deviceId) {
+function doOutages (deviceId) {
     var data = []
     var tableColumns = [
         {
@@ -82,7 +77,7 @@ function doOutages (poi, deviceId) {
         initTable('#table', tableColumns, data)
     }
 }
-function doUptime (poi, deviceId) {
+function doUptime (deviceId) {
     if (deviceId) { // get data
     }
     else { // mockup data
