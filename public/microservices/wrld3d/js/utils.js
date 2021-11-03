@@ -2,12 +2,13 @@
 var utils = {}
 utils.chartOccupancy = function (data) {
     var margin = { top: 40, right: 0, bottom: 100, left: 30 }
-    var width = 600 - margin.left - margin.right
-    var height = 270 - margin.top - margin.bottom
+    var width = 720 - margin.left - margin.right
+    var height = 300 - margin.top - margin.bottom
     var gridSize = Math.floor(width / 24)
     // var legendElementWidth = gridSize * 2,
     var legendElementWidth = gridSize * 1.33
-    var buckets = 10
+    // var buckets = 10
+    var buckets = [10, 20, 30, 40, 50, 60, 70, 80, 90]
     // var colors = ['#ffffd9','#edf8b1','#c7e9b4','#7fcdbb','#41b6c4','#1d91c0','#225ea8','#253494','#081d58'] // alternatively colorbrewer.YlGnBu[9].
     // var colors = ['#0bff00', '#70ed00', '#99db00', '#b6c700', '#cdb200', '#df9b00', '#ee8200', '#f86600', '#fe4400', '#ff0000'] // See https://colordesigner.io/gradient-generator (green to red)
     // var colors = ['#ff0000', '#fe4400', '#f86600', '#ee8200', '#df9b00', '#cdb200', '#b6c700', '#99db00', '#70ed00', '#0bff00'] // See https://colordesigner.io/gradient-generator (green to red)
@@ -39,8 +40,12 @@ utils.chartOccupancy = function (data) {
         .attr('transform', 'translate(' + gridSize / 2 + ', -6)')
         // .attr('class', function(d, i) { return ((i >= 7 && i <= 16) ? 'timeLabel mono axis axis-worktime' : 'timeLabel mono axis') })
         .attr('class', function (d, i) { return ((i >= 2 && i <= 11) ? 'timeLabel mono axis axis-worktime' : 'timeLabel mono axis') })
-    var colorScale = d3.scale.quantile()
-        .domain([0, buckets - 1, d3.max(data, function (d) { return d.value })])
+    // var colorScale = d3.scale.quantile()
+    //     .domain([0, buckets - 1, d3.max(data, function (d) { return d.value })])
+    //     .range(colors)
+    // console.log(colorScale.quantiles())
+    var colorScale = d3.scale.threshold()
+        .domain(buckets)
         .range(colors)
     var cards = svg.selectAll('.hour')
         .data(data, function (d) { return d.day + ':' + d.hour })
@@ -59,7 +64,8 @@ utils.chartOccupancy = function (data) {
     cards.select('title').text(function (d) { return d.value })
     cards.exit().remove()
     var legend = svg.selectAll('.legend')
-        .data([0].concat(colorScale.quantiles()), function (d) { return d })
+        // .data([0].concat(colorScale.quantiles()), function (d) { return d })
+        .data([0].concat(buckets), function (d) { return d })
     legend.enter().append('g')
         .attr('class', 'legend')
     legend.append('rect')

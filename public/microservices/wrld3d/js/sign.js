@@ -7,7 +7,8 @@ $(function () {
     if (window.location.hostname === 'localhost') {
         var davraToken = localStorage.getItem('davraToken')
         $.ajaxSetup({ headers: { Authorization: 'Bearer ' + davraToken } })
-        poi.davraUrl = 'https://pif.davra.com'
+        // poi.davraUrl = 'https://pif.davra.com'
+        poi.davraUrl = 'https://platform.pif-stc.davra.com'
     }
     else {
         poi.davraMs = '/microservices/wrld3d'
@@ -160,7 +161,7 @@ function doIncidents (deviceId) {
             //         serialNumber: deviceId
             //     }
             }],
-            start_absolute: endDate - (30 * 24 * 60 * 60 * 1000),
+            start_absolute: endDate - (60 * 24 * 60 * 60 * 1000),
             end_absolute: endDate
         }
         $.post(poi.davraUrl + '/api/v2/timeseriesData', JSON.stringify(query), function (result) {
@@ -186,8 +187,14 @@ function doIncidents (deviceId) {
     }
 }
 function doUptime (deviceId) {
-    if (deviceId) { // get data
-        var endDate = new Date().getTime()
+    if (deviceId) {
+        var now = new Date().getTime()
+        var oneDayAgo = new Date(); oneDayAgo.setDate(oneDayAgo.getDate() - 1); oneDayAgo = oneDayAgo.getTime()
+        var oneWeekAgo = new Date(); oneWeekAgo.setDate(oneWeekAgo.getDate() - 7); oneWeekAgo = oneWeekAgo.getTime()
+        var oneMonthAgo = new Date(); oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1); oneMonthAgo = oneMonthAgo.getTime()
+        var oneYearAgo = new Date(); oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1); oneYearAgo = oneYearAgo.getTime()
+        var installDate = new Date(2021, 8, 17).getTime()
+        if (installDate > oneYearAgo) oneYearAgo = installDate
         var data = {
             metrics: [
                 {
@@ -203,67 +210,29 @@ function doUptime (deviceId) {
                             unit: 'days'
                         }
                     }]
-                },
-                {
-                    name: 'sign.outage.timeslice',
-                    limit: 100000,
-                    tags: {
-                        serialNumber: deviceId
-                    },
-                    aggregators: [{
-                        name: 'sum',
-                        sampling: {
-                            value: '7',
-                            unit: 'days'
-                        }
-                    }]
-                },
-                {
-                    name: 'sign.outage.timeslice',
-                    limit: 100000,
-                    tags: {
-                        serialNumber: deviceId
-                    },
-                    aggregators: [{
-                        name: 'sum',
-                        sampling: {
-                            value: '1',
-                            unit: 'months'
-                        }
-                    }]
-                },
-                {
-                    name: 'sign.outage.timeslice',
-                    limit: 100000,
-                    tags: {
-                        serialNumber: deviceId
-                    },
-                    aggregators: [{
-                        name: 'sum',
-                        sampling: {
-                            value: '1',
-                            unit: 'years'
-                        }
-                    }]
                 }
             ],
-            start_absolute: endDate - (365 * 24 * 60 * 60 * 1000),
-            end_absolute: endDate
+            start_absolute: oneYearAgo
         }
         $.post(poi.davraUrl + '/api/v2/timeseriesData', JSON.stringify(data), function (result) {
             console.log(result)
-            var values1 = result.queries[0].results[0].values
-            var values2 = result.queries[1].results[0].values
-            var values3 = result.queries[2].results[0].values
-            var values4 = result.queries[3].results[0].values
-            var value1 = values1.length ? values1[values1.length - 1][1] : 0
-            var value2 = values2.length ? values2[values2.length - 1][1] : 0
-            var value3 = values3.length ? values3[values3.length - 1][1] : 0
-            var value4 = values4.length ? values4[values4.length - 1][1] : 0
-            var perc1 = utils.roundTo2((value1 * 100) / (1 * 24 * 60 * 60 * 1000))
-            var perc2 = utils.roundTo2((value2 * 100) / (7 * 24 * 60 * 60 * 1000))
-            var perc3 = utils.roundTo2((value3 * 100) / (30 * 24 * 60 * 60 * 1000))
-            var perc4 = utils.roundTo2((value4 * 100) / (365 * 24 * 60 * 60 * 1000))
+            var values = result.queries[0].results[0].values || []
+            var value1 = 0
+            var value2 = 0
+            var value3 = 0
+            var value4 = 0
+            for (var i = values.length - 1; i >= 0; i--) {
+                var date = values[i][0]
+                var value = values[i][1]
+                if (date >= oneDayAgo) value1 += value
+                if (date >= oneWeekAgo) value2 += value
+                if (date >= oneMonthAgo) value3 += value
+                if (date >= oneYearAgo) value4 += value
+            }
+            var perc1 = utils.roundTo2((value1 * 100) / (now - oneDayAgo))
+            var perc2 = utils.roundTo2((value2 * 100) / (now - oneWeekAgo))
+            var perc3 = utils.roundTo2((value3 * 100) / (now - oneMonthAgo))
+            var perc4 = utils.roundTo2((value4 * 100) / (now - oneYearAgo))
             chartUptimeConfig.dataProvider[0].uptime = utils.roundTo2(100 - perc1)
             chartUptimeConfig.dataProvider[1].uptime = utils.roundTo2(100 - perc2)
             chartUptimeConfig.dataProvider[2].uptime = utils.roundTo2(100 - perc3)
@@ -286,7 +255,7 @@ function initTable (tableId, tableColumns, data) {
     var dataTableConfig = {
         dom: 'Bfrtip',
         bDestroy: true,
-        pageLength: 5,
+        pageLength: 8,
         pagingType: 'simple',
         info: true,
         paging: true,

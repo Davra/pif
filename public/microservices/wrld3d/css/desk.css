@@ -10,18 +10,25 @@
     display: inline-block;
     vertical-align: top;
     margin-top: 12px;
+    margin-left: 20px;
 }
 .meeting-room-details {
     margin-top: 8px;
 }
-.phone-icon, .address-icon {
+.meeting-room-details .status span.online {
+    color: #0bff00;
+}
+.meeting-room-details .status span.offline {
+    color: red;
+}
+.status-icon, .address-icon {
     display: inline-block;
     vertical-align: top;
     margin-right: 0px;
     width: 20px;
     height: 20px;
 }
-.phone-number, .address {
+.status, .address {
     display: inline-block;
     vertical-align: top;
 }

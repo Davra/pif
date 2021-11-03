@@ -1,7 +1,7 @@
 const axios = require('axios')
 const mysql = require('mysql2/promise')
 var config
-const appspace = { expiryInterval: 1 * 10 * 1000 }
+const appspace = { expiryInterval: 8 * 60 * 60 * 1000 }
 const biostar = { expiryInterval: 60 * 60 * 1000 }
 const embrava = { expiryInterval: 60 * 60 * 1000 }
 const hayyak = { expiryInterval: 150 * 60 * 1000 }
@@ -21,8 +21,8 @@ exports.init = function (app) {
 exports.getAppspaceConnection = async function () {
     var currentTimeMillis = new Date().getTime()
     if (appspace.connection) {
-        // if (currentTimeMillis < (embrava.expiryTime - (10 * 1000))) {
-        if (currentTimeMillis < appspace.expiryTime) {
+        if (currentTimeMillis < (appspace.expiryTime - (10 * 1000))) {
+        // if (currentTimeMillis < appspace.expiryTime) {
             console.log('Reusing Appspace connection')
             appspace.expiryTime = currentTimeMillis + appspace.expiryInterval
             return appspace.connection
@@ -111,10 +111,11 @@ exports.getEmbravaToken = async function () {
 exports.getHayyakToken = async function () {
     var currentTimeMillis = new Date().getTime()
     if (hayyak.token) {
-        // if (currentTimeMillis < (hayyak.expiryTime - (10 * 1000))) {
-        if (currentTimeMillis < hayyak.expiryTime) {
+        if (currentTimeMillis < (hayyak.expiryTime - (10 * 1000))) {
+        // if (currentTimeMillis < hayyak.expiryTime) {
             console.log('Reusing Hayyak token: ' + hayyak.token)
-            hayyak.expiryTime = currentTimeMillis + hayyak.expiryInterval
+            // do not extend - expiry time is not extended by usage
+            // hayyak.expiryTime = currentTimeMillis + hayyak.expiryInterval
             return hayyak // return token and customerId
         }
     }

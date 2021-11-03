@@ -20,8 +20,8 @@ exports.init = async function (app) {
     })
     app.get('/desk/status/:id', async (req, res) => {
         const id = decodeURIComponent(req.params.id)
-        const status = await deskStatus(id)
-        res.send({ success: true, status: status })
+        const data = await deskStatus(id)
+        res.send({ success: true, data: data })
     })
     app.get('/desk/sync', async (req, res) => {
         const count = await deskSync()
@@ -69,15 +69,15 @@ async function deskConnect (desk, event, timestamp) {
         await utils.sendIotData(config, embrava.prefix + event.embravaId, 'desk.outage.count', timestamp, 1, {})
     }
     if (desk.state === event.state) return
+    desk.state = event.state
     if (event.state === 'Offline') {
         if (!desk.disconnectTime) {
             desk.disconnectTime = timestamp
-            desk.state = event.state
+            await utils.sendStatefulIncident(config, 'Desk outage', 'Desk outage ' + embrava.prefix + event.embravaId, 'desk', { floor: '2' })
         }
         return
     }
     // any state other than Offline means a reconnect
-    desk.state = event.state
     if (!desk.disconnectTime) return // ignore connect without a previous disconnect
     const startDate = desk.disconnectTime
     const endDate = timestamp
@@ -178,16 +178,22 @@ async function deskList () {
 }
 async function deskRefresh () {
     embrava.desks = {}
+    embrava.devices = {}
     for (const desk of await deskList()) {
         embrava.desks[desk.embravaId] = desk
+    }
+    for (const device of await utils.deviceList(config, 'desk')) {
+        embrava.devices[device.serialNumber.substr(1)] = device
     }
 }
 async function deskStatus (id) {
     console.log('Desk ID:', id)
     if (id.startsWith(embrava.prefix)) id = id.substr(1)
     const desk = embrava.desks ? embrava.desks[id] : null
+    const device = embrava.devices ? embrava.devices[id] : null
     const status = desk ? desk.state : 'Offline'
-    return status
+    const address = device ? device.customTags.address || [] : []
+    return { status: status, address: address }
 }
 async function deskSync () {
     console.log('deskSync running...')
@@ -198,13 +204,17 @@ async function deskSync () {
     }
     for (const desk of await deskList()) {
         const deskId = embrava.prefix + desk.embravaId
-        const deskName = desk.neighborhood + ' ' + desk.embravaId
+        // const deskName = desk.neighborhood + ' ' + desk.embravaId
+        const deskName = 'Desk_' + desk.deskName
+        const floor = desk.deskName.substr(2, 1)
+        const address = [desk.neighborhood, 'Floor ' + floor]
         const device = devices[deskId]
         if (device) {
             var doc = {}
             if (device.name !== deskName) doc.name = deskName
             if (device.serialNumber !== deskId) doc.serialNumber = deskId
-            if (!device.labels || !device.labels.type) doc.labels = { type: 'desk' }
+            if (!device.labels || !device.labels.type || !device.labels.floor) doc.labels = { type: 'desk', floor: floor }
+            if (!device.customTags || !device.customTags.address) doc.customTags = { address: address }
             if (Object.keys(doc).length > 0) {
                 try {
                     await axios({
@@ -234,7 +244,8 @@ async function deskSync () {
                     data: {
                         serialNumber: deskId,
                         name: deskName,
-                        labels: { type: 'desk' }
+                        labels: { type: 'desk', floor: floor },
+                        customTags: { address: address }
                     }
                 })
                 counts.added++

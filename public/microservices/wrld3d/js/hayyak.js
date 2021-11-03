@@ -7,7 +7,8 @@ $(function () {
     if (window.location.hostname === 'localhost') {
         var davraToken = localStorage.getItem('davraToken')
         $.ajaxSetup({ headers: { Authorization: 'Bearer ' + davraToken } })
-        poi.davraUrl = 'https://pif.davra.com'
+        // poi.davraUrl = 'https://pif.davra.com'
+        poi.davraUrl = 'https://platform.pif-stc.davra.com'
     }
     else {
         poi.davraMs = '/microservices/wrld3d'
@@ -79,7 +80,7 @@ function doMetrics (deviceId) {
                     }]
                 }
             ],
-            start_absolute: endDate - (30 * 24 * 60 * 60 * 1000),
+            start_absolute: endDate - (60 * 24 * 60 * 60 * 1000),
             end_absolute: endDate
         }
         $.post(poi.davraUrl + '/api/v2/timeseriesData', JSON.stringify(data), function (result) {
@@ -151,7 +152,7 @@ function doOccupancy (deviceId) {
                     datapoint = datapoints[day + '.' + hour]
                     if (!datapoint) datapoint = { day: day, hour: hour, value: 0 }
                     var perc = utils.roundTo2((datapoint.value * 100) / (numberOfWeeks * 60 * 60 * 1000))
-                    dataset.push({ day: day + 1, hour: hour - 5, value: utils.roundTo2(100 - perc) })
+                    dataset.push({ day: day + 1, hour: hour - 5, value: perc })
                 }
             }
             utils.chartOccupancy(dataset)
@@ -165,7 +166,7 @@ function doOccupancy (deviceId) {
                 datapoint.hour = hour
                 // weighted to the afternoon?
                 if (hour >= 8 && hour <= 12) {
-                    datapoint.value = 0 + parseInt(Math.random() * 10)
+                    datapoint.value = 70 + parseInt(Math.random() * 30)
                 }
                 else {
                     datapoint.value = parseInt(Math.random() * 100)
@@ -218,7 +219,7 @@ function doIncidents (deviceId) {
             //         serialNumber: deviceId
             //     }
             }],
-            start_absolute: endDate - (30 * 24 * 60 * 60 * 1000),
+            start_absolute: endDate - (60 * 24 * 60 * 60 * 1000),
             end_absolute: endDate
         }
         $.post(poi.davraUrl + '/api/v2/timeseriesData', JSON.stringify(query), function (result) {
@@ -311,7 +312,7 @@ function initTable (tableId, tableColumns, data) {
     var dataTableConfig = {
         dom: 'Bfrtip',
         bDestroy: true,
-        pageLength: 5,
+        pageLength: 8,
         pagingType: 'simple',
         info: true,
         paging: true,

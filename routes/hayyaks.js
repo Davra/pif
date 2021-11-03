@@ -36,7 +36,15 @@ async function deviceEvent (device, event, timestamp) {
         await utils.sendIotData(config, hayyak.prefix + event.id, 'hayyak.usage', timestamp, event.wakeword, {})
     }
     if (device.status === event.status) return
-    device.status = event.status
+    device.state = event.state
+    if (event.state === 'Offline') {
+        if (!device.disconnectTime) {
+            device.disconnectTime = timestamp
+            await utils.sendStatefulIncident(config, 'Hayyak outage', 'Hayyak outage ' + hayyak.prefix + event.id, 'hayyak', { floor: '3' })
+        }
+        return
+    }
+    // any status other than Offline means a reconnect
     const startDate = event.lastDisconnectTime
     const endDate = event.lastConnectTime
     var duration = endDate - startDate

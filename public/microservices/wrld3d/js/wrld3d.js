@@ -9,7 +9,7 @@ $(function () {
     var endMarker = null
     var route = null
     var routeMarker = null
-    var prefix = window.location.hostname === 'localhost' ? '' : '/microservices/wrld3d'
+    // var prefix = window.location.hostname === 'localhost' ? '' : '/microservices/wrld3d'
     var map = L.Wrld.map('map', apiKey, {
         // center: [37.7952, -122.4028],
         center: [24.763289081785917, 46.63878573585767], // Riyadh
@@ -339,11 +339,6 @@ $(function () {
             },
             iconKey: result.tags.split(' ')[0]
         }
-        if (markerOptions.iconKey === 'positioning_beacon') {
-            markerOptions.poiView.imageUrl = ''
-            markerOptions.poiView.customView = prefix + '/beacon/' + result.id
-            markerOptions.poiView.customViewHeight = 400
-        }
         // var airMockup = 'https://wrld-data-service.s3-us-west-2.amazonaws.com/staging/mock-pois/yanzi-Single-POI/index.html?intervalHours=24&cardType=AirQuality&primaryMaxLimit=500&secondaryMaxLimit=1000&poi=%7B%22id%22%3A2999591%2C%22title%22%3A%22Meeting%20Room%20Air%20Quality%22%2C%22subtitle%22%3A%22Big%20Meeting%20Room%20Comfort%20Sensor%200B7F%22%2C%22tags%22%3A%22air_quality_good%20air_quality%22%2C%22lat%22%3A56.4600566%2C%22lon%22%3A-2.9782328%2C%22height_offset%22%3A0%2C%22indoor%22%3Atrue%2C%22indoor_id%22%3A%22westport_house%22%2C%22floor_id%22%3A2%2C%22user_data%22%3A%7B%22custom_view%22%3A%22https%3A%2F%2Fwrld-data-service.s3-us-west-2.amazonaws.com%2Fstaging%2Fmock-pois%2Fyanzi-Single-POI%2Findex.html%3FintervalHours%3D24%26cardType%3DAirQuality%26primaryMaxLimit%3D500%26secondaryMaxLimit%3D1000%22%2C%22custom_view_height%22%3A280%2C%22highlight%22%3A%22Meeting%20Room%20Large%22%2C%22highlight_color%22%3A%5B121%2C244%2C47%2C191%5D%7D%2C%22styleCustomProperties%22%3A%7B%22--primary-text-color%22%3A%22%20%20%20%23404040%22%2C%22--secondary-text-color%22%3A%22%20%20%20%23606060%22%2C%22--background-color%22%3A%22%20%20%20%23fff%22%2C%22--ui-element-color%22%3A%22%20%20%20%231756a9%22%2C%22--ui-element-alt-color%22%3A%22%20%20%20navy%22%2C%22--button-text-color%22%3A%22%20%20%20%23fff%22%2C%22--minor-ui-element-color%22%3A%22%20%20%20%23aaa%22%2C%22--box-shadow-color%22%3A%22%20%20rgba(0%2C0%2C0%2C0.3)%22%2C%22--traffic-light-go-color%22%3A%22%20%20%230b9b3c%22%2C%22--traffic-light-changing-color%22%3A%22%20%20%23d96f00%22%2C%22--traffic-light-stop-color%22%3A%22%20%20%23d1021a%22%7D%7D'
         var airMockup = '/microservices/wrld3d/airMockup.html'
         // var badgeMockup = '/microservices/wrld3d/badgeMockup.html'
@@ -357,7 +352,7 @@ $(function () {
         var roomMockup = '/microservices/wrld3d/roomMockup.html'
         var powerMockup = '/microservices/wrld3d/powerMockup.html'
         var sign = '/microservices/wrld3d/sign.html'
-        $('.leaflet-pane.leaflet-popup-pane').removeClass('wide')
+        $('.leaflet-pane.leaflet-popup-pane').removeClass('wide100 wide200 wide300')
         if (markerOptions.iconKey === 'air_quality_good') {
             markerOptions.poiView.imageUrl = ''
             markerOptions.poiView.customView = airMockup
@@ -373,6 +368,7 @@ $(function () {
             markerOptions.poiView.imageUrl = ''
             markerOptions.poiView.customView = desk
             markerOptions.poiView.customViewHeight = 600
+            $('.leaflet-pane.leaflet-popup-pane').addClass('wide100')
         }
         if (markerOptions.iconKey === 'badge_reader') {
             markerOptions.poiView.imageUrl = ''
@@ -442,17 +438,17 @@ $(function () {
         var ds = '-'
         return (y + ds + M0 + ds + d0 + ' ' + h + ':' + m)
     }
-    alerts = [
-        { id: 3000365, title: 'HVAC/lighting/electricity 2.1', subtitle: 'Beside Huddle Rooms', tags: 'electricity_meter', lat: 24.7628846, lon: 46.6387049, height_offset: 0, indoor: true, indoor_id: indoorMapId, floor_id: 0, user_data: {} },
-        // { id: 3000356, title: 'Air quality 2.1', subtitle: 'Street Café', tags: 'air_quality_good air_quality', lat: 24.7627937, lon: 46.638645, height_offset: 0, indoor: true, indoor_id: indoorMapId, floor_id: 0, user_data: {} },
-        { id: 3000368, title: 'Fire control panel 3.1', subtitle: 'Behind HiTech Corner', tags: 'fire_extinguisher', lat: 24.7629645, lon: 46.6386773, height_offset: 0, indoor: true, indoor_id: indoorMapId, floor_id: 1, user_data: {} }
-    ]
-    var now = new Date()
-    alerts.forEach(function (alert, i) {
-        now.setMinutes(now.getMinutes() - ((i + 1) * 73))
-        alert.date = now.getTime()
-        alert.open = true
-    })
+    // alerts = [
+    //     { id: 3000365, title: 'HVAC/lighting/electricity 2.1', subtitle: 'Beside Huddle Rooms', tags: 'electricity_meter', lat: 24.7628846, lon: 46.6387049, height_offset: 0, indoor: true, indoor_id: indoorMapId, floor_id: 0, user_data: {} },
+    //     // { id: 3000356, title: 'Air quality 2.1', subtitle: 'Street Café', tags: 'air_quality_good air_quality', lat: 24.7627937, lon: 46.638645, height_offset: 0, indoor: true, indoor_id: indoorMapId, floor_id: 0, user_data: {} },
+    //     { id: 3000368, title: 'Fire control panel 3.1', subtitle: 'Behind HiTech Corner', tags: 'fire_extinguisher', lat: 24.7629645, lon: 46.6386773, height_offset: 0, indoor: true, indoor_id: indoorMapId, floor_id: 1, user_data: {} }
+    // ]
+    // var now = new Date()
+    // alerts.forEach(function (alert, i) {
+    //     now.setMinutes(now.getMinutes() - ((i + 1) * 73))
+    //     alert.date = now.getTime()
+    //     alert.open = true
+    // })
     var start = 0
     function displayAlerts (success, alertsParm) {
         if (success) {
@@ -468,13 +464,16 @@ $(function () {
         var count = 0
         for (var i = start, n = 5; i < n; i++) {
             var alert = alerts[i]
-            if (alert && alert.open) {
+            if (alert && alert.labels && alert.labels.status === 'open') {
                 count++
                 console.log(JSON.stringify(alert))
-                var floorNumber = alert.floor_id + 2
+                var attrs = alert.customAttributes
+                // var floorNumber = alert.floor_id + 2
+                var floorNumber = attrs.floor
                 var evens = (i % 2) ? 'odd' : 'even'
-                var date = new Date(alert.date)
-                html.push('<div class="alertRow ' + evens + '" data-index="' + i + '"><div class="col1">' + formatTimestamp(date) + '</div><div class="col2">' + alert.title + '</div><div class="col3">' + floorNumber + '</div>')
+                // var date = new Date(alert.date)
+                var date = new Date(alert.createdTime)
+                html.push('<div class="alertRow ' + evens + '" data-index="' + i + '"><div class="col1">' + formatTimestamp(date) + '</div><div class="col2">' + alert.description + '</div><div class="col3">' + floorNumber + '</div>')
                 html.push('<div class="col4"><div class="recordToolbar">')
                 html.push('<button type="button" class="dismiss kiwi" data-index="' + i + '" title="Dismiss alert"><i class="fal fa-check"></i></button>')
                 html.push('</div></div></div>')
@@ -497,7 +496,8 @@ $(function () {
                 e.stopPropagation()
                 var index = parseInt($(this).attr('data-index'))
                 // alerts.splice(index, 1)
-                alerts[index].open = false
+                // alerts[index].open = false
+                alerts[index].labels.status = 'closed'
                 pageAlerts(start)
             })
         })
@@ -842,16 +842,17 @@ $(function () {
     // var maxResults = 10
     // var options = { range: radius, number: maxResults }
     // poiApi.searchTags(['alert'], { lat: 24.763289081785917, lng: 46.63878573585767 }, displayAlerts, options)
-    displayAlerts(true, alerts)
+    // displayAlerts(true, alerts)
 
-    // $.get('/alerts' + '?t=' + new Date().getTime(), function (result) {
-    //     if (!result.success) {
-    //         console.error('Alerts failed: ' + result.message)
-    //     }
-    //     else {
-    //         console.log('Alerts', result.alerts)
-    //     }
-    // })
+    $.get('/alerts' + '?t=' + new Date().getTime(), function (result) {
+        if (!result.success) {
+            console.error('Alerts failed: ' + result.message)
+        }
+        else {
+            console.log('Alerts', result.alerts)
+            displayAlerts(true, result.alerts)
+        }
+    })
 
     /*
     var poiApi = new WrldPoiApi(apiKey);

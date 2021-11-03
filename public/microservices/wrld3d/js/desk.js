@@ -7,7 +7,8 @@ $(function () {
     if (window.location.hostname === 'localhost') {
         var davraToken = localStorage.getItem('davraToken')
         $.ajaxSetup({ headers: { Authorization: 'Bearer ' + davraToken } })
-        poi.davraUrl = 'https://pif.davra.com'
+        // poi.davraUrl = 'https://pif.davra.com'
+        poi.davraUrl = 'https://platform.pif-stc.davra.com'
     }
     else {
         poi.davraMs = '/microservices/wrld3d'
@@ -19,16 +20,24 @@ $(function () {
     if (deviceId) {
         $.get(poi.davraMs + '/desk/status/' + encodeURIComponent(deviceId), function (result) {
             if (result.success) {
-                console.log('Desk status', result.status)
-                if (result.status === 'Available') {
+                console.log('Desk status', result.data)
+                if (result.data.status === 'Available') {
                     $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/available.jpg'
                 }
-                else if (result.status === 'Checked In') {
+                else if (result.data.status === 'Checked In') {
                     $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/checked-in.jpg'
                 }
                 else {
                     $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/reserved.jpg'
                 }
+                if (result.data.status === 'Offline') {
+                    $('.meeting-room-details .status span').removeClass('online').addClass('offline')
+                }
+                else {
+                    $('.meeting-room-details .status span').removeClass('offline').addClass('online')
+                }
+                $('.meeting-room-details .status span').text(result.data.status)
+                $('.meeting-room-details .address').html(result.data.address.join('<br>'))
             }
             else {
                 console.error('Desk status not found')
@@ -47,24 +56,24 @@ function doOccupancy (deviceId) {
     var dataset = []
     if (deviceId) { // get data
         var oneYearAgo = new Date(); oneYearAgo.setDate(oneYearAgo.getDate() - (52 * 7)); oneYearAgo = oneYearAgo.getTime()
-        var installDate = new Date(2021, 8, 17).getTime()
+        var installDate = Date.UTC(2021, 9, 26, 18, 30, 32) // Oct 26 - when we started desk.usage.count
         if (installDate > oneYearAgo) oneYearAgo = installDate
         var numberOfWeeks = Math.floor((new Date().getTime() - oneYearAgo) / (7 * 24 * 60 * 60 * 1000)) || 1
         var data = {
             metrics: [
                 {
-                    name: 'desk.usage.timeslice',
+                    name: 'desk.usage.count',
                     limit: 100000,
                     tags: {
                         serialNumber: deviceId
-                    }
-                    // aggregators: [{
-                    //     name: 'avg',
-                    //     sampling: {
-                    //         value: '1',
-                    //         unit: 'hours'
-                    //     }
-                    // }]
+                    },
+                    aggregators: [{
+                        name: 'count',
+                        sampling: {
+                            value: '1',
+                            unit: 'hours'
+                        }
+                    }]
                 }
             ],
             start_absolute: oneYearAgo
@@ -76,9 +85,13 @@ function doOccupancy (deviceId) {
             var datapoints = {}
             for (var i = 0, n = values.length; i < n; i++) {
                 var date = new Date(values[i][0])
-                var value = values[i][1]
-                day = date.getDay()
-                hour = date.getHours()
+                var value = values[i][1] * 60 * 1000
+                day = date.getUTCDay()
+                hour = date.getUTCHours() + 3 // Riyadh is always UTC + 3 with no daylight savings
+                if (hour > 23) {
+                    hour -= 24
+                    day += 1
+                }
                 datapoint = datapoints[day + '.' + hour]
                 if (datapoint) {
                     datapoint.value += value
@@ -93,7 +106,7 @@ function doOccupancy (deviceId) {
                     datapoint = datapoints[day + '.' + hour]
                     if (!datapoint) datapoint = { day: day, hour: hour, value: 0 }
                     var perc = utils.roundTo2((datapoint.value * 100) / (numberOfWeeks * 60 * 60 * 1000))
-                    dataset.push({ day: day + 1, hour: hour - 5, value: utils.roundTo2(100 - perc) })
+                    dataset.push({ day: day + 1, hour: hour - 5, value: perc })
                 }
             }
             utils.chartOccupancy(dataset)
@@ -107,7 +120,7 @@ function doOccupancy (deviceId) {
                 datapoint.hour = hour
                 // weighted to the afternoon?
                 if (hour >= 8 && hour <= 12) {
-                    datapoint.value = 0 + parseInt(Math.random() * 10)
+                    datapoint.value = 70 + parseInt(Math.random() * 30)
                 }
                 else {
                     datapoint.value = parseInt(Math.random() * 100)
@@ -161,7 +174,7 @@ function doIncidents (deviceId) {
             //         serialNumber: deviceId
             //     }
             }],
-            start_absolute: endDate - (30 * 24 * 60 * 60 * 1000),
+            start_absolute: endDate - (60 * 24 * 60 * 60 * 1000),
             end_absolute: endDate
         }
         $.post(poi.davraUrl + '/api/v2/timeseriesData', JSON.stringify(query), function (result) {
@@ -188,12 +201,13 @@ function doIncidents (deviceId) {
 }
 function doUptime (deviceId) {
     if (deviceId) {
-        // get data
         var now = new Date().getTime()
         var oneDayAgo = new Date(); oneDayAgo.setDate(oneDayAgo.getDate() - 1); oneDayAgo = oneDayAgo.getTime()
         var oneWeekAgo = new Date(); oneWeekAgo.setDate(oneWeekAgo.getDate() - 7); oneWeekAgo = oneWeekAgo.getTime()
         var oneMonthAgo = new Date(); oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1); oneMonthAgo = oneMonthAgo.getTime()
         var oneYearAgo = new Date(); oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1); oneYearAgo = oneYearAgo.getTime()
+        var installDate = new Date(2021, 8, 17).getTime()
+        if (installDate > oneYearAgo) oneYearAgo = installDate
         var data = {
             metrics: [
                 {
@@ -254,7 +268,7 @@ function initTable (tableId, tableColumns, data) {
     var dataTableConfig = {
         dom: 'Bfrtip',
         bDestroy: true,
-        pageLength: 5,
+        pageLength: 8,
         pagingType: 'simple',
         info: true,
         paging: true,

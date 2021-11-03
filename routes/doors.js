@@ -252,6 +252,7 @@ async function doorConnect (door, event, eventType) {
             door.disconnectTime = event.datetime
             door.status = false
             await utils.sendIotData(config, biostar.prefix + event.device_id.id, 'door.outage.count', Date.parse(event.datetime), 1, {})
+            await utils.sendStatefulIncident(config, 'Door outage', 'Door outage ' + biostar.prefix + event.device_id.id, 'door', { floor: '2' })
         }
         return
     }

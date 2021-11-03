@@ -69,6 +69,7 @@ async function signConnect (sign, event, timestamp) {
     if (event.Status > 0) { // status not OK
         if (!sign.disconnectTime) {
             sign.disconnectTime = timestamp
+            await utils.sendStatefulIncident(config, 'Sign outage', 'Sign outage ' + appspace.prefix + event._id, 'sign', { floor: '3' })
         }
         return
     }

@@ -39,3 +39,26 @@ exports.sendIotData = async function (config, deviceId, metricName, timestamp, v
     }
     return true
 }
+exports.sendStatefulIncident = async function (config, name, description, type, tags) {
+    try {
+        await axios({
+            method: 'post',
+            url: config.davra.url + '/api/v1/twins',
+            headers: {
+                Authorization: 'Bearer ' + config.davra.token
+            },
+            data: {
+                name: name,
+                description: description,
+                labels: { status: 'open', type: type },
+                digitalTwinTypeName: 'stateful_incident',
+                customAttributes: tags
+            }
+        })
+    }
+    catch (err) {
+        console.error('sendStatefulIncident error:', err.response)
+        return false
+    }
+    return true
+}

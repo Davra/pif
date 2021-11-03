@@ -20,6 +20,7 @@ axios({
     for (const attr in runtimeConfig) { config[attr] = runtimeConfig[attr] }
     app.set('config', config)
     require('./routes/security.js').init(app) // initialise security first
+    require('./routes/beacons.js').init(app)
     require('./routes/desks.js').init(app)
     require('./routes/doors.js').init(app)
     require('./routes/hayyaks.js').init(app)
@@ -44,7 +45,7 @@ app.get('/alerts', async (req, res) => {
     try {
         const response = await axios({
             method: 'get',
-            url: config.davra.url + '/api/v1/twins?digitalTwinTypeName=stateful_incident&labels.stateful_status=open',
+            url: config.davra.url + '/api/v1/twins?digitalTwinTypeName=stateful_incident&labels.status=open',
             headers: {
                 Authorization: 'Bearer ' + config.davra.token
             }
