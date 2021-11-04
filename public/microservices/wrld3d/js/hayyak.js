@@ -116,14 +116,15 @@ function doOccupancy (deviceId) {
                     limit: 100000,
                     tags: {
                         serialNumber: deviceId
-                    }
-                    // aggregators: [{
-                    //     name: 'avg',
-                    //     sampling: {
-                    //         value: '1',
-                    //         unit: 'hours'
-                    //     }
-                    // }]
+                    },
+                    aggregators: [{
+                        name: 'sum',
+                        align_sampling: true,
+                        sampling: {
+                            value: '1',
+                            unit: 'hours'
+                        }
+                    }]
                 }
             ],
             start_absolute: oneYearAgo
@@ -133,29 +134,29 @@ function doOccupancy (deviceId) {
             var values = result.queries[0].results[0].values
             var day, hour, datapoint
             var datapoints = {}
-            for (var i = 0, n = values.length; i < n; i++) {
-                var date = new Date(values[i][0])
-                var value = values[i][1]
-                day = date.getDay()
-                hour = date.getHours()
-                datapoint = datapoints[day + '.' + hour]
-                if (datapoint) {
-                    datapoint.value += value
-                }
-                else {
-                    datapoint = { day: day, hour: hour, value: value }
-                    datapoints[datapoint.day + '.' + datapoint.hour] = datapoint
-                }
-            }
             for (day = 0; day < 5; day++) {
                 for (hour = 6; hour < 19; hour++) {
-                    datapoint = datapoints[day + '.' + hour]
-                    if (!datapoint) datapoint = { day: day, hour: hour, value: 0 }
-                    var perc = utils.roundTo2((datapoint.value * 100) / (numberOfWeeks * 60 * 60 * 1000))
-                    dataset.push({ day: day + 1, hour: hour - 5, value: perc })
+                    datapoint = { day: day + 1, hour: hour - 5, count: 0, value: 0 }
+                    dataset.push(datapoint)
+                    datapoints[day + '.' + hour] = datapoint
                 }
             }
-            utils.chartOccupancy(dataset)
+            var i, n
+            for (i = 0, n = values.length; i < n; i++) {
+                var value = values[i]
+                var date = new Date(value[0])
+                var count = value[1]
+                day = date.getUTCDay()
+                hour = date.getUTCHours() + 3 // Riyadh is always UTC + 3 with no daylight savings
+                if (day === 5 || day === 6) continue // skip Friday/Saturday
+                if (hour < 6 || hour >= 19) continue // skip non-office hours (Saudi time)
+                datapoints[day + '.' + hour].count += count
+            }
+            for (i = 0, n = dataset.length; i < n; i++) {
+                datapoint = dataset[i]
+                datapoint.value = datapoint.count / numberOfWeeks
+            }
+            utils.chartOccupancyQuantile(dataset)
         })
     }
     else { // mockup data
@@ -174,7 +175,7 @@ function doOccupancy (deviceId) {
                 dataset.push(datapoint)
             }
         }
-        utils.chartOccupancy(dataset)
+        utils.chartOccupancyThreshold(dataset)
     }
 }
 function doIncidents (deviceId) {

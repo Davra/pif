@@ -196,6 +196,6 @@ function doOccupancy (deviceId) {
                 dataset.push(tmpDatapoint)
             }
         }
-        utils.chartOccupancy(dataset)
+        utils.chartOccupancyThreshold(dataset)
     }
 }

@@ -106,7 +106,7 @@ html, body {
 #alertsDiv {
     position: absolute;
     bottom:0; left:0;
-    z-index: 20;
+    z-index: 701;
     display: none;
     width: 70%;
     box-shadow: 0 6px 12px rgb(0 0 0 / 18%);
@@ -159,11 +159,18 @@ button .kiwi {
     /* fill: #689f38; */
     fill: #007a33;
 }
-button.dismiss, button.export, .paginationDiv button {
+button.open {
+    border: none;
+    padding: 8px;
+    position: absolute;
+    left: 250px;
+    top: 0px;
+}
+button.open, button.dismiss, button.export, .paginationDiv button {
     filter: alpha(opacity=60);
     opacity: .6;
 }
-button.dismiss:hover, button.export:hover, .paginationDiv button:hover {
+button.open:hover, button.dismiss:hover, button.export:hover, .paginationDiv button:hover {
     cursor: pointer;
     filter: alpha(opacity=100);
     opacity: 1.0;
@@ -211,6 +218,9 @@ button.dismiss:hover, button.export:hover, .paginationDiv button:hover {
     color: #333;
     font-weight: 400;
 }
+#alertsDiv .alertRow .recordToolbar {
+    height: 22px;
+}
 #alertsDiv .alertRow.even {
     background-color: #fff;
 }
@@ -220,21 +230,22 @@ button.dismiss:hover, button.export:hover, .paginationDiv button:hover {
 #alertsDiv .col1 {
     display: inline-block;
     width: 20%;
-    vertical-align: super;
+    /* vertical-align: super; */
 }
 #alertsDiv .col2 {
     display: inline-block;
-    width: 40%;
-    vertical-align: super;
+    width: 20%;
+    /* vertical-align: super; */
 }
 #alertsDiv .col3 {
     display: inline-block;
-    width: 10%;
-    vertical-align: super;
+    width: 40%;
+    /* vertical-align: super; */
 }
 #alertsDiv .col4 {
     display: inline-block;
-    width: 30%;
+    width: 20%;
+    /* vertical-align: super; */
 }
 .modal-header .close {
     margin-top: -2px;
@@ -399,6 +410,9 @@ button.close {
 .leaflet-pane.leaflet-popup-pane.wide300 .poi-view-content {
     width: 634px !important;
     /* was 334 */
+}
+.leaflet-pane.leaflet-map-pane {
+    z-index: 800 !important;
 }
 .leaflet-pane .leaflet-popup-content-wrapper {
     border-radius: 6px !important;

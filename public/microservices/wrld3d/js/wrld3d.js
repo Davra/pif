@@ -1,4 +1,4 @@
-/* global AmCharts, L, WrldCompassControl, WrldIndoorControl, WrldMarkerController, WrldNavigation, WrldRouteView, WrldSearchbar */
+/* global AmCharts, L, WrldCompassControl, WrldIndoorControl, WrldMarkerController, WrldNavigation, WrldPoiApi, WrldRouteView, WrldSearchbar */
 // https://maps.wrld3d.com/?lat=24.760670&lon=46.639152&zoom=14.868738475598787&coverage_tree_manifest=https://cdn-webgl.eegeo.com/coverage-trees/vjsdavra/v38/manifest.bin.gz
 // https://mapdesigner.wrld3d.com/poi/latest/?&coverage_tree_manifest=https://cdn-webgl.eegeo.com/coverage-trees/vjsdavra/v38/manifest.bin.gz
 var alerts = []
@@ -10,6 +10,18 @@ $(function () {
     var route = null
     var routeMarker = null
     // var prefix = window.location.hostname === 'localhost' ? '' : '/microservices/wrld3d'
+    var poi = {}
+    poi.davraUrl = ''
+    poi.davraMs = ''
+    if (window.location.hostname === 'localhost') {
+        var davraToken = localStorage.getItem('davraToken')
+        $.ajaxSetup({ headers: { Authorization: 'Bearer ' + davraToken } })
+        // poi.davraUrl = 'https://pif.davra.com'
+        poi.davraUrl = 'https://platform.pif-stc.davra.com'
+    }
+    else {
+        poi.davraMs = '/microservices/wrld3d'
+    }
     var map = L.Wrld.map('map', apiKey, {
         // center: [37.7952, -122.4028],
         center: [24.763289081785917, 46.63878573585767], // Riyadh
@@ -449,45 +461,50 @@ $(function () {
     //     alert.date = now.getTime()
     //     alert.open = true
     // })
-    var start = 0
+    var alertsStart = 0
+    var alertsShowingAll = false
+    var alertsPageLength = 5
+    var alertsOpenCount = 0
     function displayAlerts (success, alertsParm) {
         if (success) {
             alerts = alertsParm
-            pageAlerts(start)
+            pageAlerts(alertsStart)
         }
         else {
-            map.openPopup('POI API query failed!', map.getCenter())
+            map.openPopup('Alerts query failed!', map.getCenter())
         }
     }
     function pageAlerts (start) {
         var html = []
-        var count = 0
-        for (var i = start, n = 5; i < n; i++) {
+        var rowCount = 0
+        for (var i = start, n = alerts.length; i < n; i++) {
             var alert = alerts[i]
-            if (alert && alert.labels && alert.labels.status === 'open') {
-                count++
-                console.log(JSON.stringify(alert))
-                var attrs = alert.customAttributes
-                // var floorNumber = alert.floor_id + 2
-                var floorNumber = attrs.floor
-                var evens = (i % 2) ? 'odd' : 'even'
-                // var date = new Date(alert.date)
-                var date = new Date(alert.createdTime)
-                html.push('<div class="alertRow ' + evens + '" data-index="' + i + '"><div class="col1">' + formatTimestamp(date) + '</div><div class="col2">' + alert.description + '</div><div class="col3">' + floorNumber + '</div>')
-                html.push('<div class="col4"><div class="recordToolbar">')
-                html.push('<button type="button" class="dismiss kiwi" data-index="' + i + '" title="Dismiss alert"><i class="fal fa-check"></i></button>')
-                html.push('</div></div></div>')
-            }
+            var isOpen = alert.labels && alert.labels.status === 'open'
+            if (!alertsShowingAll && !isOpen) continue
+            rowCount++
+            console.log(JSON.stringify(alert))
+            var attrs = alert.customAttributes
+            // var floorNumber = attrs.floor
+            var evens = (rowCount % 2) ? 'odd' : 'even'
+            var startDate = formatTimestamp(new Date(alert.createdTime))
+            var dismissDate = attrs.dismissDate ? formatTimestamp(new Date(attrs.dismissDate)) : ''
+            html.push('<div class="alertRow ' + evens + '" data-index="' + i + '"><div class="col1">' + startDate + '</div><div class="col2">' + dismissDate + '</div>' +
+                '<div class="col3">' + alert.description + '</div>')
+            html.push('<div class="col4"><div class="recordToolbar">')
+            if (!attrs.dismissDate) html.push('<button type="button" class="dismiss kiwi" data-index="' + i + '" title="Acknowledge alert"><i class="fal fa-check"></i></button>')
+            html.push('</div></div></div>')
+            if (rowCount === alertsPageLength) break
         }
         $('.alertsList').html(html.join(''))
-        $('.alertsCount').text(count)
-        count > 0 ? $('.alertButton').show() : $('.alertButton').hide()
-        $('.paginationDiv .text').text((count > 0 ? start + 1 : 0) + '-' + (start + count) + ' of ' + count)
+        // openCount > 0 ? $('.alertButton').show() : $('.alertButton').hide()
+        $('.paginationDiv .text').text((rowCount > 0 ? start + 1 : 0) + '-' + (start + rowCount) + ' of ' + alerts.length)
         $('.alertsList .alertRow').each(function (i, row) {
             $(row).click(function () {
                 var index = parseInt($(this).attr('data-index'))
-                var result = alerts[index]
-                goToResult(result)
+                var alert = alerts[index]
+                var serialNumber = alert.labels.id
+                var poi = poisLookup[serialNumber]
+                if (poi) goToResult(poi)
             })
         })
         $('.alertsList .alertRow button.dismiss').each(function (i, button) {
@@ -495,10 +512,24 @@ $(function () {
                 e.preventDefault()
                 e.stopPropagation()
                 var index = parseInt($(this).attr('data-index'))
-                // alerts.splice(index, 1)
-                // alerts[index].open = false
-                alerts[index].labels.status = 'closed'
-                pageAlerts(start)
+                var dismissDate = new Date().getTime()
+                var alert = alerts[index]
+                var body = { labels: alert.labels, customAttributes: alert.customAttributes }
+                body.labels.status = 'closed'
+                body.customAttributes.dismissDate = dismissDate
+                $.ajax(poi.davraUrl + '/api/v1/twins/' + alert.UUID, {
+                    method: 'PUT',
+                    data: JSON.stringify(body),
+                    contentType: 'application/json',
+                    error: function (xhr, status, err) {
+                        console.error(err)
+                    },
+                    success: function (data, status, xhr) {
+                        pageAlerts(alertsStart)
+                        alertsOpenCount -= 1
+                        $('.alertsCount').text(alertsOpenCount)
+                    }
+                })
             })
         })
     }
@@ -507,6 +538,17 @@ $(function () {
     })
     $('#alertsDiv .close').click(function (e) {
         $('#alertsDiv').slideToggle()
+    })
+    $('#alertsDiv .next').click(function (e) {
+        if ((alertsStart + alertsPageLength) > alerts.length - 1) return
+        alertsStart += alertsPageLength
+        pageAlerts(alertsStart)
+    })
+    $('#alertsDiv .previous').click(function (e) {
+        if (alertsStart === 0) return
+        alertsStart -= alertsPageLength
+        if (alertsStart < 0) alertsStart = 0
+        pageAlerts(alertsStart)
     })
     function bounceToServer (headers, data) {
         var form = document.getElementById('bounceForm')
@@ -528,6 +570,20 @@ $(function () {
         document.getElementById('bounceString').value = JSON.stringify(obj)
         form.submit()
     }
+    $('#alertsDiv .open').on('click', function () {
+        if ($(this).hasClass('showAll')) {
+            $(this).removeClass('showAll')
+            $(this).text('Show all')
+            $(this).attr('title', 'Show all alerts')
+            getAlerts(true)
+        }
+        else {
+            $(this).addClass('showAll')
+            $(this).text('Show open')
+            $(this).attr('title', 'Show open alerts')
+            getAlerts(false)
+        }
+    })
     $('#alertsDiv .export').on('click', function () {
         var lines = []
         var header = ['Date', 'Description', 'Floor']
@@ -843,16 +899,44 @@ $(function () {
     // var options = { range: radius, number: maxResults }
     // poiApi.searchTags(['alert'], { lat: 24.763289081785917, lng: 46.63878573585767 }, displayAlerts, options)
     // displayAlerts(true, alerts)
-
-    $.get('/alerts' + '?t=' + new Date().getTime(), function (result) {
-        if (!result.success) {
-            console.error('Alerts failed: ' + result.message)
+    function getAlerts (open) {
+        alertsShowingAll = !open
+        $.get(poi.davraUrl + '/api/v1/twins?digitalTwinTypeName=stateful_incident' + (open ? '&labels.status=open' : ''), function (result) {
+            alertsStart = 0
+            displayAlerts(true, result)
+            if (open) {
+                alertsOpenCount = result.length
+                $('.alertsCount').text(alertsOpenCount)
+            }
+        })
+    }
+    getAlerts(true)
+    var poisLookup = {}
+    var poiApi = new WrldPoiApi(apiKey)
+    var maxResults = 999
+    poiApi.searchTags([], map.getCenter(), function (success, pois) {
+        if (success) {
+            // console.log(pois)
+            for (var i = 0, n = pois.length; i < n; i++) {
+                var poi = pois[i]
+                var key = poi.user_data ? poi.user_data.id : ''
+                var prefix = ''
+                if (poi.tags === 'desk_available') prefix = 'h'
+                else if (poi.tags === 'message') prefix = 's'
+                else if (poi.tags === 'smart_post') prefix = 'y'
+                poisLookup[prefix + key] = poi
+            }
         }
-        else {
-            console.log('Alerts', result.alerts)
-            displayAlerts(true, result.alerts)
-        }
-    })
+    }, { number: maxResults })
+    // $.get(poi.davraMs + '/alerts' + '?t=' + new Date().getTime(), function (result) {
+    //     if (!result.success) {
+    //         console.error('Alerts failed: ' + result.message)
+    //     }
+    //     else {
+    //         console.log('Alerts', result.alerts)
+    //         displayAlerts(true, result.alerts)
+    //     }
+    // })
 
     /*
     var poiApi = new WrldPoiApi(apiKey);

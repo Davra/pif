@@ -39,7 +39,7 @@ exports.sendIotData = async function (config, deviceId, metricName, timestamp, v
     }
     return true
 }
-exports.sendStatefulIncident = async function (config, name, description, type, tags) {
+exports.sendStatefulIncident = async function (config, name, description, labels, tags) {
     try {
         await axios({
             method: 'post',
@@ -50,9 +50,9 @@ exports.sendStatefulIncident = async function (config, name, description, type, 
             data: {
                 name: name,
                 description: description,
-                labels: { status: 'open', type: type },
+                labels: labels,
                 digitalTwinTypeName: 'stateful_incident',
-                customAttributes: tags
+                customAttributes: tags || {}
             }
         })
     }

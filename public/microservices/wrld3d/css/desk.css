@@ -16,10 +16,13 @@
     margin-top: 8px;
 }
 .meeting-room-details .status span.online {
-    color: #0bff00;
+    color: green;
+}
+.meeting-room-details .status span.checked-in {
+    color: red;
 }
 .meeting-room-details .status span.offline {
-    color: red;
+    color: orange;
 }
 .status-icon, .address-icon {
     display: inline-block;

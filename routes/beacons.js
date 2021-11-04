@@ -66,24 +66,26 @@ async function deviceConnect (device, event, timestamp) {
     if (event.state === 'Offline') {
         await utils.sendIotData(config, beacon.prefix + event.embravaId, 'beacon.outage.count', timestamp, 1, {})
     }
-    if (beacon.state === event.state) return
+    if (device.state === event.state) return
     if (event.state === 'Offline') {
-        if (!beacon.disconnectTime) {
-            beacon.disconnectTime = timestamp
-            await utils.sendStatefulIncident(config, 'Beacon outage', 'Beacon outage ' + beacon.prefix + event.embravaId, 'beacon', { floor: '3' })
-            beacon.state = event.state
+        if (!device.disconnectTime) {
+            device.disconnectTime = timestamp
+            var labels = { status: 'open', type: 'beacon', id: beacon.prefix + event.embravaId }
+            var tags = { floor: '3' }
+            await utils.sendStatefulIncident(config, 'Beacon outage', 'Outage ' + 'Beacon_' + device.name, labels, tags)
+            device.state = event.state
         }
         return
     }
     // any state other than Offline means a reconnect
-    beacon.state = event.state
-    if (!beacon.disconnectTime) return // ignore connect without a previous disconnect
-    const startDate = beacon.disconnectTime
+    device.state = event.state
+    if (!device.disconnectTime) return // ignore connect without a previous disconnect
+    const startDate = device.disconnectTime
     const endDate = timestamp
     var duration = endDate - startDate
-    beacon.disconnectTime = 0
+    device.disconnectTime = 0
     if (duration === 0) return
-    console.log('Beacon outage:', beacon.disconnectTime, event.embravaId, startDate, endDate, duration)
+    console.log('Beacon outage:', device.disconnectTime, event.embravaId, startDate, endDate, duration)
     if (!await utils.sendIotData(config, beacon.prefix + event.embravaId, 'beacon.outage', startDate, duration, {
         // eventTypeId: event.event_type_id.code,
         // eventTypeName: eventType.name
@@ -197,7 +199,7 @@ async function deviceSync () {
     }
     for (const e of await deviceList()) {
         const deviceId = beacon.prefix + e.embravaId
-        const deviceName = e.name
+        const deviceName = 'Beacon_' + e.name
         const device = devices[deviceId]
         if (device) {
             var doc = {}

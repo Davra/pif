@@ -69,7 +69,9 @@ async function signConnect (sign, event, timestamp) {
     if (event.Status > 0) { // status not OK
         if (!sign.disconnectTime) {
             sign.disconnectTime = timestamp
-            await utils.sendStatefulIncident(config, 'Sign outage', 'Sign outage ' + appspace.prefix + event._id, 'sign', { floor: '3' })
+            var labels = { status: 'open', type: 'beacon', id: appspace.prefix + event._id }
+            var tags = { floor: '3' }
+            await utils.sendStatefulIncident(config, 'Sign outage', 'Outage ' + 'Sign_' + sign.Name, labels, tags)
         }
         return
     }
@@ -137,7 +139,7 @@ async function signSync () {
     }
     for (const sign of await signList()) {
         const signId = appspace.prefix + sign._id
-        const signName = sign.Name + ' ' + sign._id
+        const signName = 'Sign_' + sign.Name
         const device = devices[signId]
         if (device) {
             var doc = {}

@@ -65,6 +65,7 @@ async function deskCapability (id) {
     }
 }
 async function deskConnect (desk, event, timestamp) {
+    if (event.embravaId === '3206200485') return // this is a duplicate desk
     if (event.state === 'Offline') {
         await utils.sendIotData(config, embrava.prefix + event.embravaId, 'desk.outage.count', timestamp, 1, {})
     }
@@ -73,7 +74,9 @@ async function deskConnect (desk, event, timestamp) {
     if (event.state === 'Offline') {
         if (!desk.disconnectTime) {
             desk.disconnectTime = timestamp
-            await utils.sendStatefulIncident(config, 'Desk outage', 'Desk outage ' + embrava.prefix + event.embravaId, 'desk', { floor: '2' })
+            var labels = { status: 'open', type: 'desk', id: embrava.prefix + event.embravaId }
+            var tags = { floor: '2' }
+            await utils.sendStatefulIncident(config, 'Desk outage', 'Outage ' + 'Desk_' + desk.deskName, labels, tags)
         }
         return
     }

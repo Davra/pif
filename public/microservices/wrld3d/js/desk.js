@@ -21,20 +21,18 @@ $(function () {
         $.get(poi.davraMs + '/desk/status/' + encodeURIComponent(deviceId), function (result) {
             if (result.success) {
                 console.log('Desk status', result.data)
+                $('.meeting-room-details .status span').removeClass('offline online checked-in')
                 if (result.data.status === 'Available') {
+                    $('.meeting-room-details .status span').addClass('online')
                     $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/available.jpg'
                 }
                 else if (result.data.status === 'Checked In') {
+                    $('.meeting-room-details .status span').addClass('checked-in')
                     $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/checked-in.jpg'
                 }
                 else {
+                    $('.meeting-room-details .status span').addClass('offline')
                     $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/reserved.jpg'
-                }
-                if (result.data.status === 'Offline') {
-                    $('.meeting-room-details .status span').removeClass('online').addClass('offline')
-                }
-                else {
-                    $('.meeting-room-details .status span').removeClass('offline').addClass('online')
                 }
                 $('.meeting-room-details .status span').text(result.data.status)
                 $('.meeting-room-details .address').html(result.data.address.join('<br>'))
@@ -109,7 +107,7 @@ function doOccupancy (deviceId) {
                     dataset.push({ day: day + 1, hour: hour - 5, value: perc })
                 }
             }
-            utils.chartOccupancy(dataset)
+            utils.chartOccupancyThreshold(dataset)
         })
     }
     else { // mockup data
@@ -128,7 +126,7 @@ function doOccupancy (deviceId) {
                 dataset.push(datapoint)
             }
         }
-        utils.chartOccupancy(dataset)
+        utils.chartOccupancyThreshold(dataset)
     }
 }
 function doIncidents (deviceId) {

@@ -40,7 +40,9 @@ async function deviceEvent (device, event, timestamp) {
     if (event.state === 'Offline') {
         if (!device.disconnectTime) {
             device.disconnectTime = timestamp
-            await utils.sendStatefulIncident(config, 'Hayyak outage', 'Hayyak outage ' + hayyak.prefix + event.id, 'hayyak', { floor: '3' })
+            var labels = { status: 'open', type: 'beacon', id: hayyak.prefix + event.id }
+            var tags = { floor: '3' }
+            await utils.sendStatefulIncident(config, 'Hayyak outage', 'Outage ' + device.name, labels, tags)
         }
         return
     }

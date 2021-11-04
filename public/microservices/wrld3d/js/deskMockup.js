@@ -31,7 +31,7 @@ function doOccupancy (deviceId) {
                 dataset.push(tmpDatapoint)
             }
         }
-        utils.chartOccupancy(dataset)
+        utils.chartOccupancyThreshold(dataset)
     }
 }
 function doOutages (deviceId) {
