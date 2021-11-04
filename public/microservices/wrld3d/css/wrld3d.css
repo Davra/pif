@@ -163,7 +163,7 @@ button.open {
     border: none;
     padding: 8px;
     position: absolute;
-    left: 250px;
+    right: 100px;
     top: 0px;
 }
 button.open, button.dismiss, button.export, .paginationDiv button {
@@ -229,12 +229,12 @@ button.open:hover, button.dismiss:hover, button.export:hover, .paginationDiv but
 }
 #alertsDiv .col1 {
     display: inline-block;
-    width: 20%;
+    width: 17%;
     /* vertical-align: super; */
 }
 #alertsDiv .col2 {
     display: inline-block;
-    width: 20%;
+    width: 23%;
     /* vertical-align: super; */
 }
 #alertsDiv .col3 {

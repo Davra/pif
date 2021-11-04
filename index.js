@@ -69,7 +69,12 @@ app.get('/beacon/:id', (req, res) => {
     })
     res.send(html.join(''))
 })
-app.post('/bounce', express.urlencoded({ extended: true }), (req, res) => {
+app.get('/whoami', (req, res) => {
+    var userId = req.headers['x-user-id'] || ''
+    if (!userId && config.davra.env === 'dev') userId = 'admin' // default to admin for testing
+    res.send(userId)
+})
+app.post('/bounce', express.urlencoded({ extended: true, limit: '10mb' }), (req, res) => {
     const bounceString = req.body.bounceString
     const bounce = JSON.parse(bounceString)
     res.set(bounce.headers)

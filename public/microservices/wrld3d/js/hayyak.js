@@ -31,7 +31,7 @@ $(function () {
                 }
                 var location = result.data.location
                 if (location.room) {
-                    $('.meeting-room-details .address').html(location.room + '<br>' + location.floor)
+                    $('.meeting-room-details .address').html(location.room + '<br>' + 'Floor ' + location.floor)
                 }
             }
             else {
@@ -39,7 +39,7 @@ $(function () {
             }
         })
     }
-    $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/reserved.jpg'
+    $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/hayyak.png'
     doMetrics(deviceId)
     doOccupancy(deviceId)
     doUptime(deviceId)

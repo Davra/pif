@@ -488,7 +488,9 @@ $(function () {
             var evens = (rowCount % 2) ? 'odd' : 'even'
             var startDate = formatTimestamp(new Date(alert.createdTime))
             var dismissDate = attrs.dismissDate ? formatTimestamp(new Date(attrs.dismissDate)) : ''
-            html.push('<div class="alertRow ' + evens + '" data-index="' + i + '"><div class="col1">' + startDate + '</div><div class="col2">' + dismissDate + '</div>' +
+            var dismissUserId = attrs.dismissUserId || ''
+            html.push('<div class="alertRow ' + evens + '" data-index="' + i + '"><div class="col1">' + startDate + '</div>' +
+                '<div class="col2">' + dismissDate + (dismissUserId ? ' (' + dismissUserId + ')' : '') + '</div>' +
                 '<div class="col3">' + alert.description + '</div>')
             html.push('<div class="col4"><div class="recordToolbar">')
             if (!attrs.dismissDate) html.push('<button type="button" class="dismiss kiwi" data-index="' + i + '" title="Acknowledge alert"><i class="fal fa-check"></i></button>')
@@ -517,6 +519,7 @@ $(function () {
                 var body = { labels: alert.labels, customAttributes: alert.customAttributes }
                 body.labels.status = 'closed'
                 body.customAttributes.dismissDate = dismissDate
+                body.customAttributes.dismissUserId = currentUserId
                 $.ajax(poi.davraUrl + '/api/v1/twins/' + alert.UUID, {
                     method: 'PUT',
                     data: JSON.stringify(body),
@@ -557,7 +560,7 @@ $(function () {
             form.style.display = 'none'
             form.id = 'bounceForm'
             form.name = 'bounceForm'
-            form.action = '/bounce'
+            form.action = poi.davraMs + '/bounce'
             form.method = 'POST'
             var input = document.createElement('input')
             input.type = 'hidden'
@@ -586,13 +589,18 @@ $(function () {
     })
     $('#alertsDiv .export').on('click', function () {
         var lines = []
-        var header = ['Date', 'Description', 'Floor']
+        var header = ['Reported', 'Acknowledged', 'Acknowledged By', 'Description']
         lines.push('"' + header.join('","') + '"')
-        alerts.forEach(function (result, i) {
+        alerts.forEach(function (alert, i) {
             var line = []
-            line.push(formatTimestamp(result.date || new Date()))
-            line.push(result.title)
-            line.push(result.floor_id + 2)
+            var attrs = alert.customAttributes
+            var startDate = formatTimestamp(new Date(alert.createdTime))
+            var dismissDate = attrs.dismissDate ? formatTimestamp(new Date(attrs.dismissDate)) : ''
+            var dismissUserId = attrs.dismissUserId || ''
+            line.push(startDate)
+            line.push(dismissDate)
+            line.push(dismissUserId)
+            line.push(alert.description)
             lines.push('"' + line.join('","') + '"')
         })
         var data = lines.join('\n')
@@ -901,7 +909,8 @@ $(function () {
     // displayAlerts(true, alerts)
     function getAlerts (open) {
         alertsShowingAll = !open
-        $.get(poi.davraUrl + '/api/v1/twins?digitalTwinTypeName=stateful_incident' + (open ? '&labels.status=open' : ''), function (result) {
+        // labels.status=~ matches both 'open' and 'closed' - this is to exclude rules engine stateful incidents
+        $.get(poi.davraUrl + '/api/v1/twins?digitalTwinTypeName=stateful_incident' + (open ? '&labels.status=open' : '&labels.status=~'), function (result) {
             alertsStart = 0
             displayAlerts(true, result)
             if (open) {
@@ -937,6 +946,10 @@ $(function () {
     //         displayAlerts(true, result.alerts)
     //     }
     // })
+    var currentUserId = ''
+    $.get(poi.davraMs + '/whoami', function (result) {
+        currentUserId = result
+    })
 
     /*
     var poiApi = new WrldPoiApi(apiKey);
