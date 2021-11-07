@@ -71,8 +71,8 @@ async function deviceConnect (device, event, timestamp) {
         if (!device.disconnectTime) {
             device.disconnectTime = timestamp
             var labels = { status: 'open', type: 'beacon', id: beacon.prefix + event.embravaId }
-            var tags = { floor: '3' }
-            await utils.sendStatefulIncident(config, 'Beacon outage', 'Outage ' + 'Beacon_' + device.name, labels, tags)
+            var customAttributes = { floor: '3', startDate: timestamp, endDate: 0 }
+            await utils.addStatefulIncident(config, 'Beacon outage', 'Outage ' + 'Beacon_' + device.name, labels, customAttributes)
             device.state = event.state
         }
         return
@@ -179,9 +179,12 @@ async function deviceList () {
 }
 async function deviceRefresh () {
     beacon.devices = {}
+    var count = 0
     for (const e of await deviceList()) {
         beacon.devices[e.embravaId] = e
+        if (beacon.state === 'Offline') count++
     }
+    console.log('Beacons offline:', count)
 }
 async function deviceStatus (id) {
     console.log('Beacon ID:', id)
@@ -192,7 +195,7 @@ async function deviceStatus (id) {
 }
 async function deviceSync () {
     console.log('beaconSync running...')
-    var counts = { added: 0, changed: 0 }
+    const counts = { added: 0, changed: 0 }
     const devices = {}
     for (const device of await utils.deviceList(config, 'beacon')) {
         devices[device.serialNumber] = device

@@ -1,4 +1,5 @@
-/* global AmCharts, moment */
+/* global moment */
+var installDate = Date.UTC(2021, 8, 15, 19, 0, 0) // Sept 15
 var poi
 $(function () {
     poi = utils.getPoiValue()
@@ -46,7 +47,7 @@ $(function () {
     else if (type === '2') $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/checked-in.jpg'
     else $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/reserved.jpg'
     doOccupancy(deviceId)
-    doUptime(deviceId)
+    // utils.doUptime(deviceId)
     doIncidents(deviceId)
     digsig.doAnomaly(deviceId)
 })
@@ -54,7 +55,6 @@ function doOccupancy (deviceId) {
     var dataset = []
     if (deviceId) { // get data
         var oneYearAgo = new Date(); oneYearAgo.setDate(oneYearAgo.getDate() - (52 * 7)); oneYearAgo = oneYearAgo.getTime()
-        var installDate = Date.UTC(2021, 9, 26, 18, 30, 32) // Oct 26 - when we started desk.usage.count
         if (installDate > oneYearAgo) oneYearAgo = installDate
         var numberOfWeeks = Math.floor((new Date().getTime() - oneYearAgo) / (7 * 24 * 60 * 60 * 1000)) || 1
         var data = {
@@ -66,7 +66,7 @@ function doOccupancy (deviceId) {
                         serialNumber: deviceId
                     },
                     aggregators: [{
-                        name: 'count',
+                        name: 'sum',
                         sampling: {
                             value: '1',
                             unit: 'hours'
@@ -156,7 +156,19 @@ function doIncidents (deviceId) {
         // { title: 'User', data: 'userId', width: '25%' }
     ]
     if (deviceId) { // get data
-        var endDate = new Date().getTime()
+        // var endDate = new Date().getTime()
+        $.get(poi.davraUrl + '/api/v1/twins?digitalTwinTypeName=stateful_incident&labels.id=' + deviceId, function (incidents) {
+            var i, n, incident, attrs, duration
+            for (i = 0, n = incidents.length; i < n; i++) {
+                incident = incidents[i]
+                attrs = incident.customAttributes
+                duration = attrs.endDate ? attrs.endDate - attrs.startDate : 0
+                data.push({ timestamp: attrs.startDate, description: incident.description, duration: duration, userId: '' })
+            }
+            initTable('#table', tableColumns, data)
+            utils.doUptime(deviceId, incidents, installDate)
+        })
+        /*
         var query = {
             metrics: [{
                 name: 'desk.outage',
@@ -186,6 +198,7 @@ function doIncidents (deviceId) {
             }
             initTable('#table', tableColumns, data)
         })
+        */
     }
     else { // mockup data
         data = [
@@ -195,72 +208,8 @@ function doIncidents (deviceId) {
             { timestamp: 1624101734770, description: 'Contact lost', duration: 22000, userId: 'AYS5412' }
         ]
         initTable('#table', tableColumns, data)
+        utils.doUptime()
     }
-}
-function doUptime (deviceId) {
-    if (deviceId) {
-        var now = new Date().getTime()
-        var oneDayAgo = new Date(); oneDayAgo.setDate(oneDayAgo.getDate() - 1); oneDayAgo = oneDayAgo.getTime()
-        var oneWeekAgo = new Date(); oneWeekAgo.setDate(oneWeekAgo.getDate() - 7); oneWeekAgo = oneWeekAgo.getTime()
-        var oneMonthAgo = new Date(); oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1); oneMonthAgo = oneMonthAgo.getTime()
-        var oneYearAgo = new Date(); oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1); oneYearAgo = oneYearAgo.getTime()
-        var installDate = new Date(2021, 8, 17).getTime()
-        if (installDate > oneYearAgo) oneYearAgo = installDate
-        var data = {
-            metrics: [
-                {
-                    name: 'desk.outage.timeslice',
-                    limit: 100000,
-                    tags: {
-                        serialNumber: deviceId
-                    },
-                    aggregators: [{
-                        name: 'sum',
-                        sampling: {
-                            value: 1,
-                            unit: 'days'
-                        }
-                    }]
-                }
-            ],
-            start_absolute: oneYearAgo
-        }
-        $.post(poi.davraUrl + '/api/v2/timeseriesData', JSON.stringify(data), function (result) {
-            console.log(result)
-            var values = result.queries[0].results[0].values || []
-            var value1 = 0
-            var value2 = 0
-            var value3 = 0
-            var value4 = 0
-            for (var i = values.length - 1; i >= 0; i--) {
-                var date = values[i][0]
-                var value = values[i][1]
-                if (date >= oneDayAgo) value1 += value
-                if (date >= oneWeekAgo) value2 += value
-                if (date >= oneMonthAgo) value3 += value
-                if (date >= oneYearAgo) value4 += value
-            }
-            var perc1 = utils.roundTo2((value1 * 100) / (now - oneDayAgo))
-            var perc2 = utils.roundTo2((value2 * 100) / (now - oneWeekAgo))
-            var perc3 = utils.roundTo2((value3 * 100) / (now - oneMonthAgo))
-            var perc4 = utils.roundTo2((value4 * 100) / (now - oneYearAgo))
-            chartUptimeConfig.dataProvider[0].uptime = utils.roundTo2(100 - perc1)
-            chartUptimeConfig.dataProvider[1].uptime = utils.roundTo2(100 - perc2)
-            chartUptimeConfig.dataProvider[2].uptime = utils.roundTo2(100 - perc3)
-            chartUptimeConfig.dataProvider[3].uptime = utils.roundTo2(100 - perc4)
-            chartUptimeConfig.dataProvider[0].downtime = perc1
-            chartUptimeConfig.dataProvider[1].downtime = perc2
-            chartUptimeConfig.dataProvider[2].downtime = perc3
-            chartUptimeConfig.dataProvider[3].downtime = perc4
-            AmCharts.makeChart('chartUptime', chartUptimeConfig)
-        })
-    }
-    else { // mockup data
-        AmCharts.makeChart('chartUptime', chartUptimeConfig)
-    }
-    var width = $(window).width() * 0.98
-    var height = $(window).height() * 0.98
-    $('#chartUptime').width(width).height(height)
 }
 function initTable (tableId, tableColumns, data) {
     var dataTableConfig = {
@@ -281,67 +230,4 @@ function initTable (tableId, tableColumns, data) {
     $(tableId).DataTable(dataTableConfig)
     $(tableId).dataTable().fnClearTable()
     if (data.length) $(tableId).dataTable().fnAddData(data)
-}
-var chartUptimeConfig = {
-    type: 'serial',
-    theme: 'light',
-    legend: {
-        horizontalGap: 10,
-        verticalGap: 3,
-        maxColumns: 2,
-        position: 'top',
-        useGraphSettings: true,
-        markerSize: 10
-    },
-    fillColors: ['green', 'red'],
-    dataProvider: [
-        { year: 'Last day', uptime: 99.0, downtime: 1.0 },
-        { year: 'Last week', uptime: 99.9, downtime: 0.1 },
-        { year: 'Last month', uptime: 97.5, downtime: 2.5 },
-        { year: 'Last year', uptime: 99.9, downtime: 0.1 }
-    ],
-    valueAxes: [{
-        stackType: '100%',
-        axisAlpha: 0.5,
-        gridAlpha: 0
-    }],
-    graphs: [{
-        balloonText: '<b>[[title]]</b><br><span style="font-size:14px">[[category]]: <b>[[value]]%</b></span>',
-        fillColors: '#008800',
-        fillAlpha: 1,
-        // "pattern": {
-        //     "url": "https://www.amcharts.com/lib/3/patterns/black/pattern8.png",
-        //     "width": 4,
-        //     "height": 4
-        // },
-        fillAlphas: 0.8,
-        labelText: '[[value]]',
-        lineAlpha: 0.3,
-        title: 'Uptime',
-        type: 'column',
-        color: '#000000',
-        valueField: 'uptime'
-    }, {
-        balloonText: '<b>[[title]]</b><br><span style="font-size:14px">[[category]]: <b>[[value]]%</b></span>',
-        fillColors: '#ff0000',
-        fillAlpha: 1,
-        fillAlphas: 0.8,
-        labelText: '[[value]]',
-        lineAlpha: 0.3,
-        title: 'Downtime',
-        type: 'column',
-        color: '#000000',
-        valueField: 'downtime'
-    }],
-    rotate: true,
-    categoryField: 'year',
-    categoryAxis: {
-        gridPosition: 'start',
-        axisAlpha: 0,
-        gridAlpha: 0,
-        position: 'left'
-    },
-    export: {
-        enabled: true
-    }
 }

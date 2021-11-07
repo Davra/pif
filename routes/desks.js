@@ -2,9 +2,9 @@ const axios = require('axios')
 const express = require('express')
 const security = require('./security.js')
 const utils = require('./utils.js')
-// const uuidv4 = require('uuid/v4')
 var config
 const embrava = { prefix: 'h' }
+const installDate = Date.UTC(2021, 8, 15, 19, 0, 0) // Sept 15
 exports.init = async function (app) {
     config = app.get('config')
     app.post('/api/embrava/event', express.json(), async (req, res) => {
@@ -17,6 +17,14 @@ exports.init = async function (app) {
         const data = await deskCapability(id)
         if (data) return res.send({ success: true, data: data })
         res.send({ success: false, message: 'Desk capability error' })
+    })
+    app.get('/desk/convert', async (req, res) => {
+        deskConvert()
+        return res.send({ success: true, message: 'Desk convert started' })
+    })
+    app.get('/desk/setup', async (req, res) => {
+        deskSetup()
+        return res.send({ success: true, message: 'Desk setup started' })
     })
     app.get('/desk/status/:id', async (req, res) => {
         const id = decodeURIComponent(req.params.id)
@@ -65,18 +73,22 @@ async function deskCapability (id) {
     }
 }
 async function deskConnect (desk, event, timestamp) {
+    const deviceId = embrava.prefix + event.embravaId
     if (event.embravaId === '3206200485') return // this is a duplicate desk
     if (event.state === 'Offline') {
-        await utils.sendIotData(config, embrava.prefix + event.embravaId, 'desk.outage.count', timestamp, 1, {})
+        await utils.sendIotData(config, deviceId, 'desk.outage.count', timestamp, 1, {})
     }
     if (desk.state === event.state) return
     desk.state = event.state
     if (event.state === 'Offline') {
         if (!desk.disconnectTime) {
             desk.disconnectTime = timestamp
-            var labels = { status: 'open', type: 'desk', id: embrava.prefix + event.embravaId }
-            var tags = { floor: '2' }
-            await utils.sendStatefulIncident(config, 'Desk outage', 'Outage ' + 'Desk_' + desk.deskName, labels, tags)
+            const incident = await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 })[0]
+            if (!incident) {
+                var labels = { status: 'open', type: 'desk', id: deviceId }
+                var customAttributes = { floor: '2', startDate: timestamp, endDate: 0 }
+                await utils.addStatefulIncident(config, 'Desk outage', 'Outage ' + 'Desk_' + desk.deskName, labels, customAttributes)
+            }
         }
         return
     }
@@ -87,8 +99,14 @@ async function deskConnect (desk, event, timestamp) {
     var duration = endDate - startDate
     desk.disconnectTime = 0
     if (duration === 0) return
-    console.log('Desk outage:', desk.disconnectTime, event.embravaId, startDate, endDate, duration)
-    if (!await utils.sendIotData(config, embrava.prefix + event.embravaId, 'desk.outage', startDate, duration, {
+    console.log('Desk outage:', startDate, deviceId, startDate, endDate, duration)
+    const incident = await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 })[0]
+    if (incident) {
+        const body = { customAttributes: incident.customAttributes }
+        body.customAttributes.endDate = endDate
+        await utils.changeStatefulIncident(config, incident.UUID, body)
+    }
+    if (!await utils.sendIotData(config, deviceId, 'desk.outage', startDate, duration, {
         // eventTypeId: event.event_type_id.code,
         // eventTypeName: eventType.name
     })) {
@@ -101,8 +119,8 @@ async function deskConnect (desk, event, timestamp) {
     while (duration > 0) {
         const timeslice = initialSlice || (duration > bucket ? bucket : duration)
         initialSlice = 0
-        console.log('Desk outage timeslice:', event.embravaId, bucketDate, timeslice)
-        if (!await utils.sendIotData(config, embrava.prefix + event.embravaId, 'desk.outage.timeslice', bucketDate, timeslice, {
+        console.log('Desk outage timeslice:', deviceId, bucketDate, timeslice)
+        if (!await utils.sendIotData(config, deviceId, 'desk.outage.timeslice', bucketDate, timeslice, {
             // eventTypeId: event.event_type_id.code,
             // eventTypeName: eventType.name
         })) {
@@ -113,8 +131,9 @@ async function deskConnect (desk, event, timestamp) {
     }
 }
 async function deskCheckin (desk, event, timestamp) {
+    const deviceId = embrava.prefix + event.embravaId
     if (event.state === 'Checked In') {
-        await utils.sendIotData(config, embrava.prefix + event.embravaId, 'desk.usage.count', timestamp, 1, {})
+        await utils.sendIotData(config, deviceId, 'desk.usage.count', timestamp, 1, {})
     }
     if (desk.state === event.state) return
     if (event.state === 'Checked In') {
@@ -132,8 +151,8 @@ async function deskCheckin (desk, event, timestamp) {
     var duration = endDate - startDate
     desk.checkinTime = 0
     if (duration === 0) return
-    console.log('Desk usage:', desk.checkinTime, event.embravaId, startDate, endDate, duration)
-    if (!await utils.sendIotData(config, embrava.prefix + event.embravaId, 'desk.usage', startDate, duration, {
+    console.log('Desk usage:', desk.checkinTime, deviceId, startDate, endDate, duration)
+    if (!await utils.sendIotData(config, deviceId, 'desk.usage', startDate, duration, {
         // eventTypeId: event.event_type_id.code,
         // eventTypeName: eventType.name
     })) {
@@ -146,8 +165,8 @@ async function deskCheckin (desk, event, timestamp) {
     while (duration > 0) {
         const timeslice = initialSlice || (duration > bucket ? bucket : duration)
         initialSlice = 0
-        console.log('Desk usage timeslice:', event.embravaId, bucketDate, timeslice)
-        if (!await utils.sendIotData(config, embrava.prefix + event.embravaId, 'desk.usage.timeslice', bucketDate, timeslice, {
+        console.log('Desk usage timeslice:', deviceId, bucketDate, timeslice)
+        if (!await utils.sendIotData(config, deviceId, 'desk.usage.timeslice', bucketDate, timeslice, {
             // eventTypeId: event.event_type_id.code,
             // eventTypeName: eventType.name
         })) {
@@ -182,12 +201,78 @@ async function deskList () {
 async function deskRefresh () {
     embrava.desks = {}
     embrava.devices = {}
+    var count = 0
     for (const desk of await deskList()) {
         embrava.desks[desk.embravaId] = desk
+        if (desk.state === 'Offline') {
+            console.log('Desk offline:', desk.deskName)
+            count++
+        }
     }
+    console.log('Desks offline:', count)
     for (const device of await utils.deviceList(config, 'desk')) {
         embrava.devices[device.serialNumber.substr(1)] = device
     }
+}
+async function deskSetup () {
+    // converts desk.outage to stateful incidents, one time job
+    console.log('deskSetup running...')
+    const counts = { added: 0, changed: 0 }
+    var data, result
+    for (const desk of await deskList()) {
+        const deviceId = embrava.prefix + desk.embravaId
+        const deviceName = 'Desk_' + desk.deskName
+        result = await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.createdBy': 'setup' })
+        if (result.length > 0) continue // device already setup
+        data = {
+            metrics: [
+                {
+                    name: 'desk.outage',
+                    tags: {
+                        serialNumber: deviceId
+                    }
+                }
+            ],
+            start_absolute: installDate
+        }
+        result = await utils.getTimeseriesData(config, data)
+        const outages = (result && result.queries[0].results[0].values) || []
+        data = {
+            metrics: [
+                {
+                    name: 'desk.outage.count',
+                    tags: {
+                        serialNumber: deviceId
+                    }
+                }
+            ],
+            start_absolute: installDate
+        }
+        result = await utils.getTimeseriesData(config, data)
+        const outageCounts = (result && result.queries[0].results[0].values) || []
+        // if offline now, add one open stateful incident to cover from the start, ongoing
+        // start is the date of the first outage count, defaulting to the installDate
+        var startDate = installDate
+        if (outageCounts.length) startDate = outageCounts[0][0]
+        if (desk.state === 'Offline') {
+            const labels = { status: 'open', type: 'desk', id: deviceId }
+            const customAttributes = { createdBy: 'setup', floor: '2', startDate: startDate, endDate: 0 }
+            console.log('deskSetup sending open stateful incident:', deviceId, deviceName)
+            await utils.addStatefulIncident(config, 'Desk outage', 'Outage ' + deviceName, labels, customAttributes)
+            counts.added++
+        }
+        // add closed stateful incident for each outage
+        for (const outage of outages) {
+            const labels = { status: 'closed', type: 'desk', id: deviceId }
+            // set endDate to start plus duration
+            const customAttributes = { createdBy: 'setup', floor: '2', startDate: outage[0], endDate: (outage[0] + outage[1]) }
+            console.log('deskSetup sending closed stateful incident:', deviceId, deviceName)
+            await utils.addStatefulIncident(config, 'Desk outage', 'Outage ' + deviceName, labels, customAttributes)
+            counts.added++
+        }
+    }
+    console.log('deskSetup stateful incident totals:', counts)
+    return counts
 }
 async function deskStatus (id) {
     console.log('Desk ID:', id)
@@ -200,22 +285,22 @@ async function deskStatus (id) {
 }
 async function deskSync () {
     console.log('deskSync running...')
-    var counts = { added: 0, changed: 0 }
+    const counts = { added: 0, changed: 0 }
     const devices = {}
     for (const device of await utils.deviceList(config, 'desk')) {
         devices[device.serialNumber] = device
     }
     for (const desk of await deskList()) {
-        const deskId = embrava.prefix + desk.embravaId
+        const deviceId = embrava.prefix + desk.embravaId
         // const deskName = desk.neighborhood + ' ' + desk.embravaId
-        const deskName = 'Desk_' + desk.deskName
+        const deviceName = 'Desk_' + desk.deskName
         const floor = desk.deskName.substr(2, 1)
         const address = [desk.neighborhood, 'Floor ' + floor]
-        const device = devices[deskId]
+        const device = devices[deviceId]
         if (device) {
             var doc = {}
-            if (device.name !== deskName) doc.name = deskName
-            if (device.serialNumber !== deskId) doc.serialNumber = deskId
+            if (device.name !== deviceName) doc.name = deviceName
+            if (device.serialNumber !== deviceId) doc.serialNumber = deviceId
             if (!device.labels || !device.labels.type || !device.labels.floor) doc.labels = { type: 'desk', floor: floor }
             if (!device.customTags || !device.customTags.address) doc.customTags = { address: address }
             if (Object.keys(doc).length > 0) {
@@ -245,14 +330,14 @@ async function deskSync () {
                         Authorization: 'Bearer ' + config.davra.token
                     },
                     data: {
-                        serialNumber: deskId,
-                        name: deskName,
+                        serialNumber: deviceId,
+                        name: deviceName,
                         labels: { type: 'desk', floor: floor },
                         customTags: { address: address }
                     }
                 })
                 counts.added++
-                console.log('deskSync added:', deskId, deskName)
+                console.log('deskSync added:', deviceId, deviceName)
             }
             catch (err) {
                 console.error('deskSync error:', err)
@@ -261,6 +346,42 @@ async function deskSync () {
     }
     console.log('deskSync totals:', counts)
     return counts
+}
+async function deskConvert () {
+    // converts desk.usage.timeslice to desk.usage.count metrics, one time job
+    var result
+    for (const desk of await deskList()) {
+        const deviceId = embrava.prefix + desk.embravaId
+        const data = {
+            metrics: [
+                {
+                    name: 'desk.usage.timeslice',
+                    tags: {
+                        serialNumber: deviceId
+                    }
+                }
+            ],
+            start_absolute: installDate
+        }
+        result = await utils.getTimeseriesData(config, data)
+        const timeslices = (result && result.queries[0].results[0].values) || []
+        const array = []
+        for (const value of timeslices) {
+            var count = Math.ceil(value[1] / 60000)
+            array.push({
+                UUID: deviceId,
+                timestamp: value[0],
+                name: 'desk.usage.count',
+                value: count,
+                msg_type: 'datum',
+                tags: {}
+            })
+        }
+        if (array.length) {
+            console.log('deskConvert:', deviceId, array.length)
+            await utils.sendIotDataArray(config, array)
+        }
+    }
 }
 async function deskUsageStart () {
     embrava.stop = false

@@ -5,6 +5,7 @@ const utils = require('./utils.js')
 const uuidv4 = require('uuid/v4')
 var config
 const biostar = { prefix: '' }
+const installDate = Date.UTC(2021, 6, 4, 1, 19, 16) // July 4
 const webhookQueue = []
 const webhookFailedQueue = []
 var webhookTimeout = 0
@@ -107,6 +108,10 @@ exports.init = async function (app) {
     app.get('/digitalSignature/sync', async (req, res) => {
         digitalSignatureSync()
         return res.send({ success: true, message: 'Digital signature sync started' })
+    })
+    app.get('/door/setup', async (req, res) => {
+        doorSetup()
+        return res.send({ success: true, message: 'Door setup started' })
     })
     app.get('/door/capability/:id', async (req, res) => {
         const id = decodeURIComponent(req.params.id)
@@ -247,14 +252,18 @@ async function doorCapability (id) {
     }
 }
 async function doorConnect (door, event, eventType) {
+    const deviceId = biostar.prefix + event.device_id.id
     if (eventType.name.indexOf('_DISCONNECT') >= 0) { // DEVICE_, LINK_, RS485_, TCP_
         if (!door.disconnectTime) {
             door.disconnectTime = event.datetime
             door.status = false
-            await utils.sendIotData(config, biostar.prefix + event.device_id.id, 'door.outage.count', Date.parse(event.datetime), 1, {})
-            var labels = { status: 'open', type: 'door', id: biostar.prefix + event.device_id.id }
-            var tags = { floor: '2' }
-            await utils.sendStatefulIncident(config, 'Door outage', 'Outage ' + door.name, labels, tags)
+            await utils.sendIotData(config, deviceId, 'door.outage.count', Date.parse(event.datetime), 1, {})
+            const incident = await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 })[0]
+            if (!incident) {
+                var labels = { status: 'open', type: 'door', id: deviceId }
+                var customAttributes = { floor: '2', startDate: Date.parse(event.datetime), endDate: 0 }
+                await utils.addStatefulIncident(config, 'Door outage', 'Outage ' + door.name, labels, customAttributes)
+            }
         }
         return
     }
@@ -263,11 +272,17 @@ async function doorConnect (door, event, eventType) {
         const startDate = Date.parse(door.disconnectTime)
         const endDate = Date.parse(event.datetime)
         var duration = endDate - startDate
-        if (duration === 0) return
-        console.log('Door outage:', door.disconnectTime, event.device_id.id, startDate, endDate, duration)
         door.disconnectTime = 0
+        if (duration === 0) return
+        console.log('Door outage:', startDate, deviceId, startDate, endDate, duration)
         door.status = true
-        if (!await utils.sendIotData(config, biostar.prefix + event.device_id.id, 'door.outage', startDate, duration, {
+        const incident = await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 })[0]
+        if (incident) {
+            const body = { customAttributes: incident.customAttributes }
+            body.customAttributes.endDate = endDate
+            await utils.changeStatefulIncident(config, incident.UUID, body)
+        }
+        if (!await utils.sendIotData(config, deviceId, 'door.outage', startDate, duration, {
             eventTypeId: event.event_type_id.code,
             eventTypeName: eventType.name
         })) {
@@ -280,8 +295,8 @@ async function doorConnect (door, event, eventType) {
         while (duration > 0) {
             const timeslice = initialSlice || (duration > bucket ? bucket : duration)
             initialSlice = 0
-            console.log('Door outage timeslice:', event.device_id.id, bucketDate, timeslice)
-            if (!await utils.sendIotData(config, biostar.prefix + event.device_id.id, 'door.outage.timeslice', bucketDate, timeslice, {
+            console.log('Door outage timeslice:', deviceId, bucketDate, timeslice)
+            if (!await utils.sendIotData(config, deviceId, 'door.outage.timeslice', bucketDate, timeslice, {
                 eventTypeId: event.event_type_id.code,
                 eventTypeName: eventType.name
             })) {
@@ -316,9 +331,72 @@ async function doorList () {
 async function doorRefresh () {
     await hookList()
     biostar.doors = {}
+    var count = 0
     for (const door of await doorList()) {
         biostar.doors[door.id] = door
+        if (door.status === false) count++
     }
+    console.log('Doors offline:', count)
+}
+async function doorSetup () {
+    // converts door.outage to stateful incidents, one time job
+    console.log('doorSetup running...')
+    const counts = { added: 0, changed: 0 }
+    var data, result
+    for (const door of await doorList()) {
+        const deviceId = biostar.prefix + door.id
+        const deviceName = door.name
+        result = await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.createdBy': 'setup' })
+        if (result.length > 0) continue // device already setup
+        data = {
+            metrics: [
+                {
+                    name: 'door.outage',
+                    tags: {
+                        serialNumber: deviceId
+                    }
+                }
+            ],
+            start_absolute: installDate
+        }
+        result = await utils.getTimeseriesData(config, data)
+        const outages = (result && result.queries[0].results[0].values) || []
+        data = {
+            metrics: [
+                {
+                    name: 'door.outage.count',
+                    tags: {
+                        serialNumber: deviceId
+                    }
+                }
+            ],
+            start_absolute: installDate
+        }
+        result = await utils.getTimeseriesData(config, data)
+        const outageCounts = (result && result.queries[0].results[0].values) || []
+        // if offline now, add one open stateful incident to cover from the start, ongoing
+        // start is the date of the first outage count, defaulting to the installDate
+        var startDate = installDate
+        if (outageCounts.length) startDate = outageCounts[0][0]
+        if (door.status === false) {
+            const labels = { status: 'open', type: 'door', id: deviceId }
+            const customAttributes = { createdBy: 'setup', floor: '2', startDate: startDate, endDate: 0 }
+            console.log('doorSetup sending open stateful incident:', deviceId, deviceName)
+            await utils.addStatefulIncident(config, 'Door outage', 'Outage ' + deviceName, labels, customAttributes)
+            counts.added++
+        }
+        // add closed stateful incident for each outage
+        for (const outage of outages) {
+            const labels = { status: 'closed', type: 'door', id: deviceId }
+            // set endDate to start plus duration
+            const customAttributes = { createdBy: 'setup', floor: '2', startDate: outage[0], endDate: (outage[0] + outage[1]) }
+            console.log('doorSetup sending closed stateful incident:', deviceId, deviceName)
+            await utils.addStatefulIncident(config, 'Door outage', 'Outage ' + deviceName, labels, customAttributes)
+            counts.added++
+        }
+    }
+    console.log('doorSetup stateful incident totals:', counts)
+    return counts
 }
 async function doorStatus (id) {
     console.log('Door ID:', id)
@@ -328,20 +406,22 @@ async function doorStatus (id) {
 }
 async function doorSync () {
     console.log('doorSync running...')
-    var counts = { added: 0, changed: 0 }
+    const counts = { added: 0, changed: 0 }
     const devices = {}
     for (const device of await utils.deviceList(config, 'door')) {
         devices[device.serialNumber] = device
     }
     for (const door of await doorList()) {
-        const device = devices[door.id]
+        const deviceId = biostar.prefix + door.id
+        var deviceName = door.name
+        const device = devices[deviceId]
         if (device) {
             var doc = {}
-            door.name = door.name.replace('Receiption', 'Reception')
+            deviceName = deviceName.replace('Receiption', 'Reception')
                 .replace('Receition', 'Reception')
                 .replace('Recepton', 'Reception')
                 .replace('Turstile', 'Turnstile')
-            if (device.name !== door.name) doc.name = door.name
+            if (device.name !== deviceName) doc.name = deviceName
             if (!device.labels || !device.labels.type) doc.labels = { type: 'door' }
             if (Object.keys(doc).length > 0) {
                 try {
@@ -370,13 +450,13 @@ async function doorSync () {
                         Authorization: 'Bearer ' + config.davra.token
                     },
                     data: {
-                        serialNumber: door.id,
+                        serialNumber: deviceId,
                         name: door.name,
                         labels: { type: 'door' }
                     }
                 })
                 counts.added++
-                console.log('doorSync added:', door.id, door.name)
+                console.log('doorSync added:', deviceId, deviceName)
             }
             catch (err) {
                 console.error('doorSync error:', err)
@@ -409,8 +489,9 @@ async function doorUsage () {
         config.biostar.startTime = '2021-01-01T00:00:00.000Z'
     }
     for (const event of await eventList()) {
+        const deviceId = biostar.prefix + event.device_id.id
         if (event.datetime > config.biostar.startTime) config.biostar.startTime = event.datetime
-        const door = biostar.doors[event.device_id.id]
+        const door = biostar.doors[deviceId]
         if (!door) continue
         const eventType = biostar.eventTypes[event.event_type_id.code]
         if (!eventType) continue
@@ -421,7 +502,7 @@ async function doorUsage () {
             await doorConnect(door, event, eventType)
             continue
         }
-        if (!await utils.sendIotData(config, biostar.prefix + event.device_id.id, 'door.access', Date.parse(event.datetime), 1, {
+        if (!await utils.sendIotData(config, deviceId, 'door.access', Date.parse(event.datetime), 1, {
             eventTypeId: event.event_type_id.code,
             eventTypeName: eventType.name
         })) {

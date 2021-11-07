@@ -1,4 +1,4 @@
-/* global d3 */
+/* global AmCharts, d3 */
 var utils = {}
 utils.chartOccupancyQuantile = function (data) {
     var margin = { top: 40, right: 0, bottom: 100, left: 30 }
@@ -174,6 +174,153 @@ utils.chartOccupancyThreshold = function (data) {
         .attr('x', function (d, i) { return legendElementWidth * i })
         .attr('y', height + gridSize)
     legend.exit().remove()
+}
+utils.chartUptimeConfig = {
+    type: 'serial',
+    theme: 'light',
+    legend: {
+        horizontalGap: 10,
+        verticalGap: 3,
+        maxColumns: 2,
+        position: 'top',
+        useGraphSettings: true,
+        markerSize: 10
+    },
+    fillColors: ['green', 'red'],
+    dataProvider: [
+        { year: 'Last day', uptime: 99.0, downtime: 1.0 },
+        { year: 'Last week', uptime: 99.9, downtime: 0.1 },
+        { year: 'Last month', uptime: 97.5, downtime: 2.5 },
+        { year: 'Last year', uptime: 99.9, downtime: 0.1 }
+    ],
+    valueAxes: [{
+        stackType: '100%',
+        axisAlpha: 0.5,
+        gridAlpha: 0
+    }],
+    graphs: [{
+        balloonText: '<b>[[title]]</b><br><span style="font-size:14px">[[category]]: <b>[[value]]%</b></span>',
+        fillColors: '#008800',
+        fillAlpha: 1,
+        // "pattern": {
+        //     "url": "https://www.amcharts.com/lib/3/patterns/black/pattern8.png",
+        //     "width": 4,
+        //     "height": 4
+        // },
+        fillAlphas: 0.8,
+        labelText: '[[value]]',
+        lineAlpha: 0.3,
+        title: 'Uptime',
+        type: 'column',
+        color: '#000000',
+        valueField: 'uptime'
+    }, {
+        balloonText: '<b>[[title]]</b><br><span style="font-size:14px">[[category]]: <b>[[value]]%</b></span>',
+        fillColors: '#ff0000',
+        fillAlpha: 1,
+        fillAlphas: 0.8,
+        labelText: '[[value]]',
+        lineAlpha: 0.3,
+        title: 'Downtime',
+        type: 'column',
+        color: '#000000',
+        valueField: 'downtime'
+    }],
+    rotate: true,
+    categoryField: 'year',
+    categoryAxis: {
+        gridPosition: 'start',
+        axisAlpha: 0,
+        gridAlpha: 0,
+        position: 'left'
+    },
+    export: {
+        enabled: true
+    }
+}
+utils.doUptime = function (deviceId, incidents, installDate) {
+    if (deviceId) {
+        // get data
+        var now = new Date().getTime()
+        var oneDayAgo = new Date(); oneDayAgo.setDate(oneDayAgo.getDate() - 1); oneDayAgo = oneDayAgo.getTime()
+        var oneWeekAgo = new Date(); oneWeekAgo.setDate(oneWeekAgo.getDate() - 7); oneWeekAgo = oneWeekAgo.getTime()
+        var oneMonthAgo = new Date(); oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1); oneMonthAgo = oneMonthAgo.getTime()
+        var oneYearAgo = new Date(); oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1); oneYearAgo = oneYearAgo.getTime()
+        if (installDate > oneMonthAgo) oneMonthAgo = installDate
+        if (installDate > oneYearAgo) oneYearAgo = installDate
+        var oneDay = now - oneDayAgo
+        var oneWeek = now - oneWeekAgo
+        var oneMonth = now - oneMonthAgo
+        var oneYear = now - oneYearAgo
+        /*
+        var data = {
+            metrics: [
+                {
+                    name: 'hayyak.outage.timeslice',
+                    limit: 100000,
+                    tags: {
+                        serialNumber: deviceId
+                    },
+                    aggregators: [{
+                        name: 'sum',
+                        sampling: {
+                            value: 1,
+                            unit: 'days'
+                        }
+                    }]
+                }
+            ],
+            start_absolute: oneYearAgo
+        }
+        $.post(poi.davraUrl + '/api/v2/timeseriesData', JSON.stringify(data), function (result) {
+            console.log(result)
+            var values = result.queries[0].results[0].values || []
+        */
+        var value1 = 0
+        var value2 = 0
+        var value3 = 0
+        var value4 = 0
+        // for (var i = values.length - 1; i >= 0; i--) {
+        //     var date = values[i][0]
+        //     var value = values[i][1]
+        var i, n, incident, attrs, duration, endDate, startDate
+        for (i = 0, n = incidents.length; i < n; i++) {
+            incident = incidents[i]
+            attrs = incident.customAttributes
+            endDate = attrs.endDate
+            startDate = attrs.startDate
+            if (!endDate) endDate = now
+            duration = endDate - startDate
+            // console.log(moment(startDate).format('YYYY-MM-DD HH:mm') + ', ' + utils.formatDuration(duration) + ', ' + duration + ', ' + endDate + ', ' + startDate)
+            if (endDate > oneDayAgo) value1 += startDate >= oneDayAgo ? duration : (endDate - oneDayAgo)
+            if (endDate > oneWeekAgo) value2 += startDate >= oneWeekAgo ? duration : (endDate - oneWeekAgo)
+            if (endDate > oneMonthAgo) value3 += startDate >= oneMonthAgo ? duration : (endDate - oneMonthAgo)
+            if (endDate > oneYearAgo) value4 += startDate >= oneYearAgo ? duration : (endDate - oneYearAgo)
+        }
+        if (value1 > oneDay) value1 = oneDay
+        if (value2 > oneWeek) value2 = oneWeek
+        if (value3 > oneMonth) value3 = oneMonth
+        if (value4 > oneYear) value4 = oneYear
+        var perc1 = utils.roundTo2((value1 * 100) / oneDay)
+        var perc2 = utils.roundTo2((value2 * 100) / oneWeek)
+        var perc3 = utils.roundTo2((value3 * 100) / oneMonth)
+        var perc4 = utils.roundTo2((value4 * 100) / oneYear)
+        utils.chartUptimeConfig.dataProvider[0].uptime = utils.roundTo2(100 - perc1)
+        utils.chartUptimeConfig.dataProvider[1].uptime = utils.roundTo2(100 - perc2)
+        utils.chartUptimeConfig.dataProvider[2].uptime = utils.roundTo2(100 - perc3)
+        utils.chartUptimeConfig.dataProvider[3].uptime = utils.roundTo2(100 - perc4)
+        utils.chartUptimeConfig.dataProvider[0].downtime = perc1
+        utils.chartUptimeConfig.dataProvider[1].downtime = perc2
+        utils.chartUptimeConfig.dataProvider[2].downtime = perc3
+        utils.chartUptimeConfig.dataProvider[3].downtime = perc4
+        AmCharts.makeChart('chartUptime', utils.chartUptimeConfig)
+    }
+    else { // mockup data
+        AmCharts.makeChart('chartUptime', utils.chartUptimeConfig)
+    }
+    var width = $(window).width() * 0.98
+    var height = $(window).height() * 0.98
+    $('#chartUptime').width(width).height(height)
 }
 utils.formatDate = function (date, format) {
     var d, ds, d0, M, M0, y, yy

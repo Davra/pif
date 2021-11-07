@@ -5,6 +5,7 @@ const utils = require('./utils.js')
 // const uuidv4 = require('uuid/v4')
 var config
 const appspace = { prefix: 's' }
+const installDate = Date.UTC(2021, 9, 30, 12, 20, 13) // Oct 30
 exports.init = async function (app) {
     config = app.get('config')
     app.post('/api/appspace/event', express.json(), async (req, res) => {
@@ -17,6 +18,10 @@ exports.init = async function (app) {
         const data = await signCapability(id)
         if (data) return res.send({ success: true, data: data })
         res.send({ success: false, message: 'Sign capability error' })
+    })
+    app.get('/sign/setup', async (req, res) => {
+        signSetup()
+        return res.send({ success: true, message: 'Sign setup started' })
     })
     app.get('/sign/status/:id', async (req, res) => {
         const id = decodeURIComponent(req.params.id)
@@ -54,24 +59,28 @@ async function signCapability (id) {
     return (result[0] || [])
 }
 async function signConnect (sign, event, timestamp) {
+    const deviceId = appspace.prefix + event._id
     // 0 as status is Sync-Online, 1 is Offline, 2 Online - Out of Sync, 3 is Communication lost
     if (event.Status > 0) {
-        await utils.sendIotData(config, appspace.prefix + event._id, 'sign.outage.count', timestamp, 1, {})
+        await utils.sendIotData(config, deviceId, 'sign.outage.count', timestamp, 1, {})
     }
     if (event.Status === 0 || event.Status === 2) {
-        await utils.sendIotData(config, appspace.prefix + event._id, 'sign.status.count', timestamp, 1, {})
+        await utils.sendIotData(config, deviceId, 'sign.status.count', timestamp, 1, {})
     }
     if (event.Status === 0) {
-        await utils.sendIotData(config, appspace.prefix + event._id, 'sign.sync.count', timestamp, 1, {})
+        await utils.sendIotData(config, deviceId, 'sign.sync.count', timestamp, 1, {})
     }
     if (sign.Status === event.Status) return
     sign.Status = event.Status
     if (event.Status > 0) { // status not OK
         if (!sign.disconnectTime) {
             sign.disconnectTime = timestamp
-            var labels = { status: 'open', type: 'beacon', id: appspace.prefix + event._id }
-            var tags = { floor: '3' }
-            await utils.sendStatefulIncident(config, 'Sign outage', 'Outage ' + 'Sign_' + sign.Name, labels, tags)
+            const incident = await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 })[0]
+            if (!incident) {
+                var labels = { status: 'open', type: 'beacon', id: deviceId }
+                var customAttributes = { floor: '3', startDate: timestamp, endDate: 0 }
+                await utils.addStatefulIncident(config, 'Sign outage', 'Outage ' + 'Sign_' + sign.Name, labels, customAttributes)
+            }
         }
         return
     }
@@ -82,8 +91,14 @@ async function signConnect (sign, event, timestamp) {
         var duration = endDate - startDate
         sign.disconnectTime = 0
         if (duration === 0) return
-        console.log('Sign outage:', sign.disconnectTime, event._id, startDate, endDate, duration)
-        if (!await utils.sendIotData(config, appspace.prefix + event._id, 'sign.outage', startDate, duration, {
+        console.log('Sign outage:', startDate, deviceId, startDate, endDate, duration)
+        const incident = await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 })[0]
+        if (incident) {
+            const body = { customAttributes: incident.customAttributes }
+            body.customAttributes.endDate = endDate
+            await utils.changeStatefulIncident(config, incident.UUID, body)
+        }
+        if (!await utils.sendIotData(config, deviceId, 'sign.outage', startDate, duration, {
             // eventTypeId: event.event_type_id.code,
             // eventTypeName: eventType.name
         })) {
@@ -96,8 +111,8 @@ async function signConnect (sign, event, timestamp) {
         while (duration > 0) {
             const timeslice = initialSlice || (duration > bucket ? bucket : duration)
             initialSlice = 0
-            console.log('Sign outage timeslice:', event._id, bucketDate, timeslice)
-            if (!await utils.sendIotData(config, appspace.prefix + event._id, 'sign.outage.timeslice', bucketDate, timeslice, {
+            console.log('Sign outage timeslice:', startDate, bucketDate, timeslice)
+            if (!await utils.sendIotData(config, startDate, 'sign.outage.timeslice', bucketDate, timeslice, {
                 // eventTypeId: event.event_type_id.code,
                 // eventTypeName: eventType.name
             })) {
@@ -117,9 +132,72 @@ async function signList () {
 }
 async function signRefresh () {
     appspace.signs = {}
+    var count = 0
     for (const sign of await signList()) {
         appspace.signs[sign._id] = sign
+        if (sign.Status > 0) count++
     }
+    console.log('Signs offline:', count)
+}
+async function signSetup () {
+    // converts sign.outage to stateful incidents, one time job
+    console.log('deskSetup running...')
+    const counts = { added: 0, changed: 0 }
+    var data, result
+    for (const sign of await signList()) {
+        const deviceId = appspace.prefix + sign._id
+        const deviceName = 'Sign_' + sign.Name
+        result = await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.createdBy': 'setup' })
+        if (result.length > 0) continue // device already setup
+        data = {
+            metrics: [
+                {
+                    name: 'sign.outage',
+                    tags: {
+                        serialNumber: deviceId
+                    }
+                }
+            ],
+            start_absolute: installDate
+        }
+        result = await utils.getTimeseriesData(config, data)
+        const outages = (result && result.queries[0].results[0].values) || []
+        data = {
+            metrics: [
+                {
+                    name: 'sign.outage.count',
+                    tags: {
+                        serialNumber: deviceId
+                    }
+                }
+            ],
+            start_absolute: installDate
+        }
+        result = await utils.getTimeseriesData(config, data)
+        const outageCounts = (result && result.queries[0].results[0].values) || []
+        // if offline now, add one open stateful incident to cover from the start, ongoing
+        // start is the date of the first outage count, defaulting to the installDate
+        var startDate = installDate
+        if (outageCounts.length) startDate = outageCounts[0][0]
+        if (sign.Status > 0) {
+            const labels = { status: 'open', type: 'sign', id: deviceId }
+            const customAttributes = { createdBy: 'setup', floor: '2', startDate: startDate, endDate: 0 }
+            console.log('signSetup sending open stateful incident:', deviceId, deviceName)
+            await utils.addStatefulIncident(config, 'Desk outage', 'Outage ' + deviceName, labels, customAttributes)
+            counts.added++
+        }
+        // add closed stateful incident for each outage
+        for (const outage of outages) {
+            const labels = { status: 'closed', type: 'sign', id: deviceId }
+            // set endDate to start plus duration
+            const customAttributes = { createdBy: 'setup', floor: '2', startDate: outage[0], endDate: (outage[0] + outage[1]) }
+            console.log('signSetup sending closed stateful incident:', deviceId, deviceName)
+            await utils.addStatefulIncident(config, 'Desk outage', 'Outage ' + deviceName, labels, customAttributes)
+            counts.added++
+        }
+    }
+    console.log('deskSetup stateful incident totals:', counts)
+    return counts
 }
 async function signStatus (id) {
     console.log('Sign ID:', id)
@@ -132,19 +210,19 @@ async function signStatus (id) {
 }
 async function signSync () {
     console.log('signSync running...')
-    var counts = { added: 0, changed: 0 }
+    const counts = { added: 0, changed: 0 }
     const devices = {}
     for (const device of await utils.deviceList(config, 'sign')) {
         devices[device.serialNumber] = device
     }
     for (const sign of await signList()) {
-        const signId = appspace.prefix + sign._id
-        const signName = 'Sign_' + sign.Name
-        const device = devices[signId]
+        const deviceId = appspace.prefix + sign._id
+        const deviceName = 'Sign_' + sign.Name
+        const device = devices[deviceId]
         if (device) {
             var doc = {}
-            if (device.name !== signName) doc.name = signName
-            if (device.serialNumber !== signId) doc.serialNumber = signId
+            if (device.name !== deviceName) doc.name = deviceName
+            if (device.serialNumber !== deviceId) doc.serialNumber = deviceId
             if (!device.labels || !device.labels.type) doc.labels = { type: 'sign' }
             if (Object.keys(doc).length > 0) {
                 try {
@@ -173,13 +251,13 @@ async function signSync () {
                         Authorization: 'Bearer ' + config.davra.token
                     },
                     data: {
-                        serialNumber: signId,
-                        name: signName,
+                        serialNumber: deviceId,
+                        name: deviceName,
                         labels: { type: 'sign' }
                     }
                 })
                 counts.added++
-                console.log('signSync added:', signId, signName)
+                console.log('signSync added:', deviceId, deviceName)
             }
             catch (err) {
                 console.error('signSync error:', err)

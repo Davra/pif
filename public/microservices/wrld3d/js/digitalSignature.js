@@ -78,7 +78,7 @@ var getObservedElm = function (name, aggregator, average, observed, used) {
         '<br/><span style="color:gray;font-size:11px;">Sampling type:  ' + aggregator + '</span>' +
         '    </div>' +
         (average !== null
-            ? '<div style="float:left;width:30%;font-size:11px;text-align:right">' +
+            ? '<div style="float:left;width:30%;font-size:11px;text-align:right;padding-right: 5px;">' +
             '<span style="color:gray">Normal ' + roundedAverage + '</span><br/>' +
             '<span>Observed  ' + (observed === null ? '0' : observedAverage) + '</span>' +
             '</div>'

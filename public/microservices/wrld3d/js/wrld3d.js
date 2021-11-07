@@ -27,7 +27,8 @@ $(function () {
         center: [24.763289081785917, 46.63878573585767], // Riyadh
         zoom: 17,
         indoorsEnabled: true,
-        coverageTreeManifest: 'https://cdn-webgl.eegeo.com/coverage-trees/vjsdavra/v38/manifest.bin.gz'
+        // coverageTreeManifest: 'https://cdn-webgl.eegeo.com/coverage-trees/vjsdavra/v38/manifest.bin.gz'
+        coverageTreeManifest: 'https://cdn-webgl.eegeo.com/coverage-trees/vjsdavra/latest/manifest.bin.gz'
     })
 
     var navigation = new WrldNavigation('navigation-container', map, apiKey)
@@ -477,7 +478,8 @@ $(function () {
     function pageAlerts (start) {
         var html = []
         var rowCount = 0
-        for (var i = start, n = alerts.length; i < n; i++) {
+        // for (var i = start, n = alerts.length; i < n; i++) {
+        for (var i = alerts.length - start - 1; i > 0; i--) {
             var alert = alerts[i]
             var isOpen = alert.labels && alert.labels.status === 'open'
             if (!alertsShowingAll && !isOpen) continue
@@ -486,19 +488,23 @@ $(function () {
             var attrs = alert.customAttributes
             // var floorNumber = attrs.floor
             var evens = (rowCount % 2) ? 'odd' : 'even'
-            var startDate = formatTimestamp(new Date(alert.createdTime))
+            var startDate = formatTimestamp(new Date(attrs.startDate))
+            var endDate = attrs.endDate ? formatTimestamp(new Date(attrs.endDate)) : ''
             var dismissDate = attrs.dismissDate ? formatTimestamp(new Date(attrs.dismissDate)) : ''
             var dismissUserId = attrs.dismissUserId || ''
-            html.push('<div class="alertRow ' + evens + '" data-index="' + i + '"><div class="col1">' + startDate + '</div>' +
-                '<div class="col2">' + dismissDate + (dismissUserId ? ' (' + dismissUserId + ')' : '') + '</div>' +
-                '<div class="col3">' + alert.description + '</div>')
-            html.push('<div class="col4"><div class="recordToolbar">')
-            if (!attrs.dismissDate) html.push('<button type="button" class="dismiss kiwi" data-index="' + i + '" title="Acknowledge alert"><i class="fal fa-check"></i></button>')
+            html.push('<div class="alertRow ' + evens + '" data-index="' + i + '">' +
+                '<div class="col1">' + startDate + '</div>' +
+                '<div class="col2">' + endDate + '</div>' +
+                '<div class="col3">' + dismissDate + (dismissUserId ? ' (' + dismissUserId + ')' : '') + '</div>' +
+                '<div class="col4">' + alert.description + '</div>')
+            html.push('<div class="col5"><div class="recordToolbar">')
+            if (!dismissDate && !endDate) {
+                html.push('<button type="button" class="dismiss kiwi" data-index="' + i + '" title="Acknowledge alert"><i class="fal fa-check"></i></button>')
+            }
             html.push('</div></div></div>')
             if (rowCount === alertsPageLength) break
         }
         $('.alertsList').html(html.join(''))
-        // openCount > 0 ? $('.alertButton').show() : $('.alertButton').hide()
         $('.paginationDiv .text').text((rowCount > 0 ? start + 1 : 0) + '-' + (start + rowCount) + ' of ' + alerts.length)
         $('.alertsList .alertRow').each(function (i, row) {
             $(row).click(function () {
@@ -520,6 +526,7 @@ $(function () {
                 body.labels.status = 'closed'
                 body.customAttributes.dismissDate = dismissDate
                 body.customAttributes.dismissUserId = currentUserId
+                // TODO this should be handled by a server endpoint and avoid whoami
                 $.ajax(poi.davraUrl + '/api/v1/twins/' + alert.UUID, {
                     method: 'PUT',
                     data: JSON.stringify(body),
@@ -531,6 +538,7 @@ $(function () {
                         pageAlerts(alertsStart)
                         alertsOpenCount -= 1
                         $('.alertsCount').text(alertsOpenCount)
+                        alertsOpenCount > 0 ? $('.alertsCount').show() : $('.alertsCount').hide()
                     }
                 })
             })
@@ -916,6 +924,7 @@ $(function () {
             if (open) {
                 alertsOpenCount = result.length
                 $('.alertsCount').text(alertsOpenCount)
+                alertsOpenCount > 0 ? $('.alertsCount').show() : $('.alertsCount').hide()
             }
         })
     }
