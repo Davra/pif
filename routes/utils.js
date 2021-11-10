@@ -80,7 +80,7 @@ exports.getStatefulIncidents = async function (config, deviceId, tags, callback)
         var url = config.davra.url + '/api/v1/twins?digitalTwinTypeName=stateful_incident&labels.id=' + deviceId
         if (tags) {
             for (const key in tags) {
-                url += '&key=' + tags[key]
+                url += '&' + key + '=' + tags[key]
             }
         }
         const response = await axios({

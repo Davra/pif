@@ -43,13 +43,13 @@ async function deviceEvent (device, event, timestamp) {
     }
     if (device.status === event.status) return
     device.status = event.status
+    const incident = (await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 }))[0]
     if (event.status === 'Offline') {
         if (!device.disconnectTime) {
             device.disconnectTime = timestamp
-            const incident = await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 })[0]
             if (!incident) {
-                var labels = { status: 'open', type: 'beacon', id: deviceId }
-                var customAttributes = { floor: '3', startDate: timestamp, endDate: 0 }
+                const labels = { status: 'open', type: 'hayyak', id: deviceId }
+                const customAttributes = { floor: '3', startDate: timestamp, endDate: 0 }
                 await utils.addStatefulIncident(config, 'Hayyak outage', 'Outage ' + device.name, labels, customAttributes)
             }
         }
@@ -62,7 +62,6 @@ async function deviceEvent (device, event, timestamp) {
     device.disconnectTime = 0
     if (duration === 0) return
     console.log('Hayyak outage:', startDate, deviceId, startDate, endDate, duration)
-    const incident = await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 })[0]
     if (incident) {
         const body = { customAttributes: incident.customAttributes }
         body.customAttributes.endDate = endDate

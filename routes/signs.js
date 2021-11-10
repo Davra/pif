@@ -72,13 +72,13 @@ async function signConnect (sign, event, timestamp) {
     }
     if (sign.Status === event.Status) return
     sign.Status = event.Status
+    const incident = (await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 }))[0]
     if (event.Status > 0) { // status not OK
         if (!sign.disconnectTime) {
             sign.disconnectTime = timestamp
-            const incident = await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 })[0]
             if (!incident) {
-                var labels = { status: 'open', type: 'beacon', id: deviceId }
-                var customAttributes = { floor: '3', startDate: timestamp, endDate: 0 }
+                const labels = { status: 'open', type: 'sign', id: deviceId }
+                const customAttributes = { floor: '3', startDate: timestamp, endDate: 0 }
                 await utils.addStatefulIncident(config, 'Sign outage', 'Outage ' + 'Sign_' + sign.Name, labels, customAttributes)
             }
         }
@@ -92,7 +92,6 @@ async function signConnect (sign, event, timestamp) {
         sign.disconnectTime = 0
         if (duration === 0) return
         console.log('Sign outage:', startDate, deviceId, startDate, endDate, duration)
-        const incident = await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 })[0]
         if (incident) {
             const body = { customAttributes: incident.customAttributes }
             body.customAttributes.endDate = endDate

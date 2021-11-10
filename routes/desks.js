@@ -7,6 +7,8 @@ const embrava = { prefix: 'h' }
 const installDate = Date.UTC(2021, 8, 15, 19, 0, 0) // Sept 15
 exports.init = async function (app) {
     config = app.get('config')
+    // config.davra.url = 'https://10.0.32.121'
+    // config.davra.token = 'jSJhuyjo8FMfxpruFlJacQh5lZR0qIgKHzLik5edB6NRsgOM'
     app.post('/api/embrava/event', express.json(), async (req, res) => {
         const body = req.body
         console.log('embrava event received:', JSON.stringify(body))
@@ -80,13 +82,13 @@ async function deskConnect (desk, event, timestamp) {
     }
     if (desk.state === event.state) return
     desk.state = event.state
+    const incident = (await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 }))[0]
     if (event.state === 'Offline') {
         if (!desk.disconnectTime) {
             desk.disconnectTime = timestamp
-            const incident = await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 })[0]
             if (!incident) {
-                var labels = { status: 'open', type: 'desk', id: deviceId }
-                var customAttributes = { floor: '2', startDate: timestamp, endDate: 0 }
+                const labels = { status: 'open', type: 'desk', id: deviceId }
+                const customAttributes = { floor: '2', startDate: timestamp, endDate: 0 }
                 await utils.addStatefulIncident(config, 'Desk outage', 'Outage ' + 'Desk_' + desk.deskName, labels, customAttributes)
             }
         }
@@ -100,7 +102,6 @@ async function deskConnect (desk, event, timestamp) {
     desk.disconnectTime = 0
     if (duration === 0) return
     console.log('Desk outage:', startDate, deviceId, startDate, endDate, duration)
-    const incident = await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 })[0]
     if (incident) {
         const body = { customAttributes: incident.customAttributes }
         body.customAttributes.endDate = endDate

@@ -4,7 +4,7 @@ const security = require('./security.js')
 const utils = require('./utils.js')
 const uuidv4 = require('uuid/v4')
 var config
-const biostar = { prefix: '' }
+const biostar = { prefix: '', failures: {} }
 const installDate = Date.UTC(2021, 6, 4, 1, 19, 16) // July 4
 const webhookQueue = []
 const webhookFailedQueue = []
@@ -258,10 +258,10 @@ async function doorConnect (door, event, eventType) {
             door.disconnectTime = event.datetime
             door.status = false
             await utils.sendIotData(config, deviceId, 'door.outage.count', Date.parse(event.datetime), 1, {})
-            const incident = await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 })[0]
+            const incident = (await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 }))[0]
             if (!incident) {
-                var labels = { status: 'open', type: 'door', id: deviceId }
-                var customAttributes = { floor: '2', startDate: Date.parse(event.datetime), endDate: 0 }
+                const labels = { status: 'open', type: 'door', id: deviceId }
+                const customAttributes = { floor: '2', startDate: Date.parse(event.datetime), endDate: 0 }
                 await utils.addStatefulIncident(config, 'Door outage', 'Outage ' + door.name, labels, customAttributes)
             }
         }
@@ -276,7 +276,7 @@ async function doorConnect (door, event, eventType) {
         if (duration === 0) return
         console.log('Door outage:', startDate, deviceId, startDate, endDate, duration)
         door.status = true
-        const incident = await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 })[0]
+        const incident = (await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 }))[0]
         if (incident) {
             const body = { customAttributes: incident.customAttributes }
             body.customAttributes.endDate = endDate
@@ -495,9 +495,16 @@ async function doorUsage () {
         if (!door) continue
         const eventType = biostar.eventTypes[event.event_type_id.code]
         if (!eventType) continue
-        queueWebhooks(eventType.name, event)
-        if (['DELETE_SUCCESS', 'ENROLL_SUCCESS', 'UPDATE_SUCCESS'].indexOf(eventType.name) >= 0) continue
-        if (eventType.name.indexOf('CONNECT') >= 0) { // could be connect or disconnect
+        const name = eventType.name
+        queueWebhooks(name, event)
+        if (name.indexOf('ACCESS_DENIED') >= 0 || name.indexOf('AUTH_FAILED') >= 0 || name.indexOf('VERIFY_FAIL') >= 0) {
+            biostar.failures[deviceId] = { id: deviceId, date: Date.parse(event.datetime), event: event }
+        }
+        else if (name.indexOf('IDENTIFY_SUCCESS') >= 0 || name.indexOf('RELEASE_DOOR') >= 0 || name.indexOf('UNLOCK') >= 0 || name.indexOf('VERIFY_SUCCESS') >= 0) {
+            delete biostar.failures[deviceId]
+        }
+        if (['DELETE_SUCCESS', 'ENROLL_SUCCESS', 'UPDATE_SUCCESS'].indexOf(name) >= 0) continue
+        if (name.indexOf('CONNECT') >= 0) { // could be connect or disconnect
             // metricName = 'door.connect'
             await doorConnect(door, event, eventType)
             continue
@@ -515,6 +522,17 @@ async function doorUsage () {
     for (const id in biostar.doors) {
         if (!biostar.doors[id].status) {
             await utils.sendIotData(config, biostar.prefix + id, 'door.outage.count', now, 1, {})
+        }
+    }
+    for (const deviceId in biostar.failures) {
+        const failure = biostar.failures[deviceId]
+        const duration = now - failure.date
+        if (duration > 5 * 60 * 1000) {
+            const door = biostar.doors[deviceId]
+            const labels = { status: 'open', type: 'door', incident: 'failure', id: deviceId }
+            const customAttributes = { floor: '2', startDate: failure.date, endDate: 0, event: failure.event }
+            await utils.addStatefulIncident(config, 'Door failure', 'Failure ' + door.name, labels, customAttributes)
+            delete biostar.failures[deviceId]
         }
     }
     if (webhookQueue.length > 0 && !webhookRunning) {
