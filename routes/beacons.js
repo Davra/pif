@@ -70,7 +70,7 @@ async function deviceConnect (device, event, timestamp) {
     if (event.state === 'Offline') {
         if (!device.disconnectTime) {
             device.disconnectTime = timestamp
-            const labels = { status: 'open', type: 'beacon', id: beacon.prefix + event.embravaId }
+            const labels = { status: 'open', type: 'beacon', event: 'outage', id: beacon.prefix + event.embravaId }
             const customAttributes = { floor: '3', startDate: timestamp, endDate: 0 }
             await utils.addStatefulIncident(config, 'Beacon outage', 'Outage ' + 'Beacon_' + device.name, labels, customAttributes)
             device.state = event.state

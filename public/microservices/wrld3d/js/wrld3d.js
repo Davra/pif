@@ -479,7 +479,7 @@ $(function () {
         var html = []
         var rowCount = 0
         // for (var i = start, n = alerts.length; i < n; i++) {
-        for (var i = alerts.length - start - 1; i > 0; i--) {
+        for (var i = alerts.length - start - 1; i >= 0; i--) {
             var alert = alerts[i]
             var isOpen = alert.labels && alert.labels.status === 'open'
             if (!alertsShowingAll && !isOpen) continue
@@ -498,7 +498,7 @@ $(function () {
                 '<div class="col3">' + dismissDate + (dismissUserId ? ' (' + dismissUserId + ')' : '') + '</div>' +
                 '<div class="col4">' + alert.description + '</div>')
             html.push('<div class="col5"><div class="recordToolbar">')
-            if (!dismissDate && !endDate) {
+            if (!dismissDate) {
                 html.push('<button type="button" class="dismiss kiwi" data-index="' + i + '" title="Acknowledge alert"><i class="fal fa-check"></i></button>')
             }
             html.push('</div></div></div>')

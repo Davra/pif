@@ -1,6 +1,7 @@
 /* global moment */
 var installDate = Date.UTC(2021, 8, 15, 19, 0, 0) // Sept 15
 var poi
+var deviceId = ''
 $(function () {
     poi = utils.getPoiValue()
     poi.davraUrl = ''
@@ -15,7 +16,6 @@ $(function () {
         poi.davraMs = '/microservices/wrld3d'
     }
     var type = (poi && poi.user_data.title.substr(poi.user_data.title.length - 1)) || '1'
-    var deviceId = ''
     // twitter account is the deviceId
     if (window.location.hostname !== 'pif.davra.com' && poi && poi.user_data.twitter) deviceId = 'h' + poi.user_data.twitter
     if (deviceId) {
@@ -46,12 +46,28 @@ $(function () {
     else if (type === '1') $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/available.jpg'
     else if (type === '2') $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/checked-in.jpg'
     else $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/reserved.jpg'
-    doOccupancy(deviceId)
+    doOccupancy(deviceId, false)
     // utils.doUptime(deviceId)
     doIncidents(deviceId)
     digsig.doAnomaly(deviceId)
 })
-function doOccupancy (deviceId) {
+$('#tabOccupancyPanel .allHours').on('click', function () {
+    var $button = $(this)
+    $('#chartOccupancy').html('')
+    if ($button.hasClass('showAll')) {
+        $button.removeClass('showAll')
+        $button.find('i').removeClass('fas fa-compress').addClass('fas fa-expand')
+        $button.attr('title', 'Show all hours')
+        doOccupancy(deviceId, false)
+    }
+    else {
+        $button.addClass('showAll')
+        $button.find('i').removeClass('fas fa-expand').addClass('fas fa-compress')
+        $button.attr('title', 'Show working hours')
+        doOccupancy(deviceId, true)
+    }
+})
+function doOccupancy (deviceId, allHours) {
     var dataset = []
     if (deviceId) { // get data
         var oneYearAgo = new Date(); oneYearAgo.setDate(oneYearAgo.getDate() - (52 * 7)); oneYearAgo = oneYearAgo.getTime()
@@ -81,43 +97,69 @@ function doOccupancy (deviceId) {
             var values = result.queries[0].results[0].values
             var day, hour, datapoint
             var datapoints = {}
+            for (day = 0; day < (allHours ? 7 : 5); day++) {
+                for (hour = (allHours ? 0 : 6); hour < (allHours ? 24 : 19); hour++) {
+                    datapoint = { day: day + 0, hour: hour - (allHours ? 0 : 6), value: 0 }
+                    dataset.push(datapoint)
+                    datapoints[day + '.' + hour] = datapoint
+                }
+            }
             for (var i = 0, n = values.length; i < n; i++) {
                 var date = new Date(values[i][0])
                 var value = values[i][1] * 60 * 1000
                 day = date.getUTCDay()
                 hour = date.getUTCHours() + 3 // Riyadh is always UTC + 3 with no daylight savings
-                if (hour > 23) {
+                if (hour >= 24) {
                     hour -= 24
                     day += 1
+                    if (day >= 7) day -= 7
                 }
-                datapoint = datapoints[day + '.' + hour]
-                if (datapoint) {
-                    datapoint.value += value
+                if (!allHours) {
+                    if (day === 5 || day === 6) continue // skip Friday/Saturday
+                    if (hour < 6 || hour >= 19) continue // skip non-office hours (Saudi time)
                 }
-                else {
-                    datapoint = { day: day, hour: hour, value: value }
-                    datapoints[datapoint.day + '.' + datapoint.hour] = datapoint
-                }
+                datapoint = datapoints[day + '.' + hour].value += value
             }
-            for (day = 0; day < 5; day++) {
-                for (hour = 6; hour < 19; hour++) {
-                    datapoint = datapoints[day + '.' + hour]
-                    if (!datapoint) datapoint = { day: day, hour: hour, value: 0 }
-                    var perc = utils.roundTo2((datapoint.value * 100) / (numberOfWeeks * 60 * 60 * 1000))
-                    dataset.push({ day: day + 1, hour: hour - 5, value: perc })
-                }
+            // for (day = 0; day < 5; day++) {
+            //     for (hour = 6; hour < 19; hour++) {
+            //         datapoint = datapoints[day + '.' + hour]
+            //         if (!datapoint) datapoint = { day: day, hour: hour, value: 0 }
+            //         var perc = utils.roundTo2((datapoint.value * 100) / (numberOfWeeks * 60 * 60 * 1000))
+            //         dataset.push({ day: day + 1, hour: hour - 5, value: perc })
+            //     }
+            // }
+            for (i = 0, n = dataset.length; i < n; i++) {
+                datapoint = dataset[i]
+                var perc = utils.roundTo2((datapoint.value * 100) / (numberOfWeeks * 60 * 60 * 1000))
+                datapoint.value = perc
             }
-            utils.chartOccupancyThreshold(dataset)
+            utils.chartOccupancyThreshold(dataset, allHours)
         })
     }
     else { // mockup data
-        for (var day = 1; day < 6; day++) {
-            for (var hour = 1; hour < 14; hour++) {
-                var datapoint = {}
+        // for (var day = 1; day < 6; day++) {
+        //     for (var hour = 1; hour < 14; hour++) {
+        //         var datapoint = {}
+        //         datapoint.day = day
+        //         datapoint.hour = hour
+        //         // weighted to the afternoon?
+        //         if (hour >= 8 && hour <= 12) {
+        //             datapoint.value = 70 + parseInt(Math.random() * 30)
+        //         }
+        //         else {
+        //             datapoint.value = parseInt(Math.random() * 100)
+        //         }
+        //         dataset.push(datapoint)
+        //     }
+        // }
+        var day, hour, datapoint
+        for (day = 0; day < (allHours ? 7 : 5); day++) {
+            for (hour = 0; hour < (allHours ? 24 : 13); hour++) {
+                datapoint = {}
                 datapoint.day = day
                 datapoint.hour = hour
                 // weighted to the afternoon?
-                if (hour >= 8 && hour <= 12) {
+                if (hour >= (allHours ? 14 : 8) && hour <= (allHours ? 17 : 11)) {
                     datapoint.value = 70 + parseInt(Math.random() * 30)
                 }
                 else {
@@ -126,7 +168,7 @@ function doOccupancy (deviceId) {
                 dataset.push(datapoint)
             }
         }
-        utils.chartOccupancyThreshold(dataset)
+        utils.chartOccupancyThreshold(dataset, allHours)
     }
 }
 function doIncidents (deviceId) {

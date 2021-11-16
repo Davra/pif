@@ -260,7 +260,7 @@ async function doorConnect (door, event, eventType) {
             await utils.sendIotData(config, deviceId, 'door.outage.count', Date.parse(event.datetime), 1, {})
             const incident = (await utils.getStatefulIncidents(config, deviceId, { 'customAttributes.endDate': 0 }))[0]
             if (!incident) {
-                const labels = { status: 'open', type: 'door', id: deviceId }
+                const labels = { status: 'open', type: 'door', event: 'outage', id: deviceId }
                 const customAttributes = { floor: '2', startDate: Date.parse(event.datetime), endDate: 0 }
                 await utils.addStatefulIncident(config, 'Door outage', 'Outage ' + door.name, labels, customAttributes)
             }
@@ -379,7 +379,7 @@ async function doorSetup () {
         var startDate = installDate
         if (outageCounts.length) startDate = outageCounts[0][0]
         if (door.status === false) {
-            const labels = { status: 'open', type: 'door', id: deviceId }
+            const labels = { status: 'open', type: 'door', event: 'outage', id: deviceId }
             const customAttributes = { createdBy: 'setup', floor: '2', startDate: startDate, endDate: 0 }
             console.log('doorSetup sending open stateful incident:', deviceId, deviceName)
             await utils.addStatefulIncident(config, 'Door outage', 'Outage ' + deviceName, labels, customAttributes)
@@ -387,7 +387,7 @@ async function doorSetup () {
         }
         // add closed stateful incident for each outage
         for (const outage of outages) {
-            const labels = { status: 'closed', type: 'door', id: deviceId }
+            const labels = { status: 'closed', type: 'door', event: 'outage', id: deviceId }
             // set endDate to start plus duration
             const customAttributes = { createdBy: 'setup', floor: '2', startDate: outage[0], endDate: (outage[0] + outage[1]) }
             console.log('doorSetup sending closed stateful incident:', deviceId, deviceName)
@@ -498,7 +498,7 @@ async function doorUsage () {
         const name = eventType.name
         queueWebhooks(name, event)
         if (name.indexOf('ACCESS_DENIED') >= 0 || name.indexOf('AUTH_FAILED') >= 0 || name.indexOf('VERIFY_FAIL') >= 0) {
-            biostar.failures[deviceId] = { id: deviceId, date: Date.parse(event.datetime), event: event }
+            biostar.failures[deviceId] = { id: deviceId, date: Date.parse(event.datetime), eventType: name, event: event }
         }
         else if (name.indexOf('IDENTIFY_SUCCESS') >= 0 || name.indexOf('RELEASE_DOOR') >= 0 || name.indexOf('UNLOCK') >= 0 || name.indexOf('VERIFY_SUCCESS') >= 0) {
             delete biostar.failures[deviceId]
@@ -529,8 +529,8 @@ async function doorUsage () {
         const duration = now - failure.date
         if (duration > 5 * 60 * 1000) {
             const door = biostar.doors[deviceId]
-            const labels = { status: 'open', type: 'door', incident: 'failure', id: deviceId }
-            const customAttributes = { floor: '2', startDate: failure.date, endDate: 0, event: failure.event }
+            const labels = { status: 'open', type: 'door', event: 'failure', id: deviceId }
+            const customAttributes = { floor: '2', startDate: failure.date, endDate: 0, eventType: failure.eventType, event: failure.event }
             await utils.addStatefulIncident(config, 'Door failure', 'Failure ' + door.name, labels, customAttributes)
             delete biostar.failures[deviceId]
         }

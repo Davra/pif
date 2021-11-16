@@ -1,37 +1,71 @@
 /* global AmCharts, moment */
 var poi
+var deviceId = ''
 $(function () {
     poi = utils.getPoiValue()
     var type = (poi && poi.user_data.title.substr(poi.user_data.title.length - 1)) || '1'
-    var deviceId = (window.location.hostname !== 'pif.davra.com' && poi && poi.user_data.twitter) || '' // twitter account is the deviceId
+    // twitter account is the deviceId
+    if (window.location.hostname !== 'pif.davra.com' && poi && poi.user_data.twitter) deviceId = poi.user_data.twitter
     if (type === '1') $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/available.jpg'
     else if (type === '2') $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/checked-in.jpg'
     else $('.meeting-room-photo img')[0].src = '/microservices/wrld3d/img/reserved.jpg'
-    doOccupancy(deviceId)
+    doOccupancy(deviceId, false)
     doUptime(deviceId)
     doOutages(deviceId)
 })
-function doOccupancy (deviceId) {
+$('#tabOccupancyPanel .allHours').on('click', function () {
+    var $button = $(this)
+    $('#chartOccupancy').html('')
+    if ($button.hasClass('showAll')) {
+        $button.removeClass('showAll')
+        $button.find('i').removeClass('fas fa-compress').addClass('fas fa-expand')
+        $button.attr('title', 'Show all hours')
+        doOccupancy(deviceId, false)
+    }
+    else {
+        $button.addClass('showAll')
+        $button.find('i').removeClass('fas fa-expand').addClass('fas fa-compress')
+        $button.attr('title', 'Show working hours')
+        doOccupancy(deviceId, true)
+    }
+})
+function doOccupancy (deviceId, allHours) {
     var dataset = []
     if (deviceId) { // get data
     }
     else { // mockup data
-        for (var tmpDay = 1; tmpDay < 6; tmpDay++) {
-            for (var tmpHour = 1; tmpHour < 14; tmpHour++) {
-                var tmpDatapoint = {}
-                tmpDatapoint.day = tmpDay
-                tmpDatapoint.hour = tmpHour
+        // for (var tmpDay = 1; tmpDay < 6; tmpDay++) {
+        //     for (var tmpHour = 1; tmpHour < 14; tmpHour++) {
+        //         var tmpDatapoint = {}
+        //         tmpDatapoint.day = tmpDay
+        //         tmpDatapoint.hour = tmpHour
+        //         // weighted to the afternoon?
+        //         if (tmpHour >= 8 && tmpHour <= 12) {
+        //             tmpDatapoint.value = 0 + parseInt(Math.random() * 10)
+        //         }
+        //         else {
+        //             tmpDatapoint.value = parseInt(Math.random() * 100)
+        //         }
+        //         dataset.push(tmpDatapoint)
+        //     }
+        // }
+        var day, hour, datapoint
+        for (day = 0; day < (allHours ? 7 : 5); day++) {
+            for (hour = 0; hour < (allHours ? 24 : 13); hour++) {
+                datapoint = {}
+                datapoint.day = day
+                datapoint.hour = hour
                 // weighted to the afternoon?
-                if (tmpHour >= 8 && tmpHour <= 12) {
-                    tmpDatapoint.value = 0 + parseInt(Math.random() * 10)
+                if (hour >= (allHours ? 14 : 8) && hour <= (allHours ? 17 : 11)) {
+                    datapoint.value = 70 + parseInt(Math.random() * 30)
                 }
                 else {
-                    tmpDatapoint.value = parseInt(Math.random() * 100)
+                    datapoint.value = parseInt(Math.random() * 100)
                 }
-                dataset.push(tmpDatapoint)
+                dataset.push(datapoint)
             }
         }
-        utils.chartOccupancyThreshold(dataset)
+        utils.chartOccupancyThreshold(dataset, allHours)
     }
 }
 function doOutages (deviceId) {

@@ -77,7 +77,7 @@ async function signConnect (sign, event, timestamp) {
         if (!sign.disconnectTime) {
             sign.disconnectTime = timestamp
             if (!incident) {
-                const labels = { status: 'open', type: 'sign', id: deviceId }
+                const labels = { status: 'open', type: 'sign', event: 'outage', id: deviceId }
                 const customAttributes = { floor: '3', startDate: timestamp, endDate: 0 }
                 await utils.addStatefulIncident(config, 'Sign outage', 'Outage ' + 'Sign_' + sign.Name, labels, customAttributes)
             }
@@ -179,7 +179,7 @@ async function signSetup () {
         var startDate = installDate
         if (outageCounts.length) startDate = outageCounts[0][0]
         if (sign.Status > 0) {
-            const labels = { status: 'open', type: 'sign', id: deviceId }
+            const labels = { status: 'open', type: 'sign', event: 'outage', id: deviceId }
             const customAttributes = { createdBy: 'setup', floor: '2', startDate: startDate, endDate: 0 }
             console.log('signSetup sending open stateful incident:', deviceId, deviceName)
             await utils.addStatefulIncident(config, 'Desk outage', 'Outage ' + deviceName, labels, customAttributes)
@@ -187,7 +187,7 @@ async function signSetup () {
         }
         // add closed stateful incident for each outage
         for (const outage of outages) {
-            const labels = { status: 'closed', type: 'sign', id: deviceId }
+            const labels = { status: 'closed', type: 'sign', event: 'outage', id: deviceId }
             // set endDate to start plus duration
             const customAttributes = { createdBy: 'setup', floor: '2', startDate: outage[0], endDate: (outage[0] + outage[1]) }
             console.log('signSetup sending closed stateful incident:', deviceId, deviceName)

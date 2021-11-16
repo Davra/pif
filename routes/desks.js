@@ -87,7 +87,7 @@ async function deskConnect (desk, event, timestamp) {
         if (!desk.disconnectTime) {
             desk.disconnectTime = timestamp
             if (!incident) {
-                const labels = { status: 'open', type: 'desk', id: deviceId }
+                const labels = { status: 'open', type: 'desk', event: 'outage', id: deviceId }
                 const customAttributes = { floor: '2', startDate: timestamp, endDate: 0 }
                 await utils.addStatefulIncident(config, 'Desk outage', 'Outage ' + 'Desk_' + desk.deskName, labels, customAttributes)
             }
@@ -256,7 +256,7 @@ async function deskSetup () {
         var startDate = installDate
         if (outageCounts.length) startDate = outageCounts[0][0]
         if (desk.state === 'Offline') {
-            const labels = { status: 'open', type: 'desk', id: deviceId }
+            const labels = { status: 'open', type: 'desk', event: 'outage', id: deviceId }
             const customAttributes = { createdBy: 'setup', floor: '2', startDate: startDate, endDate: 0 }
             console.log('deskSetup sending open stateful incident:', deviceId, deviceName)
             await utils.addStatefulIncident(config, 'Desk outage', 'Outage ' + deviceName, labels, customAttributes)
@@ -264,7 +264,7 @@ async function deskSetup () {
         }
         // add closed stateful incident for each outage
         for (const outage of outages) {
-            const labels = { status: 'closed', type: 'desk', id: deviceId }
+            const labels = { status: 'closed', type: 'desk', event: 'outage', id: deviceId }
             // set endDate to start plus duration
             const customAttributes = { createdBy: 'setup', floor: '2', startDate: outage[0], endDate: (outage[0] + outage[1]) }
             console.log('deskSetup sending closed stateful incident:', deviceId, deviceName)

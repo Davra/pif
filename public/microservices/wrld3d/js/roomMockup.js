@@ -177,25 +177,40 @@ function doComfort (deviceId) {
         chartComfort(dataset)
     }
 }
-function doOccupancy (deviceId) {
+function doOccupancy (deviceId, allHours) {
     var dataset = []
     if (deviceId) { // get data
     }
     else { // mockup data
-        for (var tmpDay = 1; tmpDay < 6; tmpDay++) {
-            for (var tmpHour = 1; tmpHour < 14; tmpHour++) {
-                var tmpDatapoint = {}
-                tmpDatapoint.day = tmpDay
-                tmpDatapoint.hour = tmpHour
-                if ((tmpDay === 1 || tmpDay === 2) && tmpHour >= 3 && tmpHour <= 7) {
-                    tmpDatapoint.value = 0 + parseInt(Math.random() * 10)
+        // for (var tmpDay = 1; tmpDay < 6; tmpDay++) {
+        //     for (var tmpHour = 1; tmpHour < 14; tmpHour++) {
+        //         var tmpDatapoint = {}
+        //         tmpDatapoint.day = tmpDay
+        //         tmpDatapoint.hour = tmpHour
+        //         if ((tmpDay === 1 || tmpDay === 2) && tmpHour >= 3 && tmpHour <= 7) {
+        //             tmpDatapoint.value = 0 + parseInt(Math.random() * 10)
+        //         }
+        //         else {
+        //             tmpDatapoint.value = parseInt(Math.random() * 100)
+        //         }
+        //         dataset.push(tmpDatapoint)
+        //     }
+        // }
+        var day, hour, datapoint
+        for (day = 0; day < (allHours ? 7 : 5); day++) {
+            for (hour = 0; hour < (allHours ? 24 : 13); hour++) {
+                datapoint = {}
+                datapoint.day = day
+                datapoint.hour = hour
+                if ((day === 1 || day === 2) && hour >= (allHours ? 8 : 2) && hour <= (allHours ? 12 : 6)) {
+                    datapoint.value = 70 + parseInt(Math.random() * 30)
                 }
                 else {
-                    tmpDatapoint.value = parseInt(Math.random() * 100)
+                    datapoint.value = parseInt(Math.random() * 100)
                 }
-                dataset.push(tmpDatapoint)
+                dataset.push(datapoint)
             }
         }
-        utils.chartOccupancyThreshold(dataset)
+        utils.chartOccupancyThreshold(dataset, allHours)
     }
 }

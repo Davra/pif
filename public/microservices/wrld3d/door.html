@@ -59,7 +59,7 @@
 					<a class="tabUptime" href="#tabUptimePanel" role="tab" data-toggle="tab"><span>Uptime</span></a>
 				</li>
 				<li role="presentation">
-					<a class="tabEvents" href="#tabEventsPanel" role="tab" data-toggle="tab"><span>Outage</span></a>
+					<a class="tabEvents" href="#tabEventsPanel" role="tab" data-toggle="tab"><span>Incidents</span></a>
 				</li>
 				<li role="presentation">
 					<a class="tabAnomaly" href="#tabAnomalyPanel" role="tab" data-toggle="tab"><span>Digital Signature</span></a>
@@ -67,7 +67,8 @@
 			</ul>
 		</div>
 		<div class="tab-content">
-			<div role="tabpanel" class="tab-pane fade in active" id="tabOccupancyPanel">
+			<div role="tabpanel" class="tab-pane fade in active" id="tabOccupancyPanel" style="position:relative">
+				<button type="button" class="allHours" title="Show all hours" style="position:absolute; top:2px;"><i class="fas fa-expand"></i></button>
 				<div id="chartOccupancy"></div>
 			</div>
 			<div role="tabpanel" class="tab-pane fade" id="tabUptimePanel">

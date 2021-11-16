@@ -48,7 +48,7 @@ async function deviceEvent (device, event, timestamp) {
         if (!device.disconnectTime) {
             device.disconnectTime = timestamp
             if (!incident) {
-                const labels = { status: 'open', type: 'hayyak', id: deviceId }
+                const labels = { status: 'open', type: 'hayyak', event: 'outage', id: deviceId }
                 const customAttributes = { floor: '3', startDate: timestamp, endDate: 0 }
                 await utils.addStatefulIncident(config, 'Hayyak outage', 'Outage ' + device.name, labels, customAttributes)
             }
@@ -232,7 +232,7 @@ async function deviceSetup () {
         var startDate = installDate
         if (outageCounts.length) startDate = outageCounts[0][0]
         if (e.status === 'Offline') {
-            const labels = { status: 'open', type: 'hayyak', id: deviceId }
+            const labels = { status: 'open', type: 'hayyak', event: 'outage', id: deviceId }
             const customAttributes = { createdBy: 'setup', floor: '3', startDate: startDate, endDate: 0 }
             console.log('hayyakSetup sending open stateful incident:', deviceId, deviceName)
             await utils.addStatefulIncident(config, 'Hayyak outage', 'Outage ' + deviceName, labels, customAttributes)
@@ -240,7 +240,7 @@ async function deviceSetup () {
         }
         // add closed stateful incident for each outage
         for (const outage of outages) {
-            const labels = { status: 'closed', type: 'hayyak', id: deviceId }
+            const labels = { status: 'closed', type: 'hayyak', event: 'outage', id: deviceId }
             // set endDate to start plus duration
             const customAttributes = { createdBy: 'setup', floor: '3', startDate: outage[0], endDate: (outage[0] + outage[1]) }
             console.log('hayyakSetup sending closed stateful incident:', deviceId, deviceName)
@@ -249,7 +249,7 @@ async function deviceSetup () {
         }
         // add closed stateful incident if Online and no outages
         if (e.status === 'Online' && outages.length === 0 && outageCounts.length) {
-            const labels = { status: 'closed', type: 'hayyak', id: deviceId }
+            const labels = { status: 'closed', type: 'hayyak', event: 'outage', id: deviceId }
             const endDate = outageCounts[outageCounts.length - 1][0]
             const customAttributes = { createdBy: 'setup', floor: '3', startDate: startDate, endDate: endDate }
             console.log('hayyakSetup sending closed stateful incident:', deviceId, deviceName)

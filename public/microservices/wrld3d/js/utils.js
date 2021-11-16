@@ -1,21 +1,25 @@
 /* global AmCharts, d3 */
 var utils = {}
-utils.chartOccupancyQuantile = function (data) {
-    var margin = { top: 40, right: 0, bottom: 100, left: 30 }
+utils.chartOccupancyQuantile = function (data, allHours) {
+    var margin = { top: 40, right: 0, bottom: 100, left: 20 }
     var width = 720 - margin.left - margin.right
     var height = 300 - margin.top - margin.bottom
-    var gridSize = Math.floor(width / 24)
+    var gridSize = Math.floor(width / (allHours ? 40 : 24))
     // var legendElementWidth = gridSize * 2,
-    var legendElementWidth = gridSize * 1.33
+    var legendElementWidth = gridSize * (allHours ? 2 : 1.33)
     // var buckets = 10
     // var buckets = [10, 20, 30, 40, 50, 60, 70, 80, 90]
     // var colors = ['#ffffd9','#edf8b1','#c7e9b4','#7fcdbb','#41b6c4','#1d91c0','#225ea8','#253494','#081d58'] // alternatively colorbrewer.YlGnBu[9].
     // var colors = ['#0bff00', '#70ed00', '#99db00', '#b6c700', '#cdb200', '#df9b00', '#ee8200', '#f86600', '#fe4400', '#ff0000'] // See https://colordesigner.io/gradient-generator (green to red)
     // var colors = ['#ff0000', '#fe4400', '#f86600', '#ee8200', '#df9b00', '#cdb200', '#b6c700', '#99db00', '#70ed00', '#0bff00'] // See https://colordesigner.io/gradient-generator (green to red)
     var colors = ['#FCFCFC', '#E3F2FD', '#BBDEFB', '#90CAF9', '#64B5F6', '#42A5F5', '#1E88E5', '#1976D2', '#1565C0', '#0D47A1'] // See PIF Delivery channel
-    var days = ['Su', 'Mo', 'Tu', 'We', 'Th']
+    var days = allHours
+        ? ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+        : ['Su', 'Mo', 'Tu', 'We', 'Th']
     // var times = ['1a', '2a', '3a', '4a', '5a', '6a', '7a', '8a', '9a', '10a', '11a', '12a', '1p', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p', '11p', '12p']
-    var times = ['6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18']
+    var times = allHours
+        ? ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23']
+        : ['6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18']
     var svg = d3.select('#chartOccupancy').append('svg')
         .attr('width', width + margin.left + margin.right)
         .attr('height', height + margin.top + margin.bottom)
@@ -39,7 +43,7 @@ utils.chartOccupancyQuantile = function (data) {
         .style('text-anchor', 'middle')
         .attr('transform', 'translate(' + gridSize / 2 + ', -6)')
         // .attr('class', function(d, i) { return ((i >= 7 && i <= 16) ? 'timeLabel mono axis axis-worktime' : 'timeLabel mono axis') })
-        .attr('class', function (d, i) { return ((i >= 2 && i <= 11) ? 'timeLabel mono axis axis-worktime' : 'timeLabel mono axis') })
+        .attr('class', function (d, i) { return ((i >= (allHours ? 8 : 2) && i <= (allHours ? 18 : 12)) ? 'timeLabel mono axis axis-worktime' : 'timeLabel mono axis') })
     var colorScale = d3.scale.quantile()
         .domain([0, 9, d3.max(data, function (d) { return d.value })])
         // .domain(data.map(function (d) { return d.value }))
@@ -53,8 +57,8 @@ utils.chartOccupancyQuantile = function (data) {
         .data(data, function (d) { return d.day + ':' + d.hour })
     cards.append('title')
     cards.enter().append('rect')
-        .attr('x', function (d) { return (d.hour - 1) * gridSize })
-        .attr('y', function (d) { return (d.day - 1) * gridSize })
+        .attr('x', function (d) { return d.hour * gridSize })
+        .attr('y', function (d) { return d.day * gridSize })
         .attr('rx', 4)
         .attr('ry', 4)
         .attr('class', 'hour bordered')
@@ -72,9 +76,9 @@ utils.chartOccupancyQuantile = function (data) {
         .attr('class', 'legend')
     legend.append('rect')
         .attr('x', function (d, i) { return legendElementWidth * i })
-        .attr('y', height)
+        .attr('y', height - (allHours ? gridSize : 0))
         .attr('width', legendElementWidth)
-        .attr('height', gridSize / 2)
+        .attr('height', gridSize / (allHours ? 1 : 2))
         .style('fill', function (d, i) { return colors[i] })
     legend.append('text')
         .attr('class', 'mono')
@@ -89,22 +93,26 @@ utils.chartOccupancyQuantile = function (data) {
         .attr('y', height + gridSize)
     legend.exit().remove()
 }
-utils.chartOccupancyThreshold = function (data) {
-    var margin = { top: 40, right: 0, bottom: 100, left: 30 }
+utils.chartOccupancyThreshold = function (data, allHours) {
+    var margin = { top: 40, right: 0, bottom: 100, left: 20 }
     var width = 720 - margin.left - margin.right
     var height = 300 - margin.top - margin.bottom
-    var gridSize = Math.floor(width / 24)
+    var gridSize = Math.floor(width / (allHours ? 40 : 24))
     // var legendElementWidth = gridSize * 2,
-    var legendElementWidth = gridSize * 1.33
+    var legendElementWidth = gridSize * (allHours ? 2 : 1.33)
     // var buckets = 10
     var buckets = [10, 20, 30, 40, 50, 60, 70, 80, 90]
     // var colors = ['#ffffd9','#edf8b1','#c7e9b4','#7fcdbb','#41b6c4','#1d91c0','#225ea8','#253494','#081d58'] // alternatively colorbrewer.YlGnBu[9].
     // var colors = ['#0bff00', '#70ed00', '#99db00', '#b6c700', '#cdb200', '#df9b00', '#ee8200', '#f86600', '#fe4400', '#ff0000'] // See https://colordesigner.io/gradient-generator (green to red)
     // var colors = ['#ff0000', '#fe4400', '#f86600', '#ee8200', '#df9b00', '#cdb200', '#b6c700', '#99db00', '#70ed00', '#0bff00'] // See https://colordesigner.io/gradient-generator (green to red)
     var colors = ['#FCFCFC', '#E3F2FD', '#BBDEFB', '#90CAF9', '#64B5F6', '#42A5F5', '#1E88E5', '#1976D2', '#1565C0', '#0D47A1'] // See PIF Delivery channel
-    var days = ['Su', 'Mo', 'Tu', 'We', 'Th']
+    var days = allHours
+        ? ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+        : ['Su', 'Mo', 'Tu', 'We', 'Th']
     // var times = ['1a', '2a', '3a', '4a', '5a', '6a', '7a', '8a', '9a', '10a', '11a', '12a', '1p', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p', '11p', '12p']
-    var times = ['6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18']
+    var times = allHours
+        ? ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23']
+        : ['6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18']
     var svg = d3.select('#chartOccupancy').append('svg')
         .attr('width', width + margin.left + margin.right)
         .attr('height', height + margin.top + margin.bottom)
@@ -128,7 +136,7 @@ utils.chartOccupancyThreshold = function (data) {
         .style('text-anchor', 'middle')
         .attr('transform', 'translate(' + gridSize / 2 + ', -6)')
         // .attr('class', function(d, i) { return ((i >= 7 && i <= 16) ? 'timeLabel mono axis axis-worktime' : 'timeLabel mono axis') })
-        .attr('class', function (d, i) { return ((i >= 2 && i <= 11) ? 'timeLabel mono axis axis-worktime' : 'timeLabel mono axis') })
+        .attr('class', function (d, i) { return ((i >= (allHours ? 8 : 2) && i <= (allHours ? 18 : 12)) ? 'timeLabel mono axis axis-worktime' : 'timeLabel mono axis') })
     // var colorScale = d3.scale.quantile()
     //     .domain([0, buckets - 1, d3.max(data, function (d) { return d.value })])
     //     .range(colors)
@@ -140,8 +148,8 @@ utils.chartOccupancyThreshold = function (data) {
         .data(data, function (d) { return d.day + ':' + d.hour })
     cards.append('title')
     cards.enter().append('rect')
-        .attr('x', function (d) { return (d.hour - 1) * gridSize })
-        .attr('y', function (d) { return (d.day - 1) * gridSize })
+        .attr('x', function (d) { return d.hour * gridSize })
+        .attr('y', function (d) { return d.day * gridSize })
         .attr('rx', 4)
         .attr('ry', 4)
         .attr('class', 'hour bordered')
@@ -159,9 +167,9 @@ utils.chartOccupancyThreshold = function (data) {
         .attr('class', 'legend')
     legend.append('rect')
         .attr('x', function (d, i) { return legendElementWidth * i })
-        .attr('y', height)
+        .attr('y', height - (allHours ? gridSize : 0))
         .attr('width', legendElementWidth)
-        .attr('height', gridSize / 2)
+        .attr('height', gridSize / (allHours ? 1 : 2))
         .style('fill', function (d, i) { return colors[i] })
     legend.append('text')
         .attr('class', 'mono')
@@ -286,6 +294,7 @@ utils.doUptime = function (deviceId, incidents, installDate) {
         var i, n, incident, attrs, duration, endDate, startDate
         for (i = 0, n = incidents.length; i < n; i++) {
             incident = incidents[i]
+            if (incident.labels.event !== 'outage') continue
             attrs = incident.customAttributes
             endDate = attrs.endDate
             startDate = attrs.startDate
