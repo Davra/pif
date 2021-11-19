@@ -4,7 +4,7 @@ const security = require('./security.js')
 const utils = require('./utils.js')
 // const uuidv4 = require('uuid/v4')
 var config
-const appspace = { prefix: 's' }
+const appspace = { prefix: 's', stop: false, timeout: null }
 const installDate = Date.UTC(2021, 9, 30, 12, 20, 13) // Oct 30
 exports.init = async function (app) {
     config = app.get('config')
@@ -268,11 +268,13 @@ async function signSync () {
 }
 async function signUsageStart () {
     appspace.stop = false
-    signUsage()
+    if (!appspace.timeout) signUsage()
     return true
 }
 async function signUsageStop () {
     appspace.stop = true
+    clearTimeout(appspace.timeout)
+    appspace.timeout = null
     return true
 }
 async function signUsage () {
@@ -318,7 +320,7 @@ async function signUsage () {
     // fs.writeFileSync(path.join(__dirname, '/../config/config.json'), JSON.stringify(config, null, 4))
     // updateConfig('appspace.startTime', config.appspace.startTime)
     const interval = config.appspace.signUsageInterval
-    if (interval && !appspace.stop) setTimeout(signUsage, interval)
+    if (interval && !appspace.stop) appspace.timeout = setTimeout(signUsage, interval)
     return count
 }
 async function eventList () {

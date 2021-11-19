@@ -2,7 +2,7 @@ const axios = require('axios')
 const security = require('./security.js')
 const utils = require('./utils.js')
 var config
-const hayyak = { prefix: 'y' }
+const hayyak = { prefix: 'y', stop: false, timeout: null }
 const installDate = Date.UTC(2021, 9, 13, 15, 58, 10) // Oct 13
 exports.init = async function (app) {
     config = app.get('config')
@@ -329,11 +329,13 @@ async function deviceSync () {
 }
 async function deviceUsageStart () {
     hayyak.stop = false
-    deviceUsage()
+    if (!hayyak.timeout) deviceUsage()
     return true
 }
 async function deviceUsageStop () {
     hayyak.stop = true
+    clearTimeout(hayyak.timeout)
+    hayyak.timeout = null
     return true
 }
 async function deviceUsage () {
@@ -349,7 +351,7 @@ async function deviceUsage () {
     }
     console.log('hayyakUsage total:', count)
     const interval = config.hayyak.usageInterval
-    if (interval && !hayyak.stop) setTimeout(deviceUsage, interval)
+    if (interval && !hayyak.stop) hayyak.timeout = setTimeout(deviceUsage, interval)
     return count
 }
 async function eventList () {

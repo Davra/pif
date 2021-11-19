@@ -4,7 +4,7 @@ const security = require('./security.js')
 const utils = require('./utils.js')
 const uuidv4 = require('uuid/v4')
 var config
-const biostar = { prefix: '', failures: {} }
+const biostar = { prefix: '', stop: false, timeout: null, failures: {} }
 const installDate = Date.UTC(2021, 6, 4, 1, 19, 16) // July 4
 const webhookQueue = []
 const webhookFailedQueue = []
@@ -468,11 +468,13 @@ async function doorSync () {
 }
 async function doorUsageStart () {
     biostar.stop = false
-    doorUsage()
+    if (!biostar.timeout) doorUsage()
     return true
 }
 async function doorUsageStop () {
     biostar.stop = true
+    clearTimeout(biostar.timeout)
+    biostar.timeout = null
     return true
 }
 async function doorUsage () {
@@ -544,7 +546,7 @@ async function doorUsage () {
     // fs.writeFileSync(path.join(__dirname, '/../config/config.json'), JSON.stringify(config, null, 4))
     updateConfig('biostar.startTime', config.biostar.startTime)
     const interval = config.biostar.doorUsageInterval
-    if (interval && !biostar.stop) setTimeout(doorUsage, interval)
+    if (interval && !biostar.stop) biostar.timeout = setTimeout(doorUsage, interval)
     return count
 }
 async function eventTypeList () {

@@ -5,7 +5,7 @@ const security = require('./security.js')
 const utils = require('./utils.js')
 // const uuidv4 = require('uuid/v4')
 var config
-const beacon = { prefix: 'b' }
+const beacon = { prefix: 'b', stop: false, timeout: null }
 exports.init = async function (app) {
     config = app.get('config')
     app.post('/api/beacon/event', express.json(), async (req, res) => {
@@ -254,11 +254,13 @@ async function deviceSync () {
 }
 async function deviceUsageStart () {
     beacon.stop = false
-    deviceUsage()
+    if (!beacon.timeout) deviceUsage()
     return true
 }
 async function deviceUsageStop () {
     beacon.stop = true
+    clearTimeout(beacon.timeout)
+    beacon.timeout = null
     return true
 }
 async function deviceUsage () {
@@ -275,7 +277,7 @@ async function deviceUsage () {
     }
     console.log('beaconUsage total:', count)
     const interval = config.beacon.beaconUsageInterval
-    if (interval && !beacon.stop) setTimeout(deviceUsage, interval)
+    if (interval && !beacon.stop) beacon.timeout = setTimeout(deviceUsage, interval)
     return count
 }
 async function eventList () {

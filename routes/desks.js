@@ -3,7 +3,7 @@ const express = require('express')
 const security = require('./security.js')
 const utils = require('./utils.js')
 var config
-const embrava = { prefix: 'h' }
+const embrava = { prefix: 'h', stop: false, timeout: null }
 const installDate = Date.UTC(2021, 8, 15, 19, 0, 0) // Sept 15
 exports.init = async function (app) {
     config = app.get('config')
@@ -386,11 +386,13 @@ async function deskConvert () {
 }
 async function deskUsageStart () {
     embrava.stop = false
-    deskUsage()
+    if (!embrava.timeout) deskUsage()
     return true
 }
 async function deskUsageStop () {
     embrava.stop = true
+    clearTimeout(embrava.timeout)
+    embrava.timeout = null
     return true
 }
 async function deskUsage () {
@@ -422,7 +424,7 @@ async function deskUsage () {
     // fs.writeFileSync(path.join(__dirname, '/../config/config.json'), JSON.stringify(config, null, 4))
     // updateConfig('embrava.startTime', config.embrava.startTime)
     const interval = config.embrava.deskUsageInterval
-    if (interval && !embrava.stop) setTimeout(deskUsage, interval)
+    if (interval && !embrava.stop) embrava.timeout = setTimeout(deskUsage, interval)
     return count
 }
 async function eventList () {
